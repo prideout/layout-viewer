@@ -1,12 +1,8 @@
 use anyhow::{anyhow, Result};
 use colored::*;
-use layout_viewer::Layout;
-use std::collections::HashMap;
+use layout_viewer::Project;
 use std::fs;
 use std::path::Path;
-
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-struct CellId(usize);
 
 struct StatsRow {
     name: ColoredString,
@@ -19,36 +15,6 @@ impl StatsRow {
             name: name.to_string().color(Color::Green),
             value,
         }
-    }
-}
-
-struct StringInterner {
-    strings: Vec<String>,
-    indices: HashMap<String, CellId>,
-}
-
-impl StringInterner {
-    fn new() -> Self {
-        Self {
-            strings: Vec::new(),
-            indices: HashMap::new(),
-        }
-    }
-
-    fn intern(&mut self, s: String) -> CellId {
-        if let Some(&idx) = self.indices.get(&s) {
-            idx
-        } else {
-            let idx = CellId(self.strings.len());
-            self.indices.insert(s.clone(), idx);
-            self.strings.push(s);
-            idx
-        }
-    }
-
-    #[allow(dead_code)]
-    fn get(&self, id: CellId) -> &str {
-        &self.strings[id.0]
     }
 }
 
@@ -100,46 +66,26 @@ fn main() -> Result<()> {
 
     // Read and process the GDSII file
     let gds_data = fs::read(input_path)?;
-    let layout = Layout::process_gds_file(&gds_data)?;
+    let layout = Project::from_bytes(&gds_data)?;
 
     let stats = layout.stats();
     let stats_rows = vec![
         StatsRow::new("Structs", stats.struct_count),
-        StatsRow::new("Polygons", stats.polygon_count),
+        StatsRow::new("Boundaries", stats.polygon_count),
         StatsRow::new("Paths", stats.path_count),
         StatsRow::new("SRefs", stats.sref_count),
-        StatsRow::new("ARefs", stats.aref_count), // not present in our test files
-        StatsRow::new("Texts", stats.text_count), // present in caravel but let's ignore
-        StatsRow::new("Nodes", stats.node_count), // not present in our test files
-        StatsRow::new("Boxes", stats.box_count),  // not present in our test files
+        StatsRow::new("ARefs", stats.aref_count),
+        StatsRow::new("Texts", stats.text_count),
+        StatsRow::new("Nodes", stats.node_count),
+        StatsRow::new("Boxes", stats.box_count),
     ];
 
     for row in stats_rows {
         println!("{:<12} {}", row.name, row.value);
     }
 
-    let mut interner = StringInterner::new();
-
-    // Maps from a cell name to the cells that reference it
-    let mut hierarchy: HashMap<CellId, Vec<CellId>> = HashMap::new();
-
     for cell in &layout.library().structs {
-        let cell_idx = interner.intern(cell.name.clone());
-        for elem in &cell.elems {
-            if let gds21::GdsElement::GdsStructRef(sref) = elem {
-                let ref_idx = interner.intern(sref.name.clone());
-                hierarchy.entry(ref_idx).or_default().push(cell_idx);
-            }
-            if let gds21::GdsElement::GdsArrayRef(aref) = elem {
-                let ref_idx = interner.intern(aref.name.clone());
-                hierarchy.entry(ref_idx).or_default().push(cell_idx);
-            }
-        }
-    }
-
-    for cell in &layout.library().structs {
-        let cell_idx = interner.intern(cell.name.clone());
-        let is_root = !hierarchy.contains_key(&cell_idx);
+        let is_root = layout.is_root_cell(&cell.name);
         let poly_count = cell
             .elems
             .iter()
@@ -175,7 +121,7 @@ fn main() -> Result<()> {
             output.push_str(&format!(", {} children", children_count));
         }
         if !is_root {
-            output.push_str(&format!(", {} parents", hierarchy[&cell_idx].len()));
+            output.push_str(&format!(", {} parents", layout.reference_count(&cell.name)));
         }
         println!("{}", output);
     }

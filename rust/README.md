@@ -1,6 +1,8 @@
 # Layout Viewer
 
-A Rust library and CLI tool for processing GDSII layout files and converting them to SVG format. The library can be used both natively and as a WebAssembly module.
+A Rust library and CLI tool for processing GDSII layout files and converting
+them to SVG format. The library can be used both natively and as a WebAssembly
+module.
 
 ## Features
 
@@ -13,46 +15,20 @@ A Rust library and CLI tool for processing GDSII layout files and converting the
 
 ```bash
 cargo run --bin layout-viewer -- --help
+cargo run --bin layout-viewer ../public/trilomix-example.gds
 ```
 
-## Installation
+## End users
 
 ```bash
 cargo install --path .
-```
-
-## Usage
-
-### Command Line Interface
-
-```bash
 layout-viewer input.gds output.svg
 ```
 
-This will:
-1. Read and parse the GDSII file
-2. Display statistics about the layout
-3. Generate an SVG file
+### WebAssembly usage
 
-### As a Library
-
-```rust
-use layout_viewer::Layout;
-
-// Read GDSII data
-let gds_data: Vec<u8> = /* your GDSII binary data */;
-let layout = Layout::process_gds_file(&gds_data)?;
-
-// Get statistics
-println!("{}", layout.get_stats());
-
-// Generate SVG
-let svg_content = layout.to_svg()?;
-```
-
-### WebAssembly Usage
-
-The library can be compiled to WebAssembly and used in web applications. Build the WebAssembly module with:
+The library can be compiled to WebAssembly and used in web applications. Build
+the WebAssembly module with:
 
 ```bash
 wasm-pack build --target web
@@ -67,4 +43,4 @@ wasm-pack build --target web
 
 ## License
 
-MIT 
+MIT
