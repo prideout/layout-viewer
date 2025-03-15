@@ -4,12 +4,11 @@ A Rust library and CLI tool for processing GDSII layout files and converting
 them to SVG format. The library can be used both natively and as a WebAssembly
 module.
 
-## Features
+## Not implemented
 
-- Parse GDSII binary files
-- Generate SVG output
-- Display layout statistics (cell count, polygons, paths, references)
-- WebAssembly support for browser-based usage
+- Arefs are ignored (but we might fix this)
+- Magnification is ignored.
+- Text, Nodes, and Boxes are ignored.
 
 ## Dev usage
 

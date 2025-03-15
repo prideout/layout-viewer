@@ -1,26 +1,23 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct CellId(pub(crate) usize);
-
 pub struct StringInterner {
     strings: Vec<String>,
-    ids: HashMap<String, CellId>,
+    ids: HashMap<String, usize>,
 }
 
 impl StringInterner {
     pub fn new() -> Self {
         Self {
-            strings: Vec::new(),
+            strings: vec!["null".to_string()],
             ids: HashMap::new(),
         }
     }
 
-    pub fn intern(&mut self, s: &str) -> CellId {
+    pub fn intern(&mut self, s: &str) -> usize {
         if let Some(&idx) = self.ids.get(s) {
             idx
         } else {
-            let idx = CellId(self.strings.len());
+            let idx = self.strings.len();
             let s = s.to_string();
             self.ids.insert(s.clone(), idx);
             self.strings.push(s);
@@ -28,11 +25,11 @@ impl StringInterner {
         }
     }
 
-    pub fn get(&self, id: CellId) -> &str {
-        &self.strings[id.0]
+    pub fn get(&self, id: usize) -> &str {
+        &self.strings[id]
     }
 
-    pub fn get_id(&self, s: &str) -> Option<CellId> {
+    pub fn get_id(&self, s: &str) -> Option<usize> {
         self.ids.get(s).copied()
     }
 }

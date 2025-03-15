@@ -65,10 +65,10 @@ fn main() -> Result<()> {
     }
 
     // Read and process the GDSII file
-    let gds_data = fs::read(input_path)?;
-    let layout = Project::from_bytes(&gds_data)?;
+    let file_content = fs::read(input_path)?;
+    let projects = Project::from_bytes(&file_content)?;
 
-    let stats = layout.stats();
+    let stats = projects.stats();
     let stats_rows = vec![
         StatsRow::new("Structs", stats.struct_count),
         StatsRow::new("Boundaries", stats.polygon_count),
@@ -78,14 +78,20 @@ fn main() -> Result<()> {
         StatsRow::new("Texts", stats.text_count),
         StatsRow::new("Nodes", stats.node_count),
         StatsRow::new("Boxes", stats.box_count),
+        StatsRow::new("Layers", (projects.highest_layer() + 1) as usize),
     ];
 
     for row in stats_rows {
         println!("{:<12} {}", row.name, row.value);
     }
 
-    for cell in &layout.library().structs {
-        let is_root = layout.is_root_cell(&cell.name);
+    let mut has_root_cell = false;
+
+    for cell in &projects.library().structs {
+        if !projects.is_root_cell(&cell.name) {
+            continue;
+        }
+        has_root_cell = true;
         let poly_count = cell
             .elems
             .iter()
@@ -110,25 +116,24 @@ fn main() -> Result<()> {
         let children_count = sref_count + aref_count;
         let mut output = format!(
             "{} :: {} shapes",
-            if is_root {
-                cell.name.color(Color::BrightYellow)
-            } else {
-                cell.name.color(Color::White)
-            },
+            cell.name.color(Color::BrightYellow),
             shape_count.to_string().color(Color::BrightWhite),
         );
-        if children_count > 0 {
-            output.push_str(&format!(", {} children", children_count));
-        }
-        if !is_root {
-            output.push_str(&format!(", {} parents", layout.reference_count(&cell.name)));
+        match children_count {
+            0 => (),
+            1 => output.push_str(", contains 1 child"),
+            n => output.push_str(&format!(", contains {} children", n)),
         }
         println!("{}", output);
     }
 
+    if !has_root_cell {
+        println!("{}", "No root cell found".color(Color::Red));
+    }
+
     // Generate and save SVG only if output path is provided
     if let Some(output_path) = output_path {
-        let svg_content = layout.to_svg().map_err(|e| {
+        let svg_content = projects.to_svg().map_err(|e| {
             anyhow!(
                 "Failed to generate SVG: {}",
                 e.as_string().unwrap_or_default()
