@@ -1,0 +1,26 @@
+The Intel 4004 was the first commercial microprocessor (1971). It’s a 4-bit CPU with ~2,300 transistors.
+Peter Monta and collaborators recreated the 4004 layout. This GDSII file (4004.gds) is referenced in Purdue’s GDSII tools repo
+
+Layer 1 is a diffusion layer
+Layer 3 and 5 are vias (black)
+Layer 4 is an insulator (thin)
+Layer 6 are electrodes and interconnects
+
+https://www.youtube.com/watch?v=1JVrPIIowmE
+
+https://en.wikichip.org/wiki/intel/mcs-4/4004
+
+---
+
+The MOS Technology 6502 is a famous 8-bit microprocessor from 1975, used in Apple I/II, Atari, Commodore, etc. It has around 3,510 transistors.
+Obtained from Peter Monta’s FPGA-netlist-tools repository on GitHub.
+
+---
+
+Caravel is a template SoC for Efabless Open MPW and chipIgnite shuttles based on the Sky130 node from SkyWater Technologies. 
+Obtained from `efabless/caravel_user_project`.
+
+---
+
+See also:
+https://github.com/trilomix/GDS3D
