@@ -3,20 +3,23 @@
 - Repair the wasm build
 - Dump stats about the SRef refl/mag/rotation, then sanity check with KLayout
 - Find the max layer number (stored in Boundary and Path)
-- Create a `DagNode` struct that duplicates a StructRef + stores derived state
-  for rendering purposes (such as 3x3 matrix). This is the DAG.
+- Create a `DagNode` struct that holds all SRef state and derived state for
+  rendering purposes (probably just a `cgmath::Matrix3`).
+- Create a `DagNode` for the top cell. This is the only `DagNode` that does not have
+  corresponding SRef.
+- Write `build_layers`
 - Write `render_svg`
 
-## Rendering plan
+## Rendering procedure
 
-1. Create a DagNode for the top cell. This is the only DagNode that does not have
-   corresponding SRef.
-2. Allocate a `Vec<RenderLayer>` where each RenderLayer holds a list of
-   CellRefId-GeoPolygon pairs.
-2. Topological sort.
+1. Allocate a `Vec<RenderLayer>` where each RenderLayer will hold a map from
+   `CellRefId` to a `geo::Polygon`.
+2. Topological sort of `DagNode`.
 3. Starting at the top cell, traverse downstream and update a 3x3 matrix stored 
    in each DagNode, where the top cell has the identity matrix. Populate the
-   RenderLayer with the polygons of the cell.
+   RenderLayer with the polygons of the cell. Also expand a global AABB.
+4. To render SVG, go through the layers and emit a flat list of paths.
+   Each layer should be an SVG `<g>` with 50% opacity.
 
 ## Sanity checks
 
