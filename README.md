@@ -1,6 +1,5 @@
 ## Tasks
 
-- Evict the Library
 - Design the RenderLayer type
 - Write `build_layers`
 - Stub SvgBackend and GlBackend

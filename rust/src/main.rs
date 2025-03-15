@@ -66,9 +66,9 @@ fn main() -> Result<()> {
 
     // Read and process the GDSII file
     let file_content = fs::read(input_path)?;
-    let projects = Project::from_bytes(&file_content)?;
+    let project = Project::from_bytes(&file_content)?;
 
-    let stats = projects.stats();
+    let stats = project.stats();
     let stats_rows = vec![
         StatsRow::new("Structs", stats.struct_count),
         StatsRow::new("Boundaries", stats.polygon_count),
@@ -78,7 +78,7 @@ fn main() -> Result<()> {
         StatsRow::new("Texts", stats.text_count),
         StatsRow::new("Nodes", stats.node_count),
         StatsRow::new("Boxes", stats.box_count),
-        StatsRow::new("Layers", (projects.highest_layer() + 1) as usize),
+        StatsRow::new("Layers", (project.highest_layer() + 1) as usize),
     ];
 
     for row in stats_rows {
@@ -86,45 +86,9 @@ fn main() -> Result<()> {
     }
 
     let mut has_root_cell = false;
-
-    for cell in &projects.library().structs {
-        if !projects.is_root_cell(&cell.name) {
-            continue;
-        }
+    for root_id in project.find_roots() {
         has_root_cell = true;
-        let poly_count = cell
-            .elems
-            .iter()
-            .filter(|e| matches!(e, gds21::GdsElement::GdsBoundary(_)))
-            .count();
-        let path_count = cell
-            .elems
-            .iter()
-            .filter(|e| matches!(e, gds21::GdsElement::GdsPath(_)))
-            .count();
-        let shape_count = poly_count + path_count;
-        let sref_count = cell
-            .elems
-            .iter()
-            .filter(|e| matches!(e, gds21::GdsElement::GdsStructRef(_)))
-            .count();
-        let aref_count = cell
-            .elems
-            .iter()
-            .filter(|e| matches!(e, gds21::GdsElement::GdsArrayRef(_)))
-            .count();
-        let children_count = sref_count + aref_count;
-        let mut output = format!(
-            "{} :: {} shapes",
-            cell.name.color(Color::BrightYellow),
-            shape_count.to_string().color(Color::BrightWhite),
-        );
-        match children_count {
-            0 => (),
-            1 => output.push_str(", contains 1 child"),
-            n => output.push_str(&format!(", contains {} children", n)),
-        }
-        println!("{}", output);
+        println!("{:<12} {}", "Root".color(Color::BrightYellow), project.struct_name(root_id));
     }
 
     if !has_root_cell {
@@ -133,7 +97,7 @@ fn main() -> Result<()> {
 
     // Generate and save SVG only if output path is provided
     if let Some(output_path) = output_path {
-        let svg_content = projects.to_svg().map_err(|e| {
+        let svg_content = project.to_svg().map_err(|e| {
             anyhow!(
                 "Failed to generate SVG: {}",
                 e.as_string().unwrap_or_default()

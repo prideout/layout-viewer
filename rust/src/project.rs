@@ -62,7 +62,6 @@ impl CellDef {
 
 #[wasm_bindgen]
 pub struct Project {
-    library: GdsLibrary,
     stats: LayoutStats,
     interner: StringInterner,
     cells: HashMap<CellId, Cell>,
@@ -200,7 +199,6 @@ impl Project {
         }
 
         let project = Project {
-            library,
             stats,
             interner,
             cells,
@@ -216,32 +214,20 @@ impl Project {
         &self.stats
     }
 
-    pub fn name(&self) -> &str {
-        &self.library.name
-    }
-
-    pub fn library(&self) -> &GdsLibrary {
-        &self.library
-    }
-
     pub fn highest_layer(&self) -> i16 {
         self.highest_layer
     }
 
-    /// Returns true if the given struct is not instantiated by any other struct.
-    pub fn is_root_cell(&self, cell_name: &str) -> bool {
-        self.reference_count(cell_name) == 0
+    pub fn struct_name(&self, cell_def_id: CellDefId) -> &str {
+        self.interner.get(cell_def_id.0)
     }
 
-    /// Returns the number of times the given struct is referenced (instantiated).
-    pub fn reference_count(&self, cell_name: &str) -> usize {
-        if let Some(id) = self.interner.get_id(cell_name) {
-            self.cell_defs
-                .get(&CellDefId(id))
-                .map_or(0, |v| v.instances_of_self.len())
-        } else {
-            0
-        }
+    pub fn find_roots(&self) -> Vec<CellDefId> {
+        self.cell_defs
+            .iter()
+            .filter(|(_, cell_def)| cell_def.instances_of_self.is_empty())
+            .map(|(cell_def_id, _)| *cell_def_id)
+            .collect()
     }
 }
 
