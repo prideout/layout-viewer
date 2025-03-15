@@ -1,12 +1,16 @@
 #![allow(dead_code)]
 
 use anyhow::{anyhow, Result};
-use gds21::{GdsBoundary, GdsLibrary, GdsPath, GdsPoint, GdsStrans};
+use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::AffineTransform;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-use crate::interner::StringInterner;
+use crate::{
+    cells::{Cell, CellDef, CellDefId, CellId},
+    string_interner::StringInterner,
+    render_layer::RenderLayer,
+};
 
 #[derive(Debug)]
 pub struct LayoutStats {
@@ -20,54 +24,15 @@ pub struct LayoutStats {
     pub box_count: usize,
 }
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct CellDefId(usize);
-
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct CellId(usize);
-
-/// Instance of a [CellDef].
-/// Corresponds to a SRef or a sub-instance of an ARef.
-struct Cell {
-    cell_id: CellId,
-    cell_def_id: CellDefId,
-    xy: GdsPoint,
-    local_transform: Option<GdsStrans>,
-    world_transform: AffineTransform,
-    visible: bool,
-}
-
-/// Instanceable definition of a cell.
-/// Corresponds to a single GDSII struct.
-#[derive(Debug, Clone)]
-struct CellDef {
-    cell_def_id: CellDefId,
-    instances_of_self: Vec<CellId>,
-    boundary_elements: Vec<GdsBoundary>,
-    path_elements: Vec<GdsPath>,
-    // cell_elements: Vec<CellRefId>,
-}
-
-impl CellDef {
-    fn new(cell_def_id: CellDefId) -> Self {
-        Self {
-            cell_def_id,
-            instances_of_self: Vec::new(),
-            boundary_elements: Vec::new(),
-            path_elements: Vec::new(),
-            // cell_elements: Vec::new(),
-        }
-    }
-}
-
 #[wasm_bindgen]
 pub struct Project {
-    stats: LayoutStats,
-    interner: StringInterner,
     cells: HashMap<CellId, Cell>,
     cell_defs: HashMap<CellDefId, CellDef>,
+    render_layers: Vec<RenderLayer>,
     highest_layer: i16,
     next_cell_id: CellId,
+    stats: LayoutStats,
+    interner: StringInterner,
 }
 
 impl Project {
@@ -198,14 +163,18 @@ impl Project {
             cell_defs.insert(cell_def_id, cell_def);
         }
 
-        let project = Project {
+        let mut project = Project {
             stats,
             interner,
             cells,
             cell_defs,
+            render_layers: Vec::new(),
             highest_layer,
             next_cell_id,
         };
+
+        project.update_world_transforms();
+        project.update_render_layers();
 
         Ok(project)
     }
@@ -228,6 +197,31 @@ impl Project {
             .filter(|(_, cell_def)| cell_def.instances_of_self.is_empty())
             .map(|(cell_def_id, _)| *cell_def_id)
             .collect()
+    }
+
+    pub fn update_world_transforms(&mut self) {
+        for cell in self.cells.values_mut() {
+            cell.world_transform = AffineTransform::identity();
+        }
+    }
+
+    pub fn update_render_layers(&mut self) {
+        self.render_layers.clear();
+        for _ in 0..=self.highest_layer {
+            self.render_layers.push(RenderLayer::new());
+        }
+        let root_id = CellId(0);
+        let identity = &AffineTransform::identity();
+        for cell_def_id in self.find_roots() {
+            let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
+            for boundary in &cell_def.boundary_elements {
+                self.render_layers[boundary.layer as usize]
+                    .add_boundary_element(root_id, boundary, identity);
+            }
+            // for path in &cell_def.path_elements {
+            //     self.render_layers[path.layer as usize].add_path_element(root_id, path, identity);
+            // }
+        }
     }
 }
 

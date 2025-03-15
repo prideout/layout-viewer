@@ -29,6 +29,7 @@ impl StringInterner {
         &self.strings[id]
     }
 
+    #[allow(dead_code)]
     pub fn get_id(&self, s: &str) -> Option<usize> {
         self.ids.get(s).copied()
     }

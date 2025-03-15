@@ -1,10 +1,13 @@
 ## Tasks
 
-- Design the RenderLayer type
-- Write `build_layers`
+- Implement `update_world_transforms`
+- Implement `update_render_layers`
 - Stub SvgBackend and GlBackend
 - Write `render_svg`
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.
+
+Create WebGL triangles by call `earcut_triangles_raw` on the geo polygons
+and appending them to a VBO held in the layer.
 
 For WebGL, create an app with trunk + Yew + glow (?) with a sidebar for layers.
 Each layer will have a color swatch, visibility toggle, and opacity slider.
@@ -24,7 +27,6 @@ https://docs.rs/geo/latest/geo/algorithm/affine_ops/struct.AffineTransform.html
    AABB.
 3. To render SVG, go through the layers and emit a flat list of paths.
    Each layer should be an SVG `<g>` with 50% opacity.
-4. To create WebGL triangles, call `earcut_triangles_raw` on the polygons.
 
 ## Sanity checks
 
