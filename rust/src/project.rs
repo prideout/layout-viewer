@@ -1,11 +1,10 @@
 use anyhow::{anyhow, Result};
 use gds21::GdsLibrary;
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::repeat_with};
 use wasm_bindgen::prelude::*;
 
 use crate::interner::{CellId, StringInterner};
-use rand::distributions::Uniform;
-use rand::{thread_rng, Rng};
+
 #[derive(Debug)]
 pub struct LayoutStats {
     pub struct_count: usize,
@@ -32,16 +31,11 @@ pub struct Project {
     stats: LayoutStats,
     interner: StringInterner,
     cells: HashMap<CellId, Vec<CellId>>,
-    id_rng: Uniform<u8>,
 }
 
 impl Project {
     pub fn generate_random_id(&self) -> CellRefId {
-        let mut rng = thread_rng();
-        let id: String = std::iter::repeat_with(|| rng.sample(self.id_rng))
-            .map(|n| (b'a' + n) as char)
-            .take(8)
-            .collect();
+        let id: String = repeat_with(fastrand::alphanumeric).take(10).collect();
         CellRefId::new(id)
     }
 
@@ -100,7 +94,6 @@ impl Project {
             stats,
             interner,
             cells,
-            id_rng: Uniform::new(0, 26),
         };
 
         Ok(project)

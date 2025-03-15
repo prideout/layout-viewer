@@ -1,12 +1,11 @@
 ## Tasks
 
-- Repair the wasm build
 - Dump stats about the SRef refl/mag/rotation, then sanity check with KLayout
 - Find the max layer number (stored in Boundary and Path)
-- Create a `DagNode` struct that holds all SRef state and derived state for
-  rendering purposes (probably just a `cgmath::Matrix3`).
-- Create a `DagNode` for the top cell. This is the only `DagNode` that does not have
-  corresponding SRef.
+- Create a `TreeItem` struct that holds all SRef state and derived state for
+  rendering purposes (probably just a `nalgebra::Matrix3`).
+- Create a root `TreeItem` for the top cell. This is the only `TreeItem` that
+  does not have corresponding SRef.
 - Write `build_layers`
 - Write `render_svg`
 
@@ -14,12 +13,15 @@
 
 1. Allocate a `Vec<RenderLayer>` where each RenderLayer will hold a map from
    `CellRefId` to a `geo::Polygon`.
-2. Topological sort of `DagNode`.
-3. Starting at the top cell, traverse downstream and update a 3x3 matrix stored 
-   in each DagNode, where the top cell has the identity matrix. Populate the
+2. Starting at the root, traverse down and update the 3x3 transforms stored 
+   in each TreeItem, where the root has the identity matrix. Populate the
    RenderLayer with the polygons of the cell. Also expand a global AABB.
-4. To render SVG, go through the layers and emit a flat list of paths.
+3. To render SVG, go through the layers and emit a flat list of paths.
    Each layer should be an SVG `<g>` with 50% opacity.
+4. To create WebGL triangles, call `earcut_triangles_raw` on the polygons.
+
+Might want to use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for
+accelerated picking.
 
 ## Sanity checks
 
