@@ -109,6 +109,11 @@ impl Mesh {
             return;
         }
 
+        // Do not emit a warning here, we already did.
+        if geometry.indices.is_empty() {
+            return;
+        }
+
         unsafe {
             material.bind(gl);
 

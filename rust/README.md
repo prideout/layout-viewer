@@ -8,10 +8,15 @@ The library can be used both natively and as a WebAssembly module.
 ## Tasks
 
 ```bash
-cargo run --quiet --bin layout-viewer -- --gl ../public/test/SimplePath.gds
+cargo run --release --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
+cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
 ```
 
-Get it work in desktop app.  No need for mouse interaction yet.
+Fix the orientation.
+
+Add source-over blending on the material.
+
+Add mouse panning and scroll zooming using zoom-to-cursor.
 
 Create a web app with trunk and Yew. It should have two routes: a home route and
 a layouts/{id} route.

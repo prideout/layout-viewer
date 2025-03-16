@@ -91,6 +91,7 @@ impl Material {
 
         unsafe {
             let count = gl.get_active_uniforms(program);
+            log::info!("Active uniforms: {}", count);
             for i in 0..count {
                 if let Some(info) = gl.get_active_uniform(program, i) {
                     if let Some(location) = gl.get_uniform_location(program, &info.name) {
@@ -113,9 +114,7 @@ impl Material {
     pub(crate) fn bind(&mut self, gl: &glow::Context) {
         if self.program.is_none() {
             self.create_program(gl);
-            self.gather_uniforms(gl);
         }
-
         unsafe {
             gl.use_program(self.program);
         }

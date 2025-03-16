@@ -1,6 +1,5 @@
 #![cfg(not(target_arch = "wasm32"))]
 
-use glow::HasContext;
 use glutin::{
     config::ConfigTemplateBuilder,
     context::{ContextApi, ContextAttributesBuilder, Version},
@@ -22,30 +21,6 @@ use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Sce
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
-
-fn check_gl_error(gl: &glow::Context, location: &str) {
-    unsafe {
-        let error = gl.get_error();
-        if error != glow::NO_ERROR {
-            let error_str = match error {
-                glow::INVALID_ENUM => "GL_INVALID_ENUM",
-                glow::INVALID_VALUE => "GL_INVALID_VALUE",
-                glow::INVALID_OPERATION => "GL_INVALID_OPERATION",
-                glow::INVALID_FRAMEBUFFER_OPERATION => "GL_INVALID_FRAMEBUFFER_OPERATION",
-                glow::OUT_OF_MEMORY => "GL_OUT_OF_MEMORY",
-                glow::STACK_UNDERFLOW => "GL_STACK_UNDERFLOW",
-                glow::STACK_OVERFLOW => "GL_STACK_OVERFLOW",
-                _ => "Unknown GL error",
-            };
-            log::error!(
-                "OpenGL error at {}: {} (0x{:X})",
-                location,
-                error_str,
-                error
-            );
-        }
-    }
-}
 
 fn calculate_normalized_dimensions(width: u32, height: u32) -> (f32, f32) {
     let aspect_ratio = width as f32 / height as f32;
@@ -123,14 +98,16 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
                 gl_display.get_proc_address(&s) as *const _
             })
         };
-        check_gl_error(&gl, "GL context creation");
 
         (window, gl, surface, context)
     };
 
+    // The following dimensions are in physical pixels and therefore different from the
+    // initial dimensions that were passed into the surface builder.
     let window_size = window.inner_size();
+
     let mut renderer = Renderer::new(gl);
-    check_gl_error(&renderer.gl(), "Renderer creation");
+    renderer.check_gl_error("Renderer creation");
 
     let (width, height) = calculate_normalized_dimensions(window_size.width, window_size.height);
     let mut camera = Camera::new(
@@ -149,8 +126,8 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
     });
 
     event_loop.run(move |event, elwt| {
-        if let Event::WindowEvent { event, .. } = event {
-            match event {
+        match event {
+            Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => {
                     elwt.exit();
                 }
@@ -178,25 +155,33 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
                         width: size.width as f32,
                         height: size.height as f32,
                     });
-                    check_gl_error(&renderer.gl(), "Viewport update");
+                    renderer.check_gl_error("Viewport update");
 
                     renderer.render(&mut scene, &camera);
-                    check_gl_error(&renderer.gl(), "Scene render");
+                    renderer.check_gl_error("Scene render");
                     surface.swap_buffers(&context).unwrap();
                 }
-                WindowEvent::CursorMoved { position, .. } => {
-                    println!("Cursor position: ({}, {})", position.x, position.y);
+                WindowEvent::CursorMoved { position: _physical_pointer, .. } => {
                     renderer.render(&mut scene, &camera);
-                    check_gl_error(&renderer.gl(), "Scene render");
+                    renderer.check_gl_error("Scene render");
                     surface.swap_buffers(&context).unwrap();
                 }
                 WindowEvent::RedrawRequested => {
                     renderer.render(&mut scene, &camera);
-                    check_gl_error(&renderer.gl(), "Scene render");
+                    renderer.check_gl_error("Scene render");
                     surface.swap_buffers(&context).unwrap();
                 }
                 _ => (),
+            },
+            Event::AboutToWait => {
+                // This is called right before the event loop starts waiting for new events
+                // It's a good place to do cleanup when exiting
+                if elwt.exiting() {
+                    println!("Cleaning up OpenGL resources");
+                    scene.destroy(renderer.gl());
+                }
             }
+            _ => (),
         }
     })?;
 

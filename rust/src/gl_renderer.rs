@@ -25,6 +25,30 @@ impl Renderer {
         &self.gl
     }
 
+    pub fn check_gl_error(&self, location: &str) {
+        unsafe {
+            let error = self.gl.get_error();
+            if error != glow::NO_ERROR {
+                let error_str = match error {
+                    glow::INVALID_ENUM => "GL_INVALID_ENUM",
+                    glow::INVALID_VALUE => "GL_INVALID_VALUE",
+                    glow::INVALID_OPERATION => "GL_INVALID_OPERATION",
+                    glow::INVALID_FRAMEBUFFER_OPERATION => "GL_INVALID_FRAMEBUFFER_OPERATION",
+                    glow::OUT_OF_MEMORY => "GL_OUT_OF_MEMORY",
+                    glow::STACK_UNDERFLOW => "GL_STACK_UNDERFLOW",
+                    glow::STACK_OVERFLOW => "GL_STACK_OVERFLOW",
+                    _ => "Unknown GL error",
+                };
+                log::error!(
+                    "OpenGL error at {}: {} (0x{:X})",
+                    location,
+                    error_str,
+                    error
+                );
+            }
+        }
+    }
+
     /// Sets the screen space rectangle in which to draw.
     /// This is the region that the camera's projection quad fits to.
     ///
@@ -60,6 +84,7 @@ impl Renderer {
                 let geometry = scene.geometries.get_mut(&mesh.geometry_id).unwrap();
                 
                 let model_matrix = mesh.matrix;
+                material.bind(gl);
                 material.set_mat4(&self.gl, "model", &model_matrix);
                 material.set_mat4(&self.gl, "view", &view_matrix);
                 material.set_mat4(&self.gl, "projection", &projection);

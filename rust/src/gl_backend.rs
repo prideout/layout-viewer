@@ -75,7 +75,7 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
                 let y = (coord[1] - y_center) * scale;
                 geometry
                     .positions
-                    .extend_from_slice(&[x as f32, y as f32, 0.0]);
+                    .extend_from_slice(&[y as f32, -x as f32, 0.0]);
             }
 
             geometry.indices.extend(
