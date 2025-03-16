@@ -5,6 +5,7 @@ use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::{AffineTransform, Coord};
 use indexmap::IndexMap;
 use wasm_bindgen::prelude::*;
+use nalgebra::Vector4;
 
 use crate::{
     bounds::BoundingBox,
@@ -197,9 +198,16 @@ impl Project {
 
     pub fn update_render_layers(&mut self) {
         self.render_layers.clear();
-        for _ in 0..=self.highest_layer {
-            self.render_layers.push(Layer::new());
+        
+        // Create layers with unique colors
+        for i in 0..=self.highest_layer {
+            let hue = (i as f32) / ((self.highest_layer + 1) as f32);
+            let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.8);
+            let mut layer = Layer::new();
+            layer.color = Vector4::new(r, g, b, 1.0);
+            self.render_layers.push(layer);
         }
+
         let root_id = CellId(0);
         let identity = &AffineTransform::identity();
         for cell_def_id in self.find_roots() {
@@ -294,6 +302,25 @@ impl Project {
 
     pub fn bounds(&self) -> &BoundingBox {
         &self.bounds
+    }
+}
+
+// Helper function to convert HSV to RGB
+fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
+    let h = h * 6.0;
+    let i = h.floor();
+    let f = h - i;
+    let p = v * (1.0 - s);
+    let q = v * (1.0 - s * f);
+    let t = v * (1.0 - s * (1.0 - f));
+
+    match i as i32 % 6 {
+        0 => (v, t, p),
+        1 => (q, v, p),
+        2 => (p, v, t),
+        3 => (p, q, v),
+        4 => (t, p, v),
+        _ => (v, p, q),
     }
 }
 

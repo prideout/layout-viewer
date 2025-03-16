@@ -34,12 +34,16 @@ void main() {
 pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
     let material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
     let material_id = scene.add_material(material);
+    
     for layer in layers {
         let geometry = create_layer_geometry(layer);
         let geometry_id = scene.add_geometry(geometry);
-        let mesh = Mesh::new(geometry_id, material_id);
+        let mut mesh = Mesh::new(geometry_id, material_id);
+        
+        // Set the color uniform using the layer's color
+        mesh.set_vec4("color", layer.color);
+        
         scene.add_mesh(mesh);
-        mesh.set_vec4("color", &Vector4::new(1.0, 1.0, 1.0, 0.5));
     }
 }
 

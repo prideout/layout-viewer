@@ -5,6 +5,7 @@ use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use indexmap::IndexMap;
+use nalgebra::Vector4;
 
 use crate::bounds::BoundingBox;
 use crate::cells::CellId;
@@ -34,6 +35,9 @@ impl From<i16> for PathType {
 pub struct Layer {
     pub polygons: IndexMap<CellId, Vec<Polygon>>,
     pub bounds: BoundingBox,
+    pub paths: Vec<GdsPath>,
+    pub boundaries: Vec<GdsBoundary>,
+    pub color: Vector4<f32>,  // RGBA color for this layer
 }
 
 impl Layer {
@@ -41,6 +45,9 @@ impl Layer {
         Self {
             polygons: IndexMap::new(),
             bounds: BoundingBox::new(),
+            paths: Vec::new(),
+            boundaries: Vec::new(),
+            color: Vector4::new(0.0, 0.0, 0.0, 1.0),  // Default to black
         }
     }
 

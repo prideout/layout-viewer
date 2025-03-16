@@ -1,0 +1,9 @@
+open -a 'Google Chrome' ../public/intel-4004.svg
+open -a 'Google Chrome' ../public/mos-6502.svg
+open -a 'Google Chrome' ../public/test/SimpleRotation.svg
+open -a 'Google Chrome' ../public/test/SimpleMirror.svg
+open -a 'Google Chrome' ../public/test/SimpleBoth.svg
+open -a 'Google Chrome' ../public/test/SimpleRotation2.svg
+open -a 'Google Chrome' ../public/test/SimpleBoth2.svg
+open -a 'Google Chrome' ../public/trilomix-sky130.svg
+open -a 'Google Chrome' ../public/trilomix-example.svg
