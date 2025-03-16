@@ -1,7 +1,5 @@
 ## Tasks
 
-- SimplePath example is very broken.
-   - https://ishape-rust.github.io/iShape-js/overlay/stroke.html
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.
 
 Create WebGL triangles by calling `earcut_triangles_raw` on the geo polygons

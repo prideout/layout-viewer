@@ -2,8 +2,10 @@
 
 use gds21::{GdsBoundary, GdsPath};
 use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
+use i_overlay::i_float::float::compatible::FloatPointCompatible;
+use i_overlay::mesh::stroke::offset::StrokeOffset;
+use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use std::collections::HashMap;
-use std::f64::consts::PI;
 
 use crate::bounds::BoundingBox;
 use crate::cells::CellId;
@@ -45,7 +47,7 @@ impl RenderLayer {
 
     pub fn update_bounds(&mut self) {
         self.bounds = BoundingBox::new();
-        
+
         for cell_polygons in self.polygons.values() {
             for polygon in cell_polygons {
                 if let Some(bbox) = polygon.bounding_rect() {
@@ -104,197 +106,60 @@ impl RenderLayer {
     // Private helper functions
     fn create_path_outline(
         &mut self,
-        points: &[Vec2d],
+        spine_points: &[Vec2d],
         half_width: f64,
         path_type: PathType,
     ) -> Vec<Vec2d> {
-        let mut outline_points = Vec::with_capacity(points.len() * 2 + 1);
+        // At the time of this writing, LineCap is neither
+        // copyable nor cloneable.
 
-        // Add start cap
-        if let Some((dir, norm)) = self.get_segment_vectors(&points[0], &points[1]) {
-            self.add_cap(
-                &mut outline_points,
-                points[0],
-                dir,
-                norm.scale(half_width),
-                path_type,
-                true,
-            );
-        }
+        let start_cap = match path_type {
+            PathType::Round => LineCap::Round(0.1),
+            PathType::Extended => LineCap::Square,
+            PathType::Standard => LineCap::Butt,
+        };
+        
+        let end_cap = match path_type {
+            PathType::Round => LineCap::Round(0.1),
+            PathType::Extended => LineCap::Square,
+            PathType::Standard => LineCap::Butt,
+        };
+        
+        let style = StrokeStyle::new(half_width * 2.0)
+            .line_join(LineJoin::Miter(1.0))
+            .start_cap(start_cap)
+            .end_cap(end_cap);
 
-        // Add left path side with miter joints
-        self.add_left_path_side(&mut outline_points, points, half_width);
+        let shapes: Vec<Vec<Vec<Vec2d>>> = spine_points.stroke(style, false);
 
-        // Add end cap
-        let last_idx = points.len() - 1;
-        if let Some((dir, norm)) =
-            self.get_segment_vectors(&points[last_idx - 1], &points[last_idx])
-        {
-            self.add_cap(
-                &mut outline_points,
-                points[last_idx],
-                dir,
-                norm.scale(half_width),
-                path_type,
-                false,
-            );
-        }
-
-        // Add right path
-        self.add_right_path_side(&mut outline_points, points, half_width);
-
-        // Close the polygon
-        if let Some(first) = outline_points.first().copied() {
-            outline_points.push(first);
-        }
-
-        outline_points
-    }
-
-    fn get_segment_vectors(&self, p1: &Vec2d, p2: &Vec2d) -> Option<(Vec2d, Vec2d)> {
-        let diff = p2.subtract(p1);
-        let len = diff.length();
-        if len == 0.0 {
-            return None;
-        }
-        let dir = diff.scale(1.0 / len);
-        let norm = Vec2d(-dir.y(), dir.x());
-        Some((dir, norm))
-    }
-
-    fn add_cap(
-        &mut self,
-        points: &mut Vec<Vec2d>,
-        center: Vec2d,
-        dir: Vec2d,
-        norm: Vec2d,
-        path_type: PathType,
-        is_start: bool,
-    ) {
-        let dir = if is_start { dir } else { dir.flip() };
-
-        match path_type {
-            PathType::Round => {
-                self.add_round_cap(points, center, dir, norm.length());
-            }
-            PathType::Extended => {
-                self.add_extended_cap(points, center, dir, norm.length());
-            }
-            PathType::Standard => {
-                // Square end
-                points.push(center.subtract(&norm));
+        if let Some(first_shape) = shapes.first() {
+            if let Some(first_contour) = first_shape.first() {
+                return first_contour.clone();
             }
         }
-    }
 
-    fn add_left_path_side(
-        &mut self,
-        outline_points: &mut Vec<Vec2d>,
-        points: &[Vec2d],
-        half_width: f64,
-    ) {
-        for i in 0..points.len() - 1 {
-            if i < points.len() - 2 {
-                let segment = [points[i], points[i + 1], points[i + 2]];
-                self.add_miter_joint(outline_points, &segment, half_width, true);
-            } else if let Some((_, norm)) = self.get_segment_vectors(&points[i], &points[i + 1]) {
-                let scaled_norm = norm.scale(half_width);
-                outline_points.push(points[i + 1].add(&scaled_norm));
-            }
-        }
-    }
+        eprintln!("Empty contour for path.");
 
-    fn add_right_path_side(
-        &mut self,
-        outline_points: &mut Vec<Vec2d>,
-        points: &[Vec2d],
-        half_width: f64,
-    ) {
-        for i in (0..points.len() - 2).rev() {
-            if i < points.len() - 2 {
-                let segment = [points[i], points[i + 1], points[i + 2]];
-                self.add_miter_joint(outline_points, &segment, half_width, false);
-            } else if let Some((_, norm)) = self.get_segment_vectors(&points[i], &points[i + 1]) {
-                let scaled_norm = norm.scale(half_width);
-                outline_points.push(points[i + 1].subtract(&scaled_norm));
-            }
-        }
-    }
-
-    fn add_miter_joint(
-        &mut self,
-        outline_points: &mut Vec<Vec2d>,
-        segment_points: &[Vec2d; 3],
-        half_width: f64,
-        is_left_side: bool,
-    ) {
-        let [p1, p2, p3] = segment_points;
-
-        if let (Some((_, norm1)), Some((_, norm2))) = (
-            self.get_segment_vectors(p1, p2),
-            self.get_segment_vectors(p2, p3),
-        ) {
-            let (norm1, norm2) = if is_left_side {
-                (norm1, norm2)
-            } else {
-                (norm1.flip(), norm2.flip())
-            };
-
-            let scaled_norm1 = norm1.scale(half_width);
-            let scaled_norm2 = norm2.scale(half_width);
-
-            // Calculate offset lines' start points
-            let offset1 = p1.add(&scaled_norm1);
-            let offset2 = p2.add(&scaled_norm2);
-
-            // Direction vectors for the two lines
-            let dir1 = p2.subtract(p1);
-            let offset_diff = offset2.subtract(&offset1);
-
-            // Calculate intersection parameter using cross products
-            let t = offset_diff.cross(&dir1) / norm1.cross(&dir1);
-
-            // Find intersection point by interpolating along the first offset line
-            let miter = offset1.lerp(&p2.add(&scaled_norm1), t);
-            outline_points.push(miter);
-        }
-    }
-
-    fn add_round_cap(
-        &mut self,
-        points: &mut Vec<Vec2d>,
-        center: Vec2d,
-        dir: Vec2d,
-        half_width: f64,
-    ) {
-        for i in 0..=ARC_SUBDIVISIONS {
-            let angle = PI * (i as f64) / (ARC_SUBDIVISIONS as f64);
-            let nx = -dir.y() * angle.cos() + dir.x() * angle.sin();
-            let ny = dir.x() * angle.cos() + dir.y() * angle.sin();
-            let offset = Vec2d::new(nx, ny).scale(half_width);
-            points.push(center.add(&offset));
-        }
-    }
-
-    fn add_extended_cap(
-        &mut self,
-        points: &mut Vec<Vec2d>,
-        center: Vec2d,
-        dir: Vec2d,
-        half_width: f64,
-    ) {
-        let ext = half_width;
-        let normal = Vec2d(-dir.y(), dir.x());
-        let scaled_normal = normal.scale(half_width);
-        let scaled_dir = dir.scale(ext);
-
-        points.push(center.add(&scaled_normal).add(&scaled_dir));
-        points.push(center.subtract(&scaled_normal).add(&scaled_dir));
+        vec![]
     }
 }
 
 impl Default for RenderLayer {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl FloatPointCompatible<f64> for Vec2d {
+    fn from_xy(x: f64, y: f64) -> Self {
+        Self(x, y)
+    }
+
+    fn x(&self) -> f64 {
+        self.0
+    }
+
+    fn y(&self) -> f64 {
+        self.1
     }
 }
