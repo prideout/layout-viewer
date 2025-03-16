@@ -26,6 +26,7 @@ winit = "0.29"
 glow = "0.13"
 raw-window-handle = "0.5"
 clap = { version = "4.5", features = ["derive"] }
+nalgebra = "0.32"
 
 [patch.crates-io]
 geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }

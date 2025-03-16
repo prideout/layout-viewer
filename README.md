@@ -1,8 +1,7 @@
 ## Tasks
 
-
-Create a file called `gl_renderer.ts` that exports a `GlRenderer` struct that holds a
-takes a glow context in its constructor, and holds on to the context.
+Create a file called `gl_renderer.ts` that exports a `GlRenderer` struct that
+takes a glow context in its constructor and holds on to it.
 
 Create a file called `gl_scene.ts` that exports a `GlScene` struct holds a bunch of index maps.
 Each IndexMap maps from an id type to an object. The list of maps are: views, cameras, meshes,

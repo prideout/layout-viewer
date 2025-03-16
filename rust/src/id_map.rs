@@ -1,0 +1,34 @@
+use indexmap::IndexMap;
+use std::hash::Hash;
+
+pub trait Id {
+    fn to_raw(&self) -> usize;
+    fn from_raw(id: usize) -> Self;
+}
+
+pub struct IdMap<K: Id + Copy + Hash + Eq, V> {
+    items: IndexMap<K, V>,
+    next_id: usize,
+}
+
+impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
+    pub fn new() -> Self {
+        Self {
+            items: IndexMap::new(),
+            next_id: 1,
+        }
+    }
+
+    pub fn create_id(&mut self, value: V) -> K {
+        let id = K::from_raw(self.next_id);
+        self.next_id += 1;
+        self.items.insert(id, value);
+        id
+    }
+}
+
+impl<K: Id + Copy + Hash + Eq, V> Default for IdMap<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+} 
