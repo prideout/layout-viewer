@@ -21,6 +21,15 @@ impl Renderer {
         }
     }
 
+    pub fn gl(&self) -> &glow::Context {
+        &self.gl
+    }
+
+    /// Sets the screen space rectangle in which to draw.
+    /// This is the region that the camera's projection quad fits to.
+    ///
+    /// NOTE: For now we do not bother scissoring to the viewport, which we will
+    /// need for features like splitting the screen into multiple viewports.
     pub fn set_viewport(&mut self, viewport: Viewport) {
         self.viewport = viewport;
     }

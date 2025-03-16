@@ -18,7 +18,7 @@ mod svg_backend;
 mod gl_window;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use gl_window::run_gl_window;
+pub use gl_window::spawn_window;
 
 pub use gl_scene::Scene;
 pub use project::Project;

@@ -126,6 +126,8 @@ impl Material {
             unsafe {
                 gl.uniform_1_f32(Some(location), value);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to float value", name);
         }
     }
 
@@ -134,6 +136,8 @@ impl Material {
             unsafe {
                 gl.uniform_2_f32(Some(location), value.x, value.y);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to vec2 value", name);
         }
     }
 
@@ -142,6 +146,8 @@ impl Material {
             unsafe {
                 gl.uniform_3_f32(Some(location), value.x, value.y, value.z);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to vec3 value", name);
         }
     }
 
@@ -150,6 +156,8 @@ impl Material {
             unsafe {
                 gl.uniform_4_f32(Some(location), value.x, value.y, value.z, value.w);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to vec4 value", name);
         }
     }
 
@@ -158,6 +166,8 @@ impl Material {
             unsafe {
                 gl.uniform_matrix_4_f32_slice(Some(location), false, value.as_slice());
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to mat4 value", name);
         }
     }
 
@@ -166,6 +176,8 @@ impl Material {
             unsafe {
                 gl.uniform_1_i32(Some(location), value);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to int value", name);
         }
     }
 
@@ -174,6 +186,8 @@ impl Material {
             unsafe {
                 gl.uniform_1_i32(Some(location), value as i32);
             }
+        } else {
+            log::warn!("Attempting to set unknown uniform '{}' to bool value", name);
         }
     }
 }

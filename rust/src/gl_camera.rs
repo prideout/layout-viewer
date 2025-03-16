@@ -52,4 +52,10 @@ impl Camera {
     pub fn get_view_matrix(&self) -> Mat4 {
         Mat4::new_translation(&(-self.position.coords))
     }
+
+    /// Sets the world space width and height of the near projection quad.
+    pub fn set_size(&mut self, width: f32, height: f32) {
+        self.width = width;
+        self.height = height;
+    }
 } 

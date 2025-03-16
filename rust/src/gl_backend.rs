@@ -39,6 +39,7 @@ pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
         let geometry_id = scene.add_geometry(geometry);
         let mesh = Mesh::new(geometry_id, material_id);
         scene.add_mesh(mesh);
+        mesh.set_vec4("color", &Vector4::new(1.0, 1.0, 1.0, 0.5));
     }
 }
 

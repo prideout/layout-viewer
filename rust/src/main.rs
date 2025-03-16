@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use colored::*;
-use layout_viewer::{generate_svg, populate_scene, run_gl_window, Project, Scene};
+use layout_viewer::{generate_svg, populate_scene, spawn_window, Project, Scene};
 use std::fs;
 use std::path::{Path, PathBuf};
+use env_logger;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,6 +34,10 @@ fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    // Initialize logger
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .init();
+
     let args = Args::parse();
 
     // Verify file extensions
@@ -95,7 +100,7 @@ fn main() -> Result<()> {
     if args.gl {
         let mut scene = Scene::new();
         populate_scene(project.render_layers(), &mut scene);
-        run_gl_window(scene)?;
+        spawn_window(scene)?;
     }
 
     Ok(())

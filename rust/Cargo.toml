@@ -30,6 +30,7 @@ nalgebra = "0.32"
 bytemuck = "1.14"
 approx = "0.5"
 log = "0.4"
+env_logger = "0.11"
 
 [patch.crates-io]
 geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }
