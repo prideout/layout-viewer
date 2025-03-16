@@ -1,6 +1,5 @@
 ## Tasks
 
-- Implement `update_render_layers`
 - Stub SvgBackend and GlBackend
 - Write `render_svg`
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.

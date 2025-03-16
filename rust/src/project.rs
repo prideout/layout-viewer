@@ -235,12 +235,35 @@ impl Project {
         for cell_def_id in self.find_roots() {
             let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
             for boundary in &cell_def.boundary_elements {
-                self.render_layers[boundary.layer as usize]
-                    .add_boundary_element(root_id, boundary, identity);
+                let layer = &mut self.render_layers[boundary.layer as usize];
+                layer.add_boundary_element(root_id, boundary, identity);
             }
-            // for path in &cell_def.path_elements {
-            //     self.render_layers[path.layer as usize].add_path_element(root_id, path, identity);
-            // }
+            for path in &cell_def.path_elements {
+                let layer = &mut self.render_layers[path.layer as usize];
+                layer.add_path_element(root_id, path, identity);
+            }
+            let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
+            for cell_id in cell_ids {
+                self.update_render_layers_recurse(cell_id);
+            }
+        }
+    }
+
+    fn update_render_layers_recurse(&mut self, cell_id: CellId) {
+        let cell = self.cells.get(&cell_id).unwrap();
+        let transform = &cell.world_transform;
+        let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
+        for boundary in &cell_def.boundary_elements {
+            let layer = &mut self.render_layers[boundary.layer as usize];
+            layer.add_boundary_element(cell_id, boundary, transform);
+        }
+        for path in &cell_def.path_elements {
+            let layer = &mut self.render_layers[path.layer as usize];
+            layer.add_path_element(cell_id, path, transform);
+        }
+        let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
+        for cell_id in cell_ids {
+            self.update_render_layers_recurse(cell_id);
         }
     }
 
