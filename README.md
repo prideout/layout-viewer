@@ -1,10 +1,11 @@
 ## Tasks
 
-- Stub SvgBackend and GlBackend
-- Write `render_svg`
+- Fix collect_rename_au.svg
+- Get paths working.
+- Get arefs working.
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.
 
-Create WebGL triangles by call `earcut_triangles_raw` on the geo polygons
+Create WebGL triangles by calling `earcut_triangles_raw` on the geo polygons
 and appending them to a VBO held in the layer.
 
 For WebGL, create an app with trunk + Yew + glow (?) with a sidebar for layers.

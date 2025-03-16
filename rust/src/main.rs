@@ -4,6 +4,12 @@ use layout_viewer::Project;
 use std::fs;
 use std::path::Path;
 
+const PRECISION: f64 = 0.0001;
+
+fn round_to_precision(value: f64) -> f64 {
+    (value / PRECISION).round() * PRECISION
+}
+
 struct StatsRow {
     name: ColoredString,
     value: usize,
@@ -80,15 +86,22 @@ fn main() -> Result<()> {
         StatsRow::new("Paths", stats.path_count),
         StatsRow::new("SRefs", stats.sref_count),
         StatsRow::new("ARefs", stats.aref_count),
-        // StatsRow::new("Texts", stats.text_count),
-        // StatsRow::new("Nodes", stats.node_count),
-        // StatsRow::new("Boxes", stats.box_count),
         StatsRow::new("Layers", (project.highest_layer() + 1) as usize),
     ];
 
     for row in stats_rows {
         println!("{:<12} {}", row.name, row.value);
     }
+
+    let bounds = project.bounds();
+    println!(
+        "{:<12} ({}, {}) to ({}, {})",
+        "Bounds".color(Color::BrightYellow),
+        round_to_precision(bounds.min_x),
+        round_to_precision(bounds.min_y),
+        round_to_precision(bounds.max_x),
+        round_to_precision(bounds.max_y)
+    );
 
     let mut has_root_cell = false;
     for root_id in project.find_roots() {
@@ -114,7 +127,7 @@ fn main() -> Result<()> {
         })?;
 
         fs::write(output_path, svg_content)?;
-        println!("\nSVG file written to: {}", output_path.display());
+        println!("SVG file written to: {}", output_path.display());
     }
 
     println!();

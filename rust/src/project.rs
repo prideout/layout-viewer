@@ -7,9 +7,11 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use crate::{
+    bounds::BoundingBox,
     cells::{Cell, CellDef, CellDefId, CellId},
     render_layer::RenderLayer,
     string_interner::StringInterner,
+    svg_backend,
 };
 
 #[derive(Debug)]
@@ -33,6 +35,7 @@ pub struct Project {
     next_cell_id: CellId,
     stats: LayoutStats,
     interner: StringInterner,
+    bounds: BoundingBox,
 }
 
 impl Project {
@@ -186,6 +189,7 @@ impl Project {
             render_layers: Vec::new(),
             highest_layer,
             next_cell_id,
+            bounds: BoundingBox::new(),
         };
 
         project.update_world_transforms();
@@ -247,6 +251,15 @@ impl Project {
                 self.update_render_layers_recurse(cell_id);
             }
         }
+
+        // Update bounds for each layer and the overall project
+        self.bounds = BoundingBox::new();
+        for layer in &mut self.render_layers {
+            layer.update_bounds();
+            if !layer.bounds.is_empty() {
+                self.bounds.encompass(&layer.bounds);
+            }
+        }
     }
 
     fn update_render_layers_recurse(&mut self, cell_id: CellId) {
@@ -295,6 +308,14 @@ impl Project {
             self.update_world_transforms_recurse(cell_id, &transform);
         }
     }
+
+    pub fn render_layers(&self) -> &[RenderLayer] {
+        &self.render_layers
+    }
+
+    pub fn bounds(&self) -> &BoundingBox {
+        &self.bounds
+    }
 }
 
 #[wasm_bindgen]
@@ -305,13 +326,6 @@ impl Project {
     }
 
     pub fn to_svg(&self) -> Result<String, JsValue> {
-        // This is a placeholder for SVG generation
-        // TODO: Implement actual SVG generation using the svg crate
-        let doc = svg::Document::new()
-            .set("viewBox", (0, 0, 1000, 1000))
-            .set("width", "1000")
-            .set("height", "1000");
-
-        Ok(doc.to_string())
+        Ok(svg_backend::generate_svg(&self.render_layers))
     }
 }

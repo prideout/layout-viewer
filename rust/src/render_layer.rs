@@ -1,10 +1,11 @@
 #![allow(dead_code)]
 
 use gds21::{GdsBoundary, GdsPath};
-use geo::{AffineOps, AffineTransform, LineString};
+use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 
+use crate::bounds::BoundingBox;
 use crate::cells::CellId;
 use crate::vec2d::Vec2d;
 
@@ -30,13 +31,28 @@ impl From<i16> for PathType {
 }
 
 pub struct RenderLayer {
-    polygons: HashMap<CellId, Vec<Polygon>>,
+    pub polygons: HashMap<CellId, Vec<Polygon>>,
+    pub bounds: BoundingBox,
 }
 
 impl RenderLayer {
     pub fn new() -> Self {
         Self {
             polygons: HashMap::new(),
+            bounds: BoundingBox::new(),
+        }
+    }
+
+    pub fn update_bounds(&mut self) {
+        self.bounds = BoundingBox::new();
+        
+        for cell_polygons in self.polygons.values() {
+            for polygon in cell_polygons {
+                if let Some(bbox) = polygon.bounding_rect() {
+                    let layer_bbox = BoundingBox::from(bbox);
+                    self.bounds.encompass(&layer_bbox);
+                }
+            }
         }
     }
 
