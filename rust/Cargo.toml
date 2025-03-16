@@ -20,6 +20,10 @@ svg = "0.13"
 colored = "2.0"
 fastrand = "2.3.0"
 geo = "0.29.3"
+i_overlay = "2.0.0"
+
+[patch.crates-io]
+geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { version = "0.3", features = ["console"] }
