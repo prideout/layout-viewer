@@ -3,12 +3,11 @@ use clap::Parser;
 use colored::*;
 use layout_viewer::{Project, run_gl_window};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-const PRECISION: f64 = 0.0001;
-
-fn round_to_precision(value: f64) -> f64 {
-    (value / PRECISION).round() * PRECISION
+fn pretty_print_float(value: f64) -> String {
+    let value = format!("{:.4}", value);
+    value.trim_end_matches('0').trim_end_matches('.').to_string()
 }
 
 struct StatsRow {
@@ -42,7 +41,7 @@ struct Args {
     gl: bool,
 }
 
-fn verify_file_extension(path: &PathBuf, expected: &str) -> Result<()> {
+fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
     match path.extension() {
         Some(ext) if ext.to_string_lossy() == expected => Ok(()),
         _ => Err(anyhow!(
@@ -89,10 +88,10 @@ fn main() -> Result<()> {
     println!(
         "{:<12} ({}, {}) to ({}, {})",
         "Bounds".color(Color::BrightYellow),
-        round_to_precision(bounds.min_x),
-        round_to_precision(bounds.min_y),
-        round_to_precision(bounds.max_x),
-        round_to_precision(bounds.max_y)
+        pretty_print_float(bounds.min_x),
+        pretty_print_float(bounds.min_y),
+        pretty_print_float(bounds.max_x),
+        pretty_print_float(bounds.max_y)
     );
 
     let mut has_root_cell = false;

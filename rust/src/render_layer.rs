@@ -1,17 +1,16 @@
 #![allow(dead_code)]
 
-use gds21::{GdsBoundary, GdsPath};
+use gds21::{GdsBoundary, GdsPath, GdsPoint};
 use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
-use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use indexmap::IndexMap;
 
 use crate::bounds::BoundingBox;
 use crate::cells::CellId;
-use crate::vec2d::Vec2d;
 
 type Polygon = geo::Polygon<f64>;
+type Vec2d = geo::Point<f64>;
 
 const ARC_SUBDIVISIONS: usize = 8;
 
@@ -64,7 +63,7 @@ impl RenderLayer {
         boundary: &GdsBoundary,
         transform: &AffineTransform,
     ) {
-        let points: Vec<Vec2d> = boundary.xy.iter().map(Vec2d::from).collect();
+        let points: Vec<Vec2d> = boundary.xy.iter().map(gds_to_geo_point).collect();
 
         // GDS requires the last point to equal the first point
         if points.len() >= 3 {
@@ -85,13 +84,12 @@ impl RenderLayer {
         }
 
         let half_width = path.width.unwrap_or(0) as f64 / 2.0;
-        let points: Vec<Vec2d> = path.xy.iter().map(Vec2d::from).collect();
         let path_type = path
             .path_type
             .map(PathType::from)
             .unwrap_or(PathType::Standard);
 
-        let outline_points = self.create_path_outline(&points, half_width, path_type);
+        let outline_points = self.create_path_outline(&path.xy, half_width, path_type);
 
         // Create and transform the polygon
         let polygon = Polygon::new(LineString::from(outline_points), vec![]);
@@ -106,7 +104,7 @@ impl RenderLayer {
     // Private helper functions
     fn create_path_outline(
         &mut self,
-        spine_points: &[Vec2d],
+        spine_points: &[GdsPoint],
         half_width: f64,
         path_type: PathType,
     ) -> Vec<Vec2d> {
@@ -118,23 +116,25 @@ impl RenderLayer {
             PathType::Extended => LineCap::Square,
             PathType::Standard => LineCap::Butt,
         };
-        
+
         let end_cap = match path_type {
             PathType::Round => LineCap::Round(0.1),
             PathType::Extended => LineCap::Square,
             PathType::Standard => LineCap::Butt,
         };
-        
+
         let style = StrokeStyle::new(half_width * 2.0)
             .line_join(LineJoin::Miter(1.0))
             .start_cap(start_cap)
             .end_cap(end_cap);
 
-        let shapes: Vec<Vec<Vec<Vec2d>>> = spine_points.stroke(style, false);
+        // We cannot add the FloatPointCompatible trait to geo::Point or GdsPoint just use sized arrays.
+        let spine_points: Vec<[f64; 2]> = spine_points.iter().map(gds_point_to_array).collect();
+        let shapes: Vec<Vec<Vec<[f64; 2]>>> = spine_points.stroke(style, false);
 
         if let Some(first_shape) = shapes.first() {
             if let Some(first_contour) = first_shape.first() {
-                return first_contour.clone();
+                return first_contour.iter().map(array_to_geo_point).collect();
             }
         }
 
@@ -150,16 +150,14 @@ impl Default for RenderLayer {
     }
 }
 
-impl FloatPointCompatible<f64> for Vec2d {
-    fn from_xy(x: f64, y: f64) -> Self {
-        Self(x, y)
-    }
+fn gds_to_geo_point(p: &GdsPoint) -> Vec2d {
+    Vec2d::new(p.x as f64, p.y as f64)
+}
 
-    fn x(&self) -> f64 {
-        self.0
-    }
+fn gds_point_to_array(p: &GdsPoint) -> [f64; 2] {
+    [p.x as f64, p.y as f64]
+}
 
-    fn y(&self) -> f64 {
-        self.1
-    }
+fn array_to_geo_point(t: &[f64; 2]) -> Vec2d {
+    Vec2d::new(t[0], t[1])
 }

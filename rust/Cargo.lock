@@ -1034,6 +1034,7 @@ name = "layout-viewer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytemuck",
  "clap",
  "colored",
  "fastrand",

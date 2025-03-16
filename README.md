@@ -1,6 +1,6 @@
 ## Tasks
 
-Get rid of Vec2d, it's only used by render_layer.
+Move Geometry and GeometryId into a file called `gl_geometry.rs`
 
 Create a file called `gl_backend.rs` that exports a fn called `generate_svg` that
 takes a slice of layers and mutable `GlRenderer`. For each layer, it creates

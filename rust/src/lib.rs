@@ -4,7 +4,6 @@ mod string_interner;
 mod project;
 mod render_layer;
 mod svg_backend;
-mod vec2d;
 mod gl_renderer;
 mod gl_scene;
 mod id_map;
