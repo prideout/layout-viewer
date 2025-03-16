@@ -64,6 +64,11 @@ fn main() -> Result<()> {
         verify_file_extension(output_path, "svg")?;
     }
 
+    println!(
+        "Reading {}...",
+        input_path.file_name().unwrap().to_string_lossy()
+    );
+
     // Read and process the GDSII file
     let file_content = fs::read(input_path)?;
     let project = Project::from_bytes(&file_content)?;
@@ -75,9 +80,9 @@ fn main() -> Result<()> {
         StatsRow::new("Paths", stats.path_count),
         StatsRow::new("SRefs", stats.sref_count),
         StatsRow::new("ARefs", stats.aref_count),
-        StatsRow::new("Texts", stats.text_count),
-        StatsRow::new("Nodes", stats.node_count),
-        StatsRow::new("Boxes", stats.box_count),
+        // StatsRow::new("Texts", stats.text_count),
+        // StatsRow::new("Nodes", stats.node_count),
+        // StatsRow::new("Boxes", stats.box_count),
         StatsRow::new("Layers", (project.highest_layer() + 1) as usize),
     ];
 
@@ -88,7 +93,11 @@ fn main() -> Result<()> {
     let mut has_root_cell = false;
     for root_id in project.find_roots() {
         has_root_cell = true;
-        println!("{:<12} {}", "Root".color(Color::BrightYellow), project.struct_name(root_id));
+        println!(
+            "{:<12} {}",
+            "Root".color(Color::BrightYellow),
+            project.struct_name(root_id)
+        );
     }
 
     if !has_root_cell {
@@ -107,6 +116,8 @@ fn main() -> Result<()> {
         fs::write(output_path, svg_content)?;
         println!("\nSVG file written to: {}", output_path.display());
     }
+
+    println!();
 
     Ok(())
 }

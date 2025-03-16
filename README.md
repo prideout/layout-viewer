@@ -1,6 +1,5 @@
 ## Tasks
 
-- Implement `update_world_transforms`
 - Implement `update_render_layers`
 - Stub SvgBackend and GlBackend
 - Write `render_svg`

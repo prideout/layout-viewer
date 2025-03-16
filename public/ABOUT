@@ -22,5 +22,9 @@ Obtained from `efabless/caravel_user_project`.
 
 ---
 
+The test subfolder is snarfed from the KLayout codebase and includes obscure things yet does not include exhaustive tests for rotation + flipped, etc.
+
+---
+
 See also:
 https://github.com/trilomix/GDS3D

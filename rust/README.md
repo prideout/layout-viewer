@@ -4,10 +4,11 @@ A Rust library and CLI tool for processing GDSII layout files and converting
 them to SVG format. The library can be used both natively and as a WebAssembly
 module.
 
-## Not implemented
+## Limitations
 
 - Arefs are ignored (but we might fix this)
-- Magnification is ignored.
+- Magnification of elements is ignored.
+- The "absolute" flag is ignored for magnitudes and angles.
 - Text, Nodes, and Boxes are ignored.
 
 ## Dev usage

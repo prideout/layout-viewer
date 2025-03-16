@@ -36,6 +36,7 @@ pub(crate) struct CellDef {
     pub instances_of_self: Vec<CellId>,
     pub boundary_elements: Vec<GdsBoundary>,
     pub path_elements: Vec<GdsPath>,
+    pub cell_elements: Vec<CellId>,
 }
 
 impl CellDef {
@@ -45,6 +46,7 @@ impl CellDef {
             instances_of_self: Vec::new(),
             boundary_elements: Vec::new(),
             path_elements: Vec::new(),
+            cell_elements: Vec::new(),
         }
     }
 } 

@@ -2,14 +2,14 @@
 
 use anyhow::{anyhow, Result};
 use gds21::{GdsLibrary, GdsPoint, GdsStrans};
-use geo::AffineTransform;
+use geo::{AffineTransform, Coord};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     cells::{Cell, CellDef, CellDefId, CellId},
-    string_interner::StringInterner,
     render_layer::RenderLayer,
+    string_interner::StringInterner,
 };
 
 #[derive(Debug)]
@@ -116,6 +116,18 @@ impl Project {
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
+                        // if let Some(strans) = &sref.strans {
+                        //     if strans.reflected {
+                        //         println!("reflection");
+                        //     }
+                        //     if strans.mag.unwrap_or(1.0) != 1.0 {
+                        //         println!("magnification: {}", strans.mag.unwrap_or(1.0));
+                        //     }
+                        //     if strans.angle.unwrap_or(0.0) != 0.0 {
+                        //         println!("rotation: {}", strans.angle.unwrap_or(0.0));
+                        //     }
+                        // }
+                        cell_def.cell_elements.push(next_cell_id);
                         next_cell_id = add_cell(
                             next_cell_id,
                             &mut cell_defs,
@@ -127,9 +139,12 @@ impl Project {
                         );
                     }
                     gds21::GdsElement::GdsArrayRef(aref) => {
+                        // TODO: I think this isn't a great way to handle it.
+                        // Just make one cell ref; the entire array will correspond to a single geo Polygon.
                         let count = aref.cols * aref.rows;
                         for _ in 0..count {
                             let id = next_cell_id;
+                            cell_def.cell_elements.push(id);
                             next_cell_id = add_cell(
                                 id,
                                 &mut cell_defs,
@@ -200,8 +215,13 @@ impl Project {
     }
 
     pub fn update_world_transforms(&mut self) {
-        for cell in self.cells.values_mut() {
-            cell.world_transform = AffineTransform::identity();
+        let roots = self.find_roots();
+        let identity = &AffineTransform::identity();
+        for cell_def_id in roots {
+            let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
+            for cell_id in cell_ids {
+                self.update_world_transforms_recurse(cell_id, identity);
+            }
         }
     }
 
@@ -221,6 +241,35 @@ impl Project {
             // for path in &cell_def.path_elements {
             //     self.render_layers[path.layer as usize].add_path_element(root_id, path, identity);
             // }
+        }
+    }
+
+    fn update_world_transforms_recurse(
+        &mut self,
+        cell_id: CellId,
+        parent_transform: &AffineTransform,
+    ) {
+        let cell = self.cells.get_mut(&cell_id).unwrap();
+        let mut transform = *parent_transform;
+        if let Some(local_transform) = &cell.local_transform {
+            if local_transform.reflected {
+                transform = transform.scaled(1.0, -1.0, Coord::zero());
+            }
+            if let Some(angle) = &local_transform.angle {
+                transform = transform.rotated(*angle, Coord::zero()); // TODO: inefficient
+            }
+            if local_transform.mag.unwrap_or(1.0) != 1.0 {
+                eprintln!("Magnification not supported.");
+            }
+            if local_transform.abs_mag || local_transform.abs_angle {
+                eprintln!("Absolute transform not supported.");
+            }
+        }
+        transform = transform.translated(cell.xy.x as f64, cell.xy.y as f64);
+        cell.world_transform = transform;
+        let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
+        for cell_id in cell_ids {
+            self.update_world_transforms_recurse(cell_id, &transform);
         }
     }
 }
