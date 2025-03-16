@@ -286,23 +286,17 @@ impl Project {
         parent_transform: &AffineTransform,
     ) {
         let cell = self.cells.get_mut(&cell_id).unwrap();
-        let mut transform = *parent_transform;
 
         let translate = AffineTransform::translate(cell.xy.x as f64, cell.xy.y as f64);
-        transform = translate.compose(&transform);
-
-        let origin = transform.apply(Coord::zero());
+        let mut rotate = AffineTransform::identity();
+        let mut scale = AffineTransform::identity();
 
         if let Some(local_transform) = &cell.local_transform {
-            if local_transform.reflected {
-                let scale = AffineTransform::scale(1.0, -1.0, origin);
-                // transform = scale.compose(&transform);
-                transform = transform.compose(&scale);
-            }   
             if let Some(angle) = &local_transform.angle {
-                let rotate = AffineTransform::rotate(*angle, origin);
-                // transform = rotate.compose(&transform);
-                transform = transform.compose(&rotate);
+                rotate = AffineTransform::rotate(*angle, Coord::zero());
+            }
+            if local_transform.reflected {
+                scale = AffineTransform::scale(1.0, -1.0, Coord::zero());
             }
             if local_transform.mag.unwrap_or(1.0) != 1.0 {
                 eprintln!("Magnification not supported.");
@@ -311,7 +305,14 @@ impl Project {
                 eprintln!("Absolute transform not supported.");
             }
         }
+
+        let transform = scale
+            .compose(&rotate)
+            .compose(&translate)
+            .compose(parent_transform);
+
         cell.world_transform = transform;
+
         let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
         for cell_id in cell_ids {
             self.update_world_transforms_recurse(cell_id, &transform);
