@@ -5,7 +5,7 @@ use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::bounds::BoundingBox;
 use crate::cells::CellId;
@@ -33,14 +33,14 @@ impl From<i16> for PathType {
 }
 
 pub struct RenderLayer {
-    pub polygons: HashMap<CellId, Vec<Polygon>>,
+    pub polygons: IndexMap<CellId, Vec<Polygon>>,
     pub bounds: BoundingBox,
 }
 
 impl RenderLayer {
     pub fn new() -> Self {
         Self {
-            polygons: HashMap::new(),
+            polygons: IndexMap::new(),
             bounds: BoundingBox::new(),
         }
     }

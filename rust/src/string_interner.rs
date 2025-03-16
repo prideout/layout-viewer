@@ -1,15 +1,15 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 pub struct StringInterner {
     strings: Vec<String>,
-    ids: HashMap<String, usize>,
+    ids: IndexMap<String, usize>,
 }
 
 impl StringInterner {
     pub fn new() -> Self {
         Self {
             strings: vec!["null".to_string()],
-            ids: HashMap::new(),
+            ids: IndexMap::new(),
         }
     }
 

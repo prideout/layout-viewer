@@ -50,12 +50,18 @@ pub fn generate_svg(layers: &[RenderLayer]) -> String {
         let color = COLORS[layer_idx % COLORS.len()];
         let mut group = Group::new().set("fill", color).set("opacity", 0.5);
 
-        // Add all polygons in this layer
-        for cell_polygons in layer.polygons.values() {
-            for polygon in cell_polygons {
-                let path_data = polygon_to_path_data(polygon);
-                let path = Path::new().set("d", path_data).set("stroke", "none");
-                group = group.add(path);
+        // Get cell IDs in sorted order for deterministic output
+        let mut cell_ids: Vec<_> = layer.polygons.keys().collect();
+        cell_ids.sort_by_key(|cell_id| cell_id.0);
+
+        // Add all polygons in this layer in deterministic order
+        for &cell_id in &cell_ids {
+            if let Some(polygons) = layer.polygons.get(cell_id) {
+                for polygon in polygons {
+                    let path_data = polygon_to_path_data(polygon);
+                    let path = Path::new().set("d", path_data).set("stroke", "none");
+                    group = group.add(path);
+                }
             }
         }
 

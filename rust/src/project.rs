@@ -3,7 +3,7 @@
 use anyhow::{anyhow, Result};
 use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::{AffineTransform, Coord};
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -28,8 +28,8 @@ pub struct LayoutStats {
 
 #[wasm_bindgen]
 pub struct Project {
-    cells: HashMap<CellId, Cell>,
-    cell_defs: HashMap<CellDefId, CellDef>,
+    cells: IndexMap<CellId, Cell>,
+    cell_defs: IndexMap<CellDefId, CellDef>,
     render_layers: Vec<RenderLayer>,
     highest_layer: i16,
     next_cell_id: CellId,
@@ -79,13 +79,13 @@ impl Project {
         }
 
         let mut interner = StringInterner::new();
-        let mut cells: HashMap<CellId, Cell> = HashMap::new();
-        let mut cell_defs: HashMap<CellDefId, CellDef> = HashMap::new();
+        let mut cells: IndexMap<CellId, Cell> = IndexMap::new();
+        let mut cell_defs: IndexMap<CellDefId, CellDef> = IndexMap::new();
         let mut next_cell_id = CellId(1);
 
         let add_cell = |cell_id: CellId,
-                        cell_defs: &mut HashMap<CellDefId, CellDef>,
-                        cells: &mut HashMap<CellId, Cell>,
+                        cell_defs: &mut IndexMap<CellDefId, CellDef>,
+                        cells: &mut IndexMap<CellId, Cell>,
                         interner: &mut StringInterner,
                         name: &str,
                         xy: &GdsPoint,
@@ -200,7 +200,8 @@ impl Project {
     }
 
     pub fn find_roots(&self) -> Vec<CellDefId> {
-        self.cell_defs
+        self
+            .cell_defs
             .iter()
             .filter(|(_, cell_def)| cell_def.instances_of_self.is_empty())
             .map(|(cell_def_id, _)| *cell_def_id)

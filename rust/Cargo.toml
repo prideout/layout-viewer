@@ -20,6 +20,7 @@ svg = "0.13"
 colored = "2.0"
 fastrand = "2.3.0"
 geo = "0.29.3"
+indexmap = "2.2"
 i_overlay = "2.0.0"
 
 [patch.crates-io]
