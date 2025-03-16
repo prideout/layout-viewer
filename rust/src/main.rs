@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
+use clap::Parser;
 use colored::*;
-use layout_viewer::Project;
+use layout_viewer::{Project, run_gl_window};
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 
 const PRECISION: f64 = 0.0001;
 
@@ -24,17 +25,24 @@ impl StatsRow {
     }
 }
 
-fn print_usage(program_name: &str) {
-    println!("Usage: {} <input.gds> [output.svg]", program_name);
-    println!("\nArguments:");
-    println!("  <input.gds>   Input GDSII file to process");
-    println!("  [output.svg]  Optional output SVG file to generate");
-    println!("\nOptions:");
-    println!("  --help        Display this help message");
-    println!("\nIf output.svg is omitted, only statistics will be displayed.");
+/// A GDSII layout viewer with SVG export capability
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Input GDSII file to process
+    #[arg(required = true)]
+    input: PathBuf,
+
+    /// Optional output SVG file to generate
+    #[arg(value_name = "OUTPUT.svg")]
+    output: Option<PathBuf>,
+
+    /// Open OpenGL window with interactive visualization
+    #[arg(long)]
+    gl: bool,
 }
 
-fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
+fn verify_file_extension(path: &PathBuf, expected: &str) -> Result<()> {
     match path.extension() {
         Some(ext) if ext.to_string_lossy() == expected => Ok(()),
         _ => Err(anyhow!(
@@ -46,37 +54,21 @@ fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let args: Vec<String> = std::env::args().collect();
-
-    if args.len() == 2 && args[1] == "--help" {
-        print_usage(&args[0]);
-        return Ok(());
-    }
-
-    if args.len() < 2 || args.len() > 3 {
-        return Err(anyhow!("Usage: {} <input.gds> [output.svg]", args[0]));
-    }
-
-    let input_path = Path::new(&args[1]);
-    let output_path = if args.len() == 3 {
-        Some(Path::new(&args[2]))
-    } else {
-        None
-    };
+    let args = Args::parse();
 
     // Verify file extensions
-    verify_file_extension(input_path, "gds")?;
-    if let Some(output_path) = output_path {
+    verify_file_extension(&args.input, "gds")?;
+    if let Some(ref output_path) = args.output {
         verify_file_extension(output_path, "svg")?;
     }
 
     println!(
         "Reading {}...",
-        input_path.file_name().unwrap().to_string_lossy()
+        args.input.file_name().unwrap().to_string_lossy()
     );
 
     // Read and process the GDSII file
-    let file_content = fs::read(input_path)?;
+    let file_content = fs::read(&args.input)?;
     let project = Project::from_bytes(&file_content)?;
 
     let stats = project.stats();
@@ -117,8 +109,8 @@ fn main() -> Result<()> {
         println!("{}", "No root cell found".color(Color::Red));
     }
 
-    // Generate and save SVG only if output path is provided
-    if let Some(output_path) = output_path {
+    // Generate and save SVG if output path is provided
+    if let Some(ref output_path) = args.output {
         let svg_content = project.to_svg().map_err(|e| {
             anyhow!(
                 "Failed to generate SVG: {}",
@@ -131,6 +123,11 @@ fn main() -> Result<()> {
     }
 
     println!();
+
+    // Show GL window if requested
+    if args.gl {
+        run_gl_window()?;
+    }
 
     Ok(())
 }

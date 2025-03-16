@@ -22,12 +22,20 @@ fastrand = "2.3.0"
 geo = "0.29.3"
 indexmap = "2.2"
 i_overlay = "2.0.0"
+winit = "0.29"
+glow = "0.13"
+raw-window-handle = "0.5"
+clap = { version = "4.5", features = ["derive"] }
 
 [patch.crates-io]
 geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-web-sys = { version = "0.3", features = ["console"] }
+web-sys = { version = "0.3", features = ["console", "WebGl2RenderingContext"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+glutin = "0.31"
+glutin-winit = "0.4"
 
 [profile.release]
 opt-level = 3
