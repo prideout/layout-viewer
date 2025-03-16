@@ -12,6 +12,9 @@ cargo run --quiet --bin layout-viewer ../public/test/SimpleBoth2.gds ../public/t
 cargo run --quiet --bin layout-viewer ../public/test/collect_rename_au.gds ../public/test/collect_rename_au.svg
 cargo run --quiet --bin layout-viewer ../public/trilomix-sky130.gds ../public/trilomix-sky130.svg  # has some paths but no arefs
 
+cargo run --quiet --bin layout-viewer ../public/test/SimplePath.gds ../public/test/SimplePath.svg
+
+
 # cargo run --quiet --bin layout-viewer ../public/test/bug_121c.gds # has paths
 # cargo run --quiet --bin layout-viewer ../public/trilomix-example.gds # no paths but has arefs
 # cargo run --quiet --bin layout-viewer ../public/test/arefs_skew1.gds

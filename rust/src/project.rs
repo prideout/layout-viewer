@@ -119,17 +119,6 @@ impl Project {
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
-                        // if let Some(strans) = &sref.strans {
-                        //     if strans.reflected {
-                        //         println!("reflection");
-                        //     }
-                        //     if strans.mag.unwrap_or(1.0) != 1.0 {
-                        //         println!("magnification: {}", strans.mag.unwrap_or(1.0));
-                        //     }
-                        //     if strans.angle.unwrap_or(0.0) != 0.0 {
-                        //         println!("rotation: {}", strans.angle.unwrap_or(0.0));
-                        //     }
-                        // }
                         cell_def.cell_elements.push(next_cell_id);
                         next_cell_id = add_cell(
                             next_cell_id,

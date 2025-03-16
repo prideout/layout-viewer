@@ -1,19 +1,18 @@
 ## Tasks
 
-- Fix SimpleBoth2
-- Create a simple path example.
-- Get paths working.
-- Get arefs working.
+- SimplePath example is very broken.
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.
 
 Create WebGL triangles by calling `earcut_triangles_raw` on the geo polygons
-and appending them to a VBO held in the layer.
+and appending them to a VBO.  Normalize coords to [-1, +1].
 
 For WebGL, create an app with trunk + Yew + glow (?) with a sidebar for layers.
 Each layer will have a color swatch, visibility toggle, and opacity slider.
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally.
+
+Save array refs for last.
 
 ## Rendering procedure
 
