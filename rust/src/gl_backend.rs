@@ -47,9 +47,15 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
 
     // Get layer bounds for normalization
     let layer_bounds = layer.bounds;
-    let scale = 2.0 / layer_bounds.width(); // Map to [-1, +1] along X axis
-    let x_offset = -1.0 - (layer_bounds.min_x * scale);
-    let y_scale = scale; // Maintain aspect ratio
+    
+    // Calculate scale based on the larger dimension to ensure both fit in [-1, +1]
+    let width_scale = 2.0 / layer_bounds.width();
+    let height_scale = 2.0 / layer_bounds.height();
+    let scale = width_scale.min(height_scale);
+
+    // Calculate offsets to center the geometry
+    let x_center = (layer_bounds.min_x + layer_bounds.max_x) / 2.0;
+    let y_center = (layer_bounds.min_y + layer_bounds.max_y) / 2.0;
 
     // Process each polygon in the layer
     for cell_polygons in layer.polygons.values() {
@@ -59,8 +65,9 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
             let vertex_offset = geometry.positions.len() as u32 / 3;
 
             for coord in triangles.vertices.chunks(2) {
-                let x = coord[0] * scale + x_offset;
-                let y = coord[1] * y_scale;
+                // Center the coordinates and then scale
+                let x = (coord[0] - x_center) * scale;
+                let y = (coord[1] - y_center) * scale;
                 geometry
                     .positions
                     .extend_from_slice(&[x as f32, y as f32, 0.0]);
