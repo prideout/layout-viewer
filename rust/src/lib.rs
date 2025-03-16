@@ -7,11 +7,11 @@ mod svg_backend;
 mod vec2d;
 
 #[cfg(not(target_arch = "wasm32"))]
-mod gl_backend;
+mod gl_desktop;
 
 pub use project::{LayoutStats, Project};
 #[cfg(not(target_arch = "wasm32"))]
-pub use gl_backend::run_gl_window;
+pub use gl_desktop::run_gl_window;
 
 #[cfg(target_arch = "wasm32")]
 pub fn run_gl_window() -> anyhow::Result<()> {

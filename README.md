@@ -1,12 +1,28 @@
 ## Tasks
 
-- Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.
 
-Create WebGL triangles by calling `earcut_triangles_raw` on the geo polygons
-and appending them to a VBO.  Normalize coords to [-1, +1].
+Create a file called `gl_renderer.ts` that exports a `GlRenderer` struct that holds a
+takes a glow context in its constructor, and holds on to the context.
 
-For WebGL, create an app with trunk + Yew + glow (?) with a sidebar for layers.
-Each layer will have a color swatch, visibility toggle, and opacity slider.
+Create a file called `gl_scene.ts` that exports a `GlScene` struct holds a bunch of index maps.
+Each IndexMap maps from an id type to an object. The list of maps are: views, cameras, meshes,
+geometries, and materials.
+
+Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids...
+
+Add a method to GlRenderer called render that takes a SceneId and a CameraId.
+
+Create a file called `gl_backend.rs` that exports a fn called `generate_svg` that
+takes a slice of layers and mutable `GlRenderer`. For each layer, it creates
+a `GlMesh` and a `GlGeometry` to store triangles. For each polygon in the layer,
+it calls `earcut_triangles_raw` on the polygon and appends the triangle verts
+and indices to two growing arrays.  Coordinates are normalized such that bounding
+box maps to [-1,+1] along the X axis.
+
+Create a web app with trunk and Yew. There should be a sidebar on the right that
+shows a list of layers. Each layer has a color swatch, visibility toggle,
+and opacity slider. The central area of the app should be a filled a GL canvas
+that we can render to using glow and our `GlRenderer` class.
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally.

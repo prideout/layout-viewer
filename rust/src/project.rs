@@ -254,6 +254,9 @@ impl Project {
 
     fn update_render_layers_recurse(&mut self, cell_id: CellId) {
         let cell = self.cells.get(&cell_id).unwrap();
+        if !cell.visible {
+            return;
+        }
         let transform = &cell.world_transform;
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
         for boundary in &cell_def.boundary_elements {
