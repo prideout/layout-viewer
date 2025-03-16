@@ -304,7 +304,7 @@ impl Project {
             .map_err(|e| JsValue::from_str(&format!("Failed to parse GDSII: {}", e)))
     }
 
-    pub fn to_svg(&self) -> Result<String, JsValue> {
+    pub fn to_svg_js(&self) -> Result<String, JsValue> {
         Ok(svg_backend::generate_svg(&self.render_layers))
     }
 }

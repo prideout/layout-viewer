@@ -1,47 +1,24 @@
 ## Tasks
 
-Move Geometry and GeometryId into a file called `gl_geometry.rs`
+Add the log crate and use it everywhere that we're currently using print (except in main)
 
-Create a file called `gl_backend.rs` that exports a fn called `generate_svg` that
-takes a slice of layers and mutable `GlRenderer`. For each layer, it creates
-a `GlMesh` and a `GlGeometry` to store triangles. For each polygon in the layer,
-it calls `earcut_triangles_raw` on the polygon and appends the triangle verts
-and indices to two growing arrays.  Coordinates are normalized such that bounding
-box maps to [-1,+1] along the X axis.
+Get it work in desktop app.  No need for mouse interaction yet.
 
-Add a method to GlRenderer called render that takes a Scene ref and a CameraId.
+Create a web app with trunk and Yew. It should have two routes: a home route and a layouts/{id}
+route.
 
-Create a web app with trunk and Yew. There should be a sidebar on the right that
-shows a list of layers. Each layer has a color swatch, visibility toggle,
-and opacity slider. The central area of the app should be a filled a GL canvas
-that we can render to using glow and our `GlRenderer` class.
+On the layout page, there should be a sidebar on the right that shows a list of
+layers. Each layer has a color swatch, visibility toggle, and opacity slider.
+The central area of the app should be a filled a GL canvas that we can render to
+using glow and our `GlRenderer` class.  Above the layer list are a few buttons:
+"Back home", "Enable picking", "Show all", and "Hide all".
+
+Add BSD 3-clause and open source it.
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally.
 
 Save array refs for last.
-
-## Rendering procedure
-
-https://docs.rs/geo/latest/geo/algorithm/affine_ops/struct.AffineTransform.html
-
-1. Allocate a `Vec<RenderLayer>` where each RenderLayer holds a map from
-   `CellRefId` to a `geo::Polygon`.
-2. Starting at the root, traverse down the CellRef tree and update the affine
-   transforms stored in each CellRef, where the root has the identity matrix.
-   Populate the RenderLayer with the polygons of the cell. Also expand a global
-   AABB.
-3. To render SVG, go through the layers and emit a flat list of paths.
-   Each layer should be an SVG `<g>` with 50% opacity.
-
-## Sanity checks
-
-```
-wasm-pack build --target web
-cargo run --bin layout-viewer ../public/trilomix-example.gds
-cargo run --bin layout-viewer ../public/trilomix-sky130.gds
-cargo run --release --bin layout-viewer ../public/caravel.gds
-```
 
 ## References
 

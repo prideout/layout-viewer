@@ -1,30 +1,10 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use colored::*;
-use layout_viewer::{Project, run_gl_window};
+use layout_viewer::{generate_svg, populate_scene, run_gl_window, Project, Scene};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn pretty_print_float(value: f64) -> String {
-    let value = format!("{:.4}", value);
-    value.trim_end_matches('0').trim_end_matches('.').to_string()
-}
-
-struct StatsRow {
-    name: ColoredString,
-    value: usize,
-}
-
-impl StatsRow {
-    fn new(name: &str, value: usize) -> Self {
-        Self {
-            name: name.to_string().color(Color::Green),
-            value,
-        }
-    }
-}
-
-/// A GDSII layout viewer with SVG export capability
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -36,7 +16,7 @@ struct Args {
     #[arg(value_name = "OUTPUT.svg")]
     output: Option<PathBuf>,
 
-    /// Open OpenGL window with interactive visualization
+    /// Request OpenGL window with interactive visualization
     #[arg(long)]
     gl: bool,
 }
@@ -71,18 +51,12 @@ fn main() -> Result<()> {
     let project = Project::from_bytes(&file_content)?;
 
     let stats = project.stats();
-    let stats_rows = vec![
-        StatsRow::new("Structs", stats.struct_count),
-        StatsRow::new("Boundaries", stats.polygon_count),
-        StatsRow::new("Paths", stats.path_count),
-        StatsRow::new("SRefs", stats.sref_count),
-        StatsRow::new("ARefs", stats.aref_count),
-        StatsRow::new("Layers", (project.highest_layer() + 1) as usize),
-    ];
-
-    for row in stats_rows {
-        println!("{:<12} {}", row.name, row.value);
-    }
+    println!("{:<12} {}", "Structs".color(Color::Green), stats.struct_count);
+    println!("{:<12} {}", "Boundaries".color(Color::Green), stats.polygon_count);
+    println!("{:<12} {}", "Paths".color(Color::Green), stats.path_count);
+    println!("{:<12} {}", "SRefs".color(Color::Green), stats.sref_count);
+    println!("{:<12} {}", "ARefs".color(Color::Green), stats.aref_count);
+    println!("{:<12} {}", "Layers".color(Color::Green), (project.highest_layer() + 1) as usize);
 
     let bounds = project.bounds();
     println!(
@@ -110,12 +84,7 @@ fn main() -> Result<()> {
 
     // Generate and save SVG if output path is provided
     if let Some(ref output_path) = args.output {
-        let svg_content = project.to_svg().map_err(|e| {
-            anyhow!(
-                "Failed to generate SVG: {}",
-                e.as_string().unwrap_or_default()
-            )
-        })?;
+        let svg_content = generate_svg(project.render_layers());
 
         fs::write(output_path, svg_content)?;
         println!("SVG file written to: {}", output_path.display());
@@ -123,10 +92,20 @@ fn main() -> Result<()> {
 
     println!();
 
-    // Show GL window if requested
     if args.gl {
-        run_gl_window()?;
+        let mut scene = Scene::new();
+        populate_scene(project.render_layers(), &mut scene);
+        run_gl_window(scene)?;
     }
 
     Ok(())
 }
+
+fn pretty_print_float(value: f64) -> String {
+    let value = format!("{:.4}", value);
+    value
+        .trim_end_matches('0')
+        .trim_end_matches('.')
+        .to_string()
+}
+

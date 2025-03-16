@@ -17,6 +17,8 @@ use winit::{
     window::WindowBuilder,
 };
 
+use crate::Scene;
+
 pub struct GlCircle {
     gl: glow::Context,
     program: glow::Program,
@@ -173,7 +175,7 @@ impl Drop for GlCircle {
     }
 }
 
-pub fn run_gl_window() -> anyhow::Result<()> {
+pub fn run_gl_window(_scene: Scene) -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
     let window_builder = WindowBuilder::new()
         .with_title("Layout Viewer")
@@ -183,7 +185,7 @@ pub fn run_gl_window() -> anyhow::Result<()> {
     let (window, gl) = {
         use wasm_bindgen::JsCast;
         use web_sys::WebGl2RenderingContext;
-        
+
         let window = window_builder.build(&event_loop)?;
         let canvas = window.canvas();
         let gl = canvas

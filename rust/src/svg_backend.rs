@@ -17,10 +17,6 @@ const COLORS: [&str; 10] = [
     "#800080", // Dark Purple
 ];
 
-fn round_to_precision(value: f64) -> f64 {
-    (value / PRECISION).round() * PRECISION
-}
-
 pub fn generate_svg(layers: &[RenderLayer]) -> String {
     // Get the overall bounding box
     let mut bounds = BoundingBox::new();
@@ -114,4 +110,8 @@ fn polygon_to_path_data(polygon: &geo::Polygon<f64>) -> String {
     }
 
     path_data
+}
+
+fn round_to_precision(value: f64) -> f64 {
+    (value / PRECISION).round() * PRECISION
 }
