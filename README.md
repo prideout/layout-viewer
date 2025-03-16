@@ -1,15 +1,6 @@
 ## Tasks
 
-Create a file called `gl_renderer.ts` that exports a `GlRenderer` struct that
-takes a glow context in its constructor and holds on to it.
-
-Create a file called `gl_scene.ts` that exports a `GlScene` struct holds a bunch of index maps.
-Each IndexMap maps from an id type to an object. The list of maps are: views, cameras, meshes,
-geometries, and materials.
-
-Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids...
-
-Add a method to GlRenderer called render that takes a SceneId and a CameraId.
+Get rid of Vec2d, it's only used by render_layer.
 
 Create a file called `gl_backend.rs` that exports a fn called `generate_svg` that
 takes a slice of layers and mutable `GlRenderer`. For each layer, it creates
@@ -17,6 +8,8 @@ a `GlMesh` and a `GlGeometry` to store triangles. For each polygon in the layer,
 it calls `earcut_triangles_raw` on the polygon and appends the triangle verts
 and indices to two growing arrays.  Coordinates are normalized such that bounding
 box maps to [-1,+1] along the X axis.
+
+Add a method to GlRenderer called render that takes a Scene ref and a CameraId.
 
 Create a web app with trunk and Yew. There should be a sidebar on the right that
 shows a list of layers. Each layer has a color swatch, visibility toggle,

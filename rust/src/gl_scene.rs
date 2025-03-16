@@ -62,60 +62,24 @@ pub struct Mesh;
 pub struct Geometry;
 pub struct Material;
 
-impl From<usize> for ViewId {
-    fn from(id: usize) -> Self {
-        ViewId(id)
-    }
-}
-
-impl From<usize> for CameraId {
-    fn from(id: usize) -> Self {
-        CameraId(id)
-    }
-}
-
-impl From<usize> for MeshId {
-    fn from(id: usize) -> Self {
-        MeshId(id)
-    }
-}
-
-impl From<usize> for GeometryId {
-    fn from(id: usize) -> Self {
-        GeometryId(id)
-    }
-}
-
-impl From<usize> for MaterialId {
-    fn from(id: usize) -> Self {
-        MaterialId(id)
-    }
-}
-
-// Implement Id for all our ID types
 impl Id for ViewId {
-    fn to_raw(&self) -> usize { self.0 }
-    fn from_raw(id: usize) -> Self { ViewId(id) }
+    fn from_usize(id: usize) -> Self { ViewId(id) }
 }
 
 impl Id for CameraId {
-    fn to_raw(&self) -> usize { self.0 }
-    fn from_raw(id: usize) -> Self { CameraId(id) }
+    fn from_usize(id: usize) -> Self { CameraId(id) }
 }
 
 impl Id for MeshId {
-    fn to_raw(&self) -> usize { self.0 }
-    fn from_raw(id: usize) -> Self { MeshId(id) }
+    fn from_usize(id: usize) -> Self { MeshId(id) }
 }
 
 impl Id for GeometryId {
-    fn to_raw(&self) -> usize { self.0 }
-    fn from_raw(id: usize) -> Self { GeometryId(id) }
+    fn from_usize(id: usize) -> Self { GeometryId(id) }
 }
 
 impl Id for MaterialId {
-    fn to_raw(&self) -> usize { self.0 }
-    fn from_raw(id: usize) -> Self { MaterialId(id) }
+    fn from_usize(id: usize) -> Self { MaterialId(id) }
 }
 
 pub struct GlScene {

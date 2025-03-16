@@ -3,6 +3,8 @@
 use gds21::{GdsBoundary, GdsPath, GdsPoint, GdsStrans};
 use geo::AffineTransform;
 
+use crate::id_map::Id;
+
 /// Simple integer ID for cells, guaranteed to be unique within a project.
 ///
 /// 0 is reserved for root cells, which don't actually have a `Cell` object
@@ -13,6 +15,12 @@ pub struct CellId(pub(crate) usize);
 /// Simple integer ID for cell defs, guaranteed to be unique within a project.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct CellDefId(pub(crate) usize);
+
+impl Id for CellId {
+    fn from_usize(id: usize) -> Self {
+        CellId(id)
+    }
+}
 
 /// Instance of a [CellDef].
 /// Corresponds to a SRef or a sub-instance of an ARef.

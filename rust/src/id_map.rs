@@ -2,8 +2,7 @@ use indexmap::IndexMap;
 use std::hash::Hash;
 
 pub trait Id {
-    fn to_raw(&self) -> usize;
-    fn from_raw(id: usize) -> Self;
+    fn from_usize(id: usize) -> Self;
 }
 
 pub struct IdMap<K: Id + Copy + Hash + Eq, V> {
@@ -20,10 +19,18 @@ impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
     }
 
     pub fn create_id(&mut self, value: V) -> K {
-        let id = K::from_raw(self.next_id);
+        let id = K::from_usize(self.next_id);
         self.next_id += 1;
         self.items.insert(id, value);
         id
+    }
+
+    pub fn get(&self, id: &K) -> Option<&V> {
+        self.items.get(id)
+    }
+
+    pub fn get_mut(&mut self, id: &K) -> Option<&mut V> {
+        self.items.get_mut(id)
     }
 }
 

@@ -12,6 +12,7 @@ use crate::{
     render_layer::RenderLayer,
     string_interner::StringInterner,
     svg_backend,
+    id_map::IdMap,
 };
 
 #[derive(Debug)]
@@ -28,11 +29,10 @@ pub struct LayoutStats {
 
 #[wasm_bindgen]
 pub struct Project {
-    cells: IndexMap<CellId, Cell>,
+    cells: IdMap<CellId, Cell>,
     cell_defs: IndexMap<CellDefId, CellDef>,
     render_layers: Vec<RenderLayer>,
     highest_layer: i16,
-    next_cell_id: CellId,
     stats: LayoutStats,
     interner: StringInterner,
     bounds: BoundingBox,
@@ -79,35 +79,31 @@ impl Project {
         }
 
         let mut interner = StringInterner::new();
-        let mut cells: IndexMap<CellId, Cell> = IndexMap::new();
+        let mut cells = IdMap::new();
         let mut cell_defs: IndexMap<CellDefId, CellDef> = IndexMap::new();
-        let mut next_cell_id = CellId(1);
 
-        let add_cell = |cell_id: CellId,
-                        cell_defs: &mut IndexMap<CellDefId, CellDef>,
-                        cells: &mut IndexMap<CellId, Cell>,
-                        interner: &mut StringInterner,
-                        name: &str,
-                        xy: &GdsPoint,
-                        strans: &Option<GdsStrans>| {
+        let add_cell = |cells: &mut IdMap<CellId, Cell>,
+                       cell_defs: &mut IndexMap<CellDefId, CellDef>,
+                       interner: &mut StringInterner,
+                       name: &str,
+                       xy: &GdsPoint,
+                       strans: &Option<GdsStrans>| {
             let cell_def_id = CellDefId(interner.intern(name));
-            cells.insert(
-                cell_id,
-                Cell {
-                    cell_id,
-                    cell_def_id,
-                    xy: xy.clone(),
-                    local_transform: strans.clone(),
-                    visible: true,
-                    world_transform: AffineTransform::identity(),
-                },
-            );
+            let cell = Cell {
+                cell_id: CellId(0), // Will be set by IdMap
+                cell_def_id,
+                xy: xy.clone(),
+                local_transform: strans.clone(),
+                visible: true,
+                world_transform: AffineTransform::identity(),
+            };
+            let cell_id = cells.create_id(cell);
             cell_defs
                 .entry(cell_def_id)
                 .or_insert(CellDef::new(cell_def_id))
                 .instances_of_self
                 .push(cell_id);
-            CellId(cell_id.0 + 1)
+            cell_id
         };
 
         for cell in &library.structs {
@@ -119,33 +115,14 @@ impl Project {
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
-                        cell_def.cell_elements.push(next_cell_id);
-                        next_cell_id = add_cell(
-                            next_cell_id,
-                            &mut cell_defs,
-                            &mut cells,
-                            &mut interner,
-                            &sref.name,
-                            &sref.xy,
-                            &sref.strans,
-                        );
+                        cell_def.cell_elements.push(add_cell(&mut cells, &mut cell_defs, &mut interner, &sref.name, &sref.xy, &sref.strans));
                     }
                     gds21::GdsElement::GdsArrayRef(aref) => {
                         // TODO: I think this isn't a great way to handle it.
                         // Just make one cell ref; the entire array will correspond to a single geo Polygon.
                         let count = aref.cols * aref.rows;
                         for _ in 0..count {
-                            let id = next_cell_id;
-                            cell_def.cell_elements.push(id);
-                            next_cell_id = add_cell(
-                                id,
-                                &mut cell_defs,
-                                &mut cells,
-                                &mut interner,
-                                &aref.name,
-                                &aref.xy[0], // TODO: use the correct xy
-                                &aref.strans,
-                            );
+                            let id = add_cell(&mut cells, &mut cell_defs, &mut interner, &aref.name, &aref.xy[0], &aref.strans);
                             // TODO: array refs are not yet implemented, hide them for now
                             cells.get_mut(&id).unwrap().visible = false;
                         }
@@ -177,7 +154,6 @@ impl Project {
             cell_defs,
             render_layers: Vec::new(),
             highest_layer,
-            next_cell_id,
             bounds: BoundingBox::new(),
         };
 
