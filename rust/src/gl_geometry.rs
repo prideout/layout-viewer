@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::id_map::Id;
 use glow::HasContext;
 use std::hash::Hash;
@@ -71,7 +69,7 @@ impl Geometry {
 
     pub(crate) fn upload_positions(&mut self, gl: &glow::Context) {
         if self.positions.is_empty() {
-            eprintln!("Warning: Attempting to upload empty positions buffer");
+            log::warn!("Attempting to upload empty positions buffer");
             self.positions_uploaded = true;
             return;
         }
@@ -96,7 +94,7 @@ impl Geometry {
 
     pub(crate) fn upload_indices(&mut self, gl: &glow::Context) {
         if self.indices.is_empty() {
-            eprintln!("Warning: Attempting to upload empty indices buffer");
+            log::warn!("Attempting to upload empty indices buffer");
             self.indices_uploaded = true;
             return;
         }
@@ -133,7 +131,7 @@ impl Geometry {
 impl Drop for Geometry {
     fn drop(&mut self) {
         if self.vao.is_some() {
-            eprintln!("Warning: Geometry dropped without calling destroy()");
+            log::warn!("Geometry dropped without calling destroy()");
         }
     }
 }

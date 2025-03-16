@@ -1046,6 +1046,7 @@ dependencies = [
  "glutin-winit",
  "i_overlay",
  "indexmap 2.8.0",
+ "log",
  "nalgebra",
  "raw-window-handle 0.5.2",
  "svg",

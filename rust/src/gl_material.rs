@@ -57,7 +57,9 @@ impl Material {
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
-                    panic!("{}", gl.get_shader_info_log(shader));
+                    let slog = gl.get_shader_info_log(shader);
+                    log::error!("Shader compilation failed: {}", slog);
+                    panic!("Shader compilation failed");
                 }
                 gl.attach_shader(program, shader);
                 shaders.push(shader);
@@ -66,7 +68,9 @@ impl Material {
             // Link program
             gl.link_program(program);
             if !gl.get_program_link_status(program) {
-                panic!("{}", gl.get_program_info_log(program));
+                let log = gl.get_program_info_log(program);
+                log::error!("Program linking failed: {}", log);
+                panic!("Program linking failed");
             }
 
             // Clean up shaders
@@ -180,5 +184,8 @@ impl Drop for Material {
             self.program.is_none(),
             "Material was not explicitly destroyed"
         );
+        if self.program.is_some() {
+            log::warn!("Material dropped without calling destroy()");
+        }
     }
 }

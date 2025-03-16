@@ -31,12 +31,12 @@ impl From<i16> for PathType {
     }
 }
 
-pub struct RenderLayer {
+pub struct Layer {
     pub polygons: IndexMap<CellId, Vec<Polygon>>,
     pub bounds: BoundingBox,
 }
 
-impl RenderLayer {
+impl Layer {
     pub fn new() -> Self {
         Self {
             polygons: IndexMap::new(),
@@ -108,9 +108,6 @@ impl RenderLayer {
         half_width: f64,
         path_type: PathType,
     ) -> Vec<Vec2d> {
-        // At the time of this writing, LineCap is neither
-        // copyable nor cloneable.
-
         let start_cap = match path_type {
             PathType::Round => LineCap::Round(0.1),
             PathType::Extended => LineCap::Square,
@@ -128,7 +125,6 @@ impl RenderLayer {
             .start_cap(start_cap)
             .end_cap(end_cap);
 
-        // We cannot add the FloatPointCompatible trait to geo::Point or GdsPoint just use sized arrays.
         let spine_points: Vec<[f64; 2]> = spine_points.iter().map(gds_point_to_array).collect();
         let shapes: Vec<Vec<Vec<[f64; 2]>>> = spine_points.stroke(style, false);
 
@@ -138,13 +134,12 @@ impl RenderLayer {
             }
         }
 
-        eprintln!("Empty contour for path.");
-
+        log::warn!("Empty contour for path.");
         vec![]
     }
 }
 
-impl Default for RenderLayer {
+impl Default for Layer {
     fn default() -> Self {
         Self::new()
     }
@@ -160,4 +155,4 @@ fn gds_point_to_array(p: &GdsPoint) -> [f64; 2] {
 
 fn array_to_geo_point(t: &[f64; 2]) -> Vec2d {
     Vec2d::new(t[0], t[1])
-}
+} 

@@ -60,6 +60,23 @@ impl Scene {
     pub fn get_material_mut(&mut self, id: &MaterialId) -> Option<&mut Material> {
         self.materials.get_mut(id)
     }
+
+    pub fn destroy(&mut self, gl: &glow::Context) {
+        // Destroy all geometries
+        for geometry in self.geometries.values_mut() {
+            geometry.destroy(gl);
+        }
+        self.geometries.clear();
+
+        // Destroy all materials
+        for material in self.materials.values_mut() {
+            material.destroy(gl);
+        }
+        self.materials.clear();
+
+        // Clear meshes (they don't own any GL resources)
+        self.meshes.clear();
+    }
 }
 
 impl Default for Scene {

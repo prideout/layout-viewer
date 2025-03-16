@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use crate::{
     bounds::BoundingBox,
     cells::{Cell, CellDef, CellDefId, CellId},
-    render_layer::RenderLayer,
+    layer::Layer,
     string_interner::StringInterner,
     svg_backend,
     id_map::IdMap,
@@ -31,7 +31,7 @@ pub struct LayoutStats {
 pub struct Project {
     cells: IdMap<CellId, Cell>,
     cell_defs: IndexMap<CellDefId, CellDef>,
-    render_layers: Vec<RenderLayer>,
+    render_layers: Vec<Layer>,
     highest_layer: i16,
     stats: LayoutStats,
     interner: StringInterner,
@@ -198,7 +198,7 @@ impl Project {
     pub fn update_render_layers(&mut self) {
         self.render_layers.clear();
         for _ in 0..=self.highest_layer {
-            self.render_layers.push(RenderLayer::new());
+            self.render_layers.push(Layer::new());
         }
         let root_id = CellId(0);
         let identity = &AffineTransform::identity();
@@ -288,7 +288,7 @@ impl Project {
         }
     }
 
-    pub fn render_layers(&self) -> &[RenderLayer] {
+    pub fn render_layers(&self) -> &[Layer] {
         &self.render_layers
     }
 

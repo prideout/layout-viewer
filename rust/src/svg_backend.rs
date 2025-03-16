@@ -1,5 +1,5 @@
 use crate::bounds::BoundingBox;
-use crate::render_layer::RenderLayer;
+use crate::layer::Layer;
 use svg::node::element::{Group, Path};
 use svg::Document;
 
@@ -17,7 +17,7 @@ const COLORS: [&str; 10] = [
     "#800080", // Dark Purple
 ];
 
-pub fn generate_svg(layers: &[RenderLayer]) -> String {
+pub fn generate_svg(layers: &[Layer]) -> String {
     // Get the overall bounding box
     let mut bounds = BoundingBox::new();
     for layer in layers {

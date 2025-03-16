@@ -1,9 +1,10 @@
+use geo::TriangulateEarcut;
+
 use crate::gl_geometry::Geometry;
 use crate::gl_material::Material;
 use crate::gl_mesh::Mesh;
 use crate::gl_scene::Scene;
-use crate::render_layer::RenderLayer;
-use geo::TriangulateEarcut;
+use crate::layer::Layer;
 
 const VERTEX_SHADER: &str = r#"#version 330
 layout (location = 0) in vec3 position;
@@ -30,7 +31,7 @@ void main() {
 }
 "#;
 
-pub fn populate_scene(layers: &[RenderLayer], scene: &mut Scene) {
+pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
     let material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
     let material_id = scene.add_material(material);
     for layer in layers {
@@ -41,7 +42,7 @@ pub fn populate_scene(layers: &[RenderLayer], scene: &mut Scene) {
     }
 }
 
-fn create_layer_geometry(layer: &RenderLayer) -> Geometry {
+fn create_layer_geometry(layer: &Layer) -> Geometry {
     let mut geometry = Geometry::new();
 
     // Get layer bounds for normalization
