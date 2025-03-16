@@ -1,6 +1,7 @@
 ## Tasks
 
-- Fix collect_rename_au.svg
+- Fix SimpleBoth2
+- Create a simple path example.
 - Get paths working.
 - Get arefs working.
 - Stub GlView, GlScene, GlMesh, GlGeometry, GlMaterial, all of which have ids.

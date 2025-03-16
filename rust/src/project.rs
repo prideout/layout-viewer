@@ -287,12 +287,22 @@ impl Project {
     ) {
         let cell = self.cells.get_mut(&cell_id).unwrap();
         let mut transform = *parent_transform;
+
+        let translate = AffineTransform::translate(cell.xy.x as f64, cell.xy.y as f64);
+        transform = translate.compose(&transform);
+
+        let origin = transform.apply(Coord::zero());
+
         if let Some(local_transform) = &cell.local_transform {
             if local_transform.reflected {
-                transform = transform.scaled(1.0, -1.0, Coord::zero());
-            }
+                let scale = AffineTransform::scale(1.0, -1.0, origin);
+                // transform = scale.compose(&transform);
+                transform = transform.compose(&scale);
+            }   
             if let Some(angle) = &local_transform.angle {
-                transform = transform.rotated(*angle, Coord::zero()); // TODO: inefficient
+                let rotate = AffineTransform::rotate(*angle, origin);
+                // transform = rotate.compose(&transform);
+                transform = transform.compose(&rotate);
             }
             if local_transform.mag.unwrap_or(1.0) != 1.0 {
                 eprintln!("Magnification not supported.");
@@ -301,7 +311,6 @@ impl Project {
                 eprintln!("Absolute transform not supported.");
             }
         }
-        transform = transform.translated(cell.xy.x as f64, cell.xy.y as f64);
         cell.world_transform = transform;
         let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
         for cell_id in cell_ids {
