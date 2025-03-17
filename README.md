@@ -39,11 +39,13 @@ trunk serve
 
 Drag and drop.
 
+Refactor: Viewer should have a custom Canvas component.
+
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally. Create an outline triangle buffer on the
 fly using the stroke feature in i_overlay.
 
-On the layout page, there should be a sidebar on the right that shows a list of
+On the viewer page, there should be a sidebar on the right that shows a list of
 layers. Each layer has a color swatch, visibility toggle, and opacity slider.
 Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
 

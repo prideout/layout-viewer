@@ -79,20 +79,23 @@ body {
     border-color: #dc3545 !important;
 }
 
-.layout-container {
+.viewer-container {
     position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #2D2D2D;
+}
+
+.viewer-canvas {
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-}
-
-.layout-canvas {
-    width: 100%;
-    height: 100%;
     display: block;
-    background-color: #2D2D2D;
 }
 
 .floating-buttons {

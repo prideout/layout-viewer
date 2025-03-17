@@ -53,22 +53,22 @@ pub fn home() -> Html {
                 <span class="tile-text">{"prideout/layout-viewer"}</span>
             </a>
 
-            <Link<Route> to={Route::Layout { id: "intel-4004".to_string() }} classes="tile">
+            <Link<Route> to={Route::Viewer { id: "intel-4004".to_string() }} classes="tile">
                 <i class="fas fa-microchip"></i>
                 <span class="tile-text">{"Intel 4004"}</span>
             </Link<Route>>
 
-            <Link<Route> to={Route::Layout { id: "mos-6502".to_string() }} classes="tile">
+            <Link<Route> to={Route::Viewer { id: "mos-6502".to_string() }} classes="tile">
                 <i class="fas fa-microchip"></i>
                 <span class="tile-text">{"MOS Technology 6502"}</span>
             </Link<Route>>
 
-            // <Link<Route> to={Route::Layout { id: "caravel".to_string() }} classes="tile">
+            // <Link<Route> to={Route::Viewer { id: "caravel".to_string() }} classes="tile">
             //     <i class="fas fa-microchip"></i>
             //     <span class="tile-text">{"Caravel Harness"}</span>
             // </Link<Route>>
 
-            <Link<Route> to={Route::Layout { id: "trilomix-sky130".to_string() }} classes="tile">
+            <Link<Route> to={Route::Viewer { id: "trilomix-sky130".to_string() }} classes="tile">
                 <i class="fas fa-microchip"></i>
                 <span class="tile-text">{"SkyWater 130"}</span>
             </Link<Route>>

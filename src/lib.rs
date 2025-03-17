@@ -32,7 +32,7 @@ pub use svg_backend::generate_svg;
 mod pages;
 
 #[cfg(target_arch = "wasm32")]
-use pages::{home::Home, layout::Layout};
+use pages::{home::Home, viewer::Viewer};
 
 #[cfg(target_arch = "wasm32")]
 use yew::prelude::*;
@@ -46,14 +46,14 @@ pub enum Route {
     #[at("/")]
     Home,
     #[at("/:id")]
-    Layout { id: String },
+    Viewer { id: String },
 }
 
 #[cfg(target_arch = "wasm32")]
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <Home /> },
-        Route::Layout { id } => html! { <Layout id={id} /> },
+        Route::Viewer { id } => html! { <Viewer id={id} /> },
     }
 }
 
