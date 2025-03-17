@@ -8,7 +8,8 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::{
-    controller::Controller, gl_renderer::Renderer, gl_scene::Scene, populate_scene, Project, Route,
+    controller::Controller, gl_renderer::Renderer, gl_scene::Scene, pages::home::take_dropped_file,
+    populate_scene, Project, Route,
 };
 
 #[derive(Properties, PartialEq)]
@@ -37,11 +38,37 @@ impl Component for Viewer {
     type Message = ViewerMsg;
     type Properties = ViewerProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let canvas_ref = NodeRef::default();
+        let controller = None;
+        let status = "Downloading GDS...".to_string();
+
+        // Check for dropped file
+        if let Some((_name, content)) = take_dropped_file() {
+            let link = ctx.link().clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                link.send_message(ViewerMsg::ParsingGds);
+                match Project::from_bytes(&content) {
+                    Ok(mut project) => {
+                        project.update_render_layers();
+                        link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
+                    }
+                    Err(_) => {
+                        log::error!("Failed to parse dropped GDS.");
+                    }
+                }
+            });
+        } else if ctx.props().id == "dropped-file" {
+            // No dropped file but on the dropped-file route, navigate back to home
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.push(&Route::Home);
+            log::info!("No dropped file found, redirecting to home page");
+        }
+
         Self {
-            canvas_ref: NodeRef::default(),
-            controller: None,
-            status: "Downloading GDS...".to_string(),
+            canvas_ref,
+            controller,
+            status,
         }
     }
 
@@ -100,32 +127,33 @@ impl Component for Viewer {
         }
         // Start GDS file fetch
         let id = ctx.props().id.clone();
-        let link = ctx.link().clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            match fetch_gds_file(&id).await {
-                Ok(bytes) => {
-                    log::info!("Parsing {} bytes from GDS file", bytes.len());
-                    link.send_message(ViewerMsg::ParsingGds);
-                    let Ok(project) = Project::from_bytes(&bytes) else {
-                        log::error!("Failed to parse GDS file.");
-                        return;
-                    };
-                    let stats = project.stats();
-                    log::info!("Loaded GDS file for project {}", id);
-                    log::info!("Number of structs: {}", stats.struct_count);
-                    log::info!("Number of polygons: {}", stats.polygon_count);
-                    log::info!("Number of paths: {}", stats.path_count);
-                    log::info!(
-                        "Number of layers: {}",
-                        (project.highest_layer() + 1) as usize
-                    );
-                    link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
+
+        if id != "dropped-file" {
+            let link = ctx.link().clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match fetch_gds_file(&id).await {
+                    Ok(bytes) => {
+                        link.send_message(ViewerMsg::ParsingGds);
+                        let Ok(project) = Project::from_bytes(&bytes) else {
+                            log::error!("Failed to parse fetched GDS.");
+                            return;
+                        };
+                        let stats = project.stats();
+                        log::info!("Number of structs: {}", stats.struct_count);
+                        log::info!("Number of polygons: {}", stats.polygon_count);
+                        log::info!("Number of paths: {}", stats.path_count);
+                        log::info!(
+                            "Number of layers: {}",
+                            (project.highest_layer() + 1) as usize
+                        );
+                        link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
+                    }
+                    Err(e) => {
+                        log::error!("Failed to fetch GDS file: {:?}", e);
+                    }
                 }
-                Err(e) => {
-                    log::error!("Failed to fetch GDS file: {:?}", e);
-                }
-            }
-        });
+            });
+        }
 
         // Get canvas and create WebGL context
         let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() else {
@@ -248,7 +276,7 @@ async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     let opts = RequestInit::new();
     opts.set_method("GET");
 
-    let url = format!("../gds/{}.gds", id);
+    let url = format!("gds/{}.gds", id);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 

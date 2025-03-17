@@ -37,8 +37,6 @@ trunk serve
 
 ## Next tasks
 
-Drag and drop.
-
 Refactor: Viewer should have a custom Canvas component.
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
@@ -50,3 +48,5 @@ layers. Each layer has a color swatch, visibility toggle, and opacity slider.
 Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
 
 Implement array refs.
+
+Performance / smooth zoom / camera constraints.
