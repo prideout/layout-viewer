@@ -40,7 +40,9 @@ impl Component for Layout {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        // No cleanup needed anymore
+        log::info!("Destroying controller...");
+        self.controller = None;
+        log::info!("Done destroying controller.");
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

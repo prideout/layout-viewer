@@ -129,12 +129,18 @@ impl Controller {
         self.camera.set_size(width, height);
     }
 
-    pub fn cleanup(&mut self) {
+    pub fn destroy(&mut self) {
         self.scene.destroy(self.renderer.gl());
     }
 
     pub fn scene(&mut self) -> &mut Scene {
         &mut self.scene
+    }
+}
+
+impl Drop for Controller {
+    fn drop(&mut self) {
+        self.destroy();
     }
 }
 

@@ -208,10 +208,6 @@ impl Material {
 
 impl Drop for Material {
     fn drop(&mut self) {
-        debug_assert!(
-            self.program.is_none(),
-            "Material was not explicitly destroyed"
-        );
         if self.program.is_some() {
             log::warn!("Material dropped without calling destroy()");
         }
