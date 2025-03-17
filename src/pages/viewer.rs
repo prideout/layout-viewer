@@ -8,8 +8,13 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::{
-    controller::Controller, gl_renderer::Renderer, gl_scene::Scene, pages::home::take_dropped_file,
-    resize_observer::ResizeObserver, Project, Route,
+    components::toast::{ToastContainer, ToastManager},
+    controller::Controller,
+    gl_renderer::Renderer,
+    gl_scene::Scene,
+    pages::home::take_dropped_file,
+    resize_observer::ResizeObserver,
+    Project, Route,
 };
 
 #[derive(Properties, PartialEq)]
@@ -26,12 +31,14 @@ pub enum ViewerMsg {
     ParsingGds,
     Render,
     Tick,
+    RemoveToast(usize),
 }
 
 pub struct ViewerPage {
     canvas_ref: NodeRef,
     controller: Option<Controller>,
     status: String,
+    toast_manager: ToastManager,
 }
 
 impl Component for ViewerPage {
@@ -42,6 +49,7 @@ impl Component for ViewerPage {
         let canvas_ref = NodeRef::default();
         let controller = None;
         let status = "Downloading GDS...".to_string();
+        let toast_manager = ToastManager::new();
 
         // Check for dropped file
         if let Some((_name, content)) = take_dropped_file() {
@@ -69,6 +77,7 @@ impl Component for ViewerPage {
             canvas_ref,
             controller,
             status,
+            toast_manager,
         }
     }
 
@@ -101,23 +110,28 @@ impl Component for ViewerPage {
             ViewerMsg::MouseWheel(x, y, delta)
         });
 
+        let on_remove_toast = ctx.link().callback(ViewerMsg::RemoveToast);
+
         html! {
-            <div class="viewer-container">
-                <canvas
-                    class="viewer-canvas"
-                    ref={self.canvas_ref.clone()}
-                    onmousedown={onmousedown}
-                    onmouseup={onmouseup}
-                    onmousemove={onmousemove}
-                    onwheel={onwheel}
-                />
-                <div class="floating-buttons">
-                    <Link<Route> to={Route::Home} classes="floating-button">
-                        <i class="fas fa-arrow-left fa-lg"></i>
-                    </Link<Route>>
-                    <span class="status-text">{self.status.clone()}</span>
+            <>
+                <div class="viewer-container">
+                    <canvas
+                        class="viewer-canvas"
+                        ref={self.canvas_ref.clone()}
+                        onmousedown={onmousedown}
+                        onmouseup={onmouseup}
+                        onmousemove={onmousemove}
+                        onwheel={onwheel}
+                    />
+                    <div class="floating-buttons">
+                        <Link<Route> to={Route::Home} classes="floating-button">
+                            <i class="fas fa-arrow-left fa-lg"></i>
+                        </Link<Route>>
+                        <span class="status-text">{self.status.clone()}</span>
+                    </div>
                 </div>
-            </div>
+                <ToastContainer toasts={self.toast_manager.toasts().to_vec()} on_remove={on_remove_toast} />
+            </>
         }
     }
 
@@ -245,12 +259,18 @@ impl Component for ViewerPage {
                     return false;
                 };
                 controller.set_project(*project);
-                self.status = "Zoom and pan like a map.".to_string();
+                self.status.clear();
+                self.toast_manager
+                    .show("Zoom and pan like a map".to_string());
                 controller.render();
                 true
             }
             ViewerMsg::ParsingGds => {
                 self.status = "Parsing GDS...".to_string();
+                true
+            }
+            ViewerMsg::RemoveToast(id) => {
+                self.toast_manager.remove(id);
                 true
             }
         }

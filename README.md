@@ -37,10 +37,11 @@ trunk serve
 
 ## Next tasks
 
-On the viewer page, there should be a sidebar on the right that shows a list of
-layers. Each layer has a color swatch, visibility toggle, and opacity slider.
-Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide
-all".
+On the viewer page, there should be a sidebar on the right representing the list
+of layers in the project. Each layer has a color swatch, visibility toggle, and
+opacity slider. Above the layer list are a few buttons: "Enable picking", "Show
+all", and "Hide all". All of this functionality should go into a Sidebar
+component.
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally. Use a vec of (layer index, cell id) for

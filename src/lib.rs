@@ -35,6 +35,9 @@ mod pages;
 mod resize_observer;
 
 #[cfg(target_arch = "wasm32")]
+mod components;
+
+#[cfg(target_arch = "wasm32")]
 use pages::{home::HomePage, viewer::ViewerPage};
 
 #[cfg(target_arch = "wasm32")]

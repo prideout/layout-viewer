@@ -1,4 +1,7 @@
-use crate::Route;
+use crate::{
+    components::toast::{ToastContainer, ToastManager},
+    Route,
+};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::DragEvent;
 use yew::prelude::*;
@@ -7,12 +10,14 @@ use yew_router::prelude::*;
 pub struct HomePage {
     dropped_file: Option<(String, Vec<u8>)>,
     is_dragging: bool,
+    toast_manager: ToastManager,
 }
 
 pub enum HomeMsg {
     FileDropped(String, Vec<u8>),
     NavigateToViewer,
     DragOver(bool),
+    RemoveToast(usize),
 }
 
 impl Component for HomePage {
@@ -23,6 +28,7 @@ impl Component for HomePage {
         Self {
             dropped_file: None,
             is_dragging: false,
+            toast_manager: ToastManager::new(),
         }
     }
 
@@ -45,11 +51,18 @@ impl Component for HomePage {
                     navigator.push(&Route::Viewer {
                         id: "dropped-file".to_string(),
                     });
+                } else {
+                    self.toast_manager
+                        .show("Drag and drop a valid GDS file.".to_string());
                 }
                 true
             }
             HomeMsg::DragOver(is_dragging) => {
                 self.is_dragging = is_dragging;
+                true
+            }
+            HomeMsg::RemoveToast(id) => {
+                self.toast_manager.remove(id);
                 true
             }
         }
@@ -107,48 +120,53 @@ impl Component for HomePage {
             "Drop GDS".to_string()
         };
 
+        let on_remove_toast = ctx.link().callback(HomeMsg::RemoveToast);
+
         html! {
-            <div class="tile-container">
-                <a href="https://github.com/prideout/layout-viewer"
-                   class="tile"
-                   target="_blank">
-                    <i class="fab fa-github"></i>
-                    <span class="tile-text">{"prideout/layout-viewer"}</span>
-                </a>
-                <Link<Route> to={Route::Viewer { id: "intel-4004".to_string() }} classes="tile">
-                    <i class="fas fa-microchip"></i>
-                    <span class="tile-text">{"Intel 4004"}</span>
-                </Link<Route>>
-                <Link<Route> to={Route::Viewer { id: "mos-6502".to_string() }} classes="tile">
-                    <i class="fas fa-microchip"></i>
-                    <span class="tile-text">{"MOS 6502"}</span>
-                </Link<Route>>
-                // <Link<Route> to={Route::Viewer { id: "caravel".to_string() }} classes="tile">
-                //     <i class="fas fa-microchip"></i>
-                //     <span class="tile-text">{"Caravel Harness"}</span>
-                // </Link<Route>>
-                <Link<Route> to={Route::Viewer { id: "trilomix-sky130".to_string() }} classes="tile">
-                    <i class="fas fa-microchip"></i>
-                    <span class="tile-text">{"SkyWater SKY130"}</span>
-                </Link<Route>>
-                <div
-                    class={classes!(
-                        "tile",
-                        "drop-tile",
-                        if self.dropped_file.is_some() { "drop-valid" } else { "" },
-                        if self.is_dragging { "drop-valid" } else { "" }
-                    )}
-                    {ondrop}
-                    {ondragover}
-                    {ondragleave}
-                    {onclick}
-                >
-                    <i class="fas fa-upload"></i>
-                    <span class="tile-text">{drop_text}</span>
-                    <span class="tile-text" style="font-size: 0.8em;">{"Stays in browser"}</span>
-                    <span class="tile-text" style="font-size: 0.8em;">{"Not sent to server"}</span>
+            <>
+                <div class="tile-container">
+                    <a href="https://github.com/prideout/layout-viewer"
+                       class="tile"
+                       target="_blank">
+                        <i class="fab fa-github"></i>
+                        <span class="tile-text">{"prideout/layout-viewer"}</span>
+                    </a>
+                    <Link<Route> to={Route::Viewer { id: "intel-4004".to_string() }} classes="tile">
+                        <i class="fas fa-microchip"></i>
+                        <span class="tile-text">{"Intel 4004"}</span>
+                    </Link<Route>>
+                    <Link<Route> to={Route::Viewer { id: "mos-6502".to_string() }} classes="tile">
+                        <i class="fas fa-microchip"></i>
+                        <span class="tile-text">{"MOS 6502"}</span>
+                    </Link<Route>>
+                    // <Link<Route> to={Route::Viewer { id: "caravel".to_string() }} classes="tile">
+                    //     <i class="fas fa-microchip"></i>
+                    //     <span class="tile-text">{"Caravel Harness"}</span>
+                    // </Link<Route>>
+                    <Link<Route> to={Route::Viewer { id: "trilomix-sky130".to_string() }} classes="tile">
+                        <i class="fas fa-microchip"></i>
+                        <span class="tile-text">{"SkyWater SKY130"}</span>
+                    </Link<Route>>
+                    <div
+                        class={classes!(
+                            "tile",
+                            "drop-tile",
+                            if self.dropped_file.is_some() { "drop-valid" } else { "" },
+                            if self.is_dragging { "drop-valid" } else { "" }
+                        )}
+                        {ondrop}
+                        {ondragover}
+                        {ondragleave}
+                        {onclick}
+                    >
+                        <i class="fas fa-file-upload"></i>
+                        <span class="tile-text">{drop_text}</span>
+                        <span class="tile-text" style="font-size: 0.8em;">{"Stays in browser"}</span>
+                        <span class="tile-text" style="font-size: 0.8em;">{"Not sent to server"}</span>
+                    </div>
                 </div>
-            </div>
+                <ToastContainer toasts={self.toast_manager.toasts().to_vec()} on_remove={on_remove_toast} />
+            </>
         }
     }
 }
