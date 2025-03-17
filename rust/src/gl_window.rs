@@ -15,6 +15,7 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::EventLoop,
     window::WindowBuilder,
+    dpi::PhysicalPosition,
 };
 
 use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene};
@@ -125,54 +126,74 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
         height: window_size.height as f32,
     });
 
+    let mut current_cursor_pos: Option<PhysicalPosition<f64>> = None;
     event_loop.run(move |event, elwt| {
         match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => {
-                    elwt.exit();
-                }
-                WindowEvent::KeyboardInput { event, .. } => {
-                    use winit::keyboard::{KeyCode, PhysicalKey};
-                    if let PhysicalKey::Code(code) = event.physical_key {
-                        if code == KeyCode::Escape || code == KeyCode::KeyQ {
-                            elwt.exit();
+            Event::WindowEvent { event, .. } => {
+                match event {
+                    WindowEvent::CloseRequested => {
+                        elwt.exit();
+                    }
+                    WindowEvent::KeyboardInput { event, .. } => {
+                        use winit::keyboard::{KeyCode, PhysicalKey};
+                        if let PhysicalKey::Code(code) = event.physical_key {
+                            if code == KeyCode::Escape || code == KeyCode::KeyQ {
+                                elwt.exit();
+                            }
                         }
                     }
-                }
-                WindowEvent::Resized(size) => {
-                    surface.resize(
-                        &context,
-                        NonZeroU32::new(size.width).unwrap(),
-                        NonZeroU32::new(size.height).unwrap(),
-                    );
+                    WindowEvent::MouseInput { state, button, .. } => {
+                        use winit::event::MouseButton;
+                        if button == MouseButton::Left {
+                            match state {
+                                winit::event::ElementState::Pressed => {
+                                    if let Some(pos) = current_cursor_pos {
+                                        renderer.handle_mouse_press(pos.x as f32, pos.y as f32);
+                                    }
+                                }
+                                winit::event::ElementState::Released => {
+                                    renderer.handle_mouse_release();
+                                }
+                            }
+                        }
+                    }
+                    WindowEvent::CursorMoved { position, .. } => {
+                        current_cursor_pos = Some(position);
+                        renderer.handle_mouse_move(position.x as f32, position.y as f32, &mut camera);
+                        renderer.render(&mut scene, &camera);
+                        renderer.check_gl_error("Scene render");
+                        surface.swap_buffers(&context).unwrap();
+                    }
+                    WindowEvent::Resized(size) => {
+                        surface.resize(
+                            &context,
+                            NonZeroU32::new(size.width).unwrap(),
+                            NonZeroU32::new(size.height).unwrap(),
+                        );
 
-                    let (width, height) = calculate_normalized_dimensions(size.width, size.height);
-                    camera.set_size(width, height);
+                        let (width, height) = calculate_normalized_dimensions(size.width, size.height);
+                        camera.set_size(width, height);
 
-                    renderer.set_viewport(Viewport {
-                        left: 0.0,
-                        top: 0.0,
-                        width: size.width as f32,
-                        height: size.height as f32,
-                    });
-                    renderer.check_gl_error("Viewport update");
+                        renderer.set_viewport(Viewport {
+                            left: 0.0,
+                            top: 0.0,
+                            width: size.width as f32,
+                            height: size.height as f32,
+                        });
+                        renderer.check_gl_error("Viewport update");
 
-                    renderer.render(&mut scene, &camera);
-                    renderer.check_gl_error("Scene render");
-                    surface.swap_buffers(&context).unwrap();
+                        renderer.render(&mut scene, &camera);
+                        renderer.check_gl_error("Scene render");
+                        surface.swap_buffers(&context).unwrap();
+                    }
+                    WindowEvent::RedrawRequested => {
+                        renderer.render(&mut scene, &camera);
+                        renderer.check_gl_error("Scene render");
+                        surface.swap_buffers(&context).unwrap();
+                    }
+                    _ => (),
                 }
-                WindowEvent::CursorMoved { position: _physical_pointer, .. } => {
-                    renderer.render(&mut scene, &camera);
-                    renderer.check_gl_error("Scene render");
-                    surface.swap_buffers(&context).unwrap();
-                }
-                WindowEvent::RedrawRequested => {
-                    renderer.render(&mut scene, &camera);
-                    renderer.check_gl_error("Scene render");
-                    surface.swap_buffers(&context).unwrap();
-                }
-                _ => (),
-            },
+            }
             Event::AboutToWait => {
                 // This is called right before the event loop starts waiting for new events
                 // It's a good place to do cleanup when exiting

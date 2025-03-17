@@ -7,6 +7,8 @@ pub struct Renderer {
     gl: glow::Context,
     viewport: Viewport,
     clear_color: (f32, f32, f32, f32),
+    is_dragging: bool,
+    last_mouse_pos: Option<(f32, f32)>,
 }
 
 impl Renderer {
@@ -20,6 +22,8 @@ impl Renderer {
                 height: 600.0,
             },
             clear_color: (0.2, 0.2, 0.1, 1.0),
+            is_dragging: false,
+            last_mouse_pos: None,
         }
     }
 
@@ -76,6 +80,33 @@ impl Renderer {
 
     pub fn get_clear_color(&self) -> (f32, f32, f32, f32) {
         self.clear_color
+    }
+
+    pub fn handle_mouse_press(&mut self, x: f32, y: f32) {
+        self.is_dragging = true;
+        self.last_mouse_pos = Some((x, y));
+    }
+
+    pub fn handle_mouse_release(&mut self) {
+        self.is_dragging = false;
+        self.last_mouse_pos = None;
+    }
+
+    pub fn handle_mouse_move(&mut self, x: f32, y: f32, camera: &mut Camera) {
+        if self.is_dragging {
+            if let Some((last_x, last_y)) = self.last_mouse_pos {
+                // Convert pixel movement to world space movement
+                let dx = (x - last_x) * camera.width / self.viewport.width;
+                let dy = (y - last_y) * camera.height / self.viewport.height;
+                
+                // Move camera in the opposite direction of mouse movement
+                let mut pos = camera.position;
+                pos.x -= dx;
+                pos.y += dy; // Invert Y since screen coordinates are top-down
+                camera.position = pos;
+            }
+            self.last_mouse_pos = Some((x, y));
+        }
     }
 
     pub fn render(&self, scene: &mut Scene, camera: &Camera) {
