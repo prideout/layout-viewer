@@ -61,9 +61,20 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: background-color 0.3s ease;
 }
 
 .drop-tile:hover {
     border-color: #333;
     background-color: rgba(255, 255, 255, 0.5);
+}
+
+.drop-valid {
+    background-color: rgba(40, 167, 69, 0.2) !important;
+    border-color: #28a745 !important;
+}
+
+.drop-invalid {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    border-color: #dc3545 !important;
 } 

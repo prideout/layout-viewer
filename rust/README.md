@@ -16,11 +16,8 @@ trunk serve
 
 ## Tasks
 
-Fix warnings
-
-On the layout/{id} page, there should be a GL canvas that fills the entire window that we can render to using glow and our `GlRenderer` class. There are two floating circular icon buttons in the top-left: a home button (which navigates the user back to the root route) and a github icon (which navigates to https://github.com/prideout/layout-viewer)
-
-On the root route, the "Drop GDS File" tile is a drag-and-drop area that should change color when the user hovers a file over it. It should change to green if you hover a GDS or a red if you hover anything else. If you drop a GDS file, it should navigate to the layouts/{id} route with the file loaded. It can be clicked only if the user has dropped a file.
+On the layout/{id} page, there should be a GL canvas that fills the entire window that we can render to using glow and our `Renderer` class. There are two floating circular icon buttons in the top-left: a home button (which navigates the user back to the root route) and a github icon (which navigates to https://github.com/prideout/layout-viewer).
+When the page initially loads and the canvas DOM element becomes available, we should create a gloo context (WebGL 2) and pass it into a Renderer constructor. We can store the Renderer in the page state.
 
 On the layout page, there should be a sidebar on the right that shows a list of
 layers. Each layer has a color swatch, visibility toggle, and opacity slider.
