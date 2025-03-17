@@ -204,7 +204,7 @@ impl Project {
             let hue = (i as f32) / ((self.highest_layer + 1) as f32);
             let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.8);
             let mut layer = Layer::new();
-            layer.color = Vector4::new(r, g, b, 1.0);
+            layer.color = Vector4::new(r, g, b, 0.5);
             self.render_layers.push(layer);
         }
 

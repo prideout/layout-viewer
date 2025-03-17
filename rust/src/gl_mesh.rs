@@ -114,9 +114,9 @@ impl Mesh {
             return;
         }
 
-        unsafe {
-            material.bind(gl);
+        // Assumes material is already bound.
 
+        unsafe {
             for (name, value) in &self.float_uniforms {
                 material.set_float(gl, name, *value);
             }

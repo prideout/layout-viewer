@@ -32,7 +32,10 @@ void main() {
 "#;
 
 pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
-    let material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+    let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+
+    material.set_blending(true);
+
     let material_id = scene.add_material(material);
     
     for layer in layers {

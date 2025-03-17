@@ -8,13 +8,9 @@ The library can be used both natively and as a WebAssembly module.
 ## Tasks
 
 ```bash
-cargo run --release --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
 cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
+cargo run --release --quiet --bin layout-viewer -- --gl ../public/caravel.gds
 ```
-
-Fix the orientation.
-
-Add source-over blending on the material.
 
 Add mouse panning and scroll zooming using zoom-to-cursor.
 
@@ -40,8 +36,13 @@ using glow and our `GlRenderer` class.  Above the layer list are a few buttons:
 
 Add BSD 3-clause and open source it.
 
+Add blog post.
+
+Default colors/opacities look terrible.
+
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
-picking. It uses nalgebra internally.
+picking. It uses nalgebra internally. Create an outline triangle buffer on the
+fly using the stroke feature in i_overlay.
 
 Save array refs for last.
 

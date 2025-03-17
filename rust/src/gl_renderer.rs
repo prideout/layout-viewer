@@ -6,6 +6,7 @@ use glow::*;
 pub struct Renderer {
     gl: glow::Context,
     viewport: Viewport,
+    clear_color: (f32, f32, f32, f32),
 }
 
 impl Renderer {
@@ -18,6 +19,7 @@ impl Renderer {
                 width: 800.0,
                 height: 600.0,
             },
+            clear_color: (0.2, 0.2, 0.1, 1.0),
         }
     }
 
@@ -25,6 +27,7 @@ impl Renderer {
         &self.gl
     }
 
+    #[cfg(debug_assertions)]
     pub fn check_gl_error(&self, location: &str) {
         unsafe {
             let error = self.gl.get_error();
@@ -49,6 +52,11 @@ impl Renderer {
         }
     }
 
+    #[cfg(not(debug_assertions))]
+    pub fn check_gl_error(&self, _location: &str) {
+        // No-op in release builds
+    }
+
     /// Sets the screen space rectangle in which to draw.
     /// This is the region that the camera's projection quad fits to.
     ///
@@ -62,6 +70,14 @@ impl Renderer {
         self.viewport
     }
 
+    pub fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
+        self.clear_color = (r, g, b, a);
+    }
+
+    pub fn get_clear_color(&self) -> (f32, f32, f32, f32) {
+        self.clear_color
+    }
+
     pub fn render(&self, scene: &mut Scene, camera: &Camera) {
         unsafe {
             let gl = &self.gl;
@@ -73,7 +89,8 @@ impl Renderer {
                 vp.width as i32,
                 vp.height as i32,
             );
-            gl.clear_color(0.2, 0.4, 0.6, 1.0);
+            let (r, g, b, a) = self.clear_color;
+            gl.clear_color(r, g, b, a);
             gl.clear(glow::COLOR_BUFFER_BIT);
 
             let projection = camera.get_projection_matrix();

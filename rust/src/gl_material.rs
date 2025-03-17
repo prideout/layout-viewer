@@ -20,6 +20,7 @@ pub struct Material {
     uniform_locations: IndexMap<String, glow::UniformLocation>,
     vertex_shader: String,
     fragment_shader: String,
+    blending_enabled: bool,
 }
 
 impl Material {
@@ -29,7 +30,16 @@ impl Material {
             uniform_locations: IndexMap::new(),
             vertex_shader: vertex_shader.to_string(),
             fragment_shader: fragment_shader.to_string(),
+            blending_enabled: false,
         }
+    }
+
+    pub fn set_blending(&mut self, enabled: bool) {
+        self.blending_enabled = enabled;
+    }
+
+    pub fn is_blending_enabled(&self) -> bool {
+        self.blending_enabled
     }
 
     pub(crate) fn create_program(&mut self, gl: &glow::Context) {
@@ -91,7 +101,6 @@ impl Material {
 
         unsafe {
             let count = gl.get_active_uniforms(program);
-            log::info!("Active uniforms: {}", count);
             for i in 0..count {
                 if let Some(info) = gl.get_active_uniform(program, i) {
                     if let Some(location) = gl.get_uniform_location(program, &info.name) {
@@ -115,8 +124,16 @@ impl Material {
         if self.program.is_none() {
             self.create_program(gl);
         }
+
         unsafe {
             gl.use_program(self.program);
+
+            if self.blending_enabled {
+                gl.enable(glow::BLEND);
+                gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+            } else {
+                gl.disable(glow::BLEND);
+            }
         }
     }
 
