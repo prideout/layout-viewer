@@ -13,3 +13,12 @@ cargo run --quiet --bin layout-viewer ../public/test/SimpleBoth2.gds ../public/t
 cargo run --quiet --bin layout-viewer ../public/trilomix-sky130.gds ../public/trilomix-sky130.svg
 cargo run --quiet --bin layout-viewer ../public/trilomix-example.gds ../public/trilomix-example.svg # has arefs
 
+open -a 'Google Chrome' ../public/intel-4004.svg
+open -a 'Google Chrome' ../public/mos-6502.svg
+open -a 'Google Chrome' ../public/test/SimpleRotation.svg
+open -a 'Google Chrome' ../public/test/SimpleMirror.svg
+open -a 'Google Chrome' ../public/test/SimpleBoth.svg
+open -a 'Google Chrome' ../public/test/SimpleRotation2.svg
+open -a 'Google Chrome' ../public/test/SimpleBoth2.svg
+open -a 'Google Chrome' ../public/trilomix-sky130.svg
+open -a 'Google Chrome' ../public/trilomix-example.svg

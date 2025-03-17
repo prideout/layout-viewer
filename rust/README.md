@@ -5,20 +5,18 @@ or converting them to SVG format.
 
 The library can be used both natively and as a WebAssembly module.
 
-## Tasks
+## Usage
 
 ```bash
 cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
 cargo run --release --quiet --bin layout-viewer -- --gl ../public/caravel.gds
+
+trunk serve
 ```
 
-Create a web app with trunk and Yew. It should have two routes: a home route and
-a layouts/{id} route.
+## Tasks
 
-On the home page there should a vertical column of large tile buttons, centered
-in the window. From top to bottom the tiles should say: "GitHub Repo" (with
-github icon), "Intel 4004", "MOS Technology 6502", "Caravel Harness", "SkyWater
-130", and "Drop GDS file".
+Fix warnings
 
 The "Drop GDS File" tile is a drag-and-drop area that should change color when
 the user hovers a file over it. It should change to green if you hover a GDS or

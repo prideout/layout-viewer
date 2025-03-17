@@ -28,8 +28,45 @@ pub use gl_backend::populate_scene;
 pub use svg_backend::generate_svg;
 
 #[cfg(target_arch = "wasm32")]
-pub fn run_gl_window() -> anyhow::Result<()> {
-    Err(anyhow::anyhow!(
-        "OpenGL rendering is not supported in web builds"
-    ))
+mod pages;
+
+#[cfg(target_arch = "wasm32")]
+use pages::{home::Home, layout::Layout};
+
+#[cfg(target_arch = "wasm32")]
+use yew::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+use yew_router::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Routable, PartialEq)]
+pub enum Route {
+    #[at("/")]
+    Home,
+    #[at("/layouts/:id")]
+    Layout { id: String },
+}
+
+#[cfg(target_arch = "wasm32")]
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <Home /> },
+        Route::Layout { id } => html! { <Layout id={id} /> },
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[function_component(App)]
+pub fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn add(left: u64, right: u64) -> u64 {
+    left + right
 }

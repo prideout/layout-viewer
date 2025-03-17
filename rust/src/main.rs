@@ -1,10 +1,14 @@
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    yew::Renderer::<layout_viewer::App>::new().render();
+}
+
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use colored::*;
-use layout_viewer::{generate_svg, populate_scene, spawn_window, Project, Scene};
+use layout_viewer::{generate_svg, populate_scene, Project, Scene};
 use std::fs;
 use std::path::{Path, PathBuf};
-use env_logger;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,10 +37,10 @@ fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<()> {
     // Initialize logger
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let args = Args::parse();
 
@@ -56,12 +60,24 @@ fn main() -> Result<()> {
     let project = Project::from_bytes(&file_content)?;
 
     let stats = project.stats();
-    println!("{:<12} {}", "Structs".color(Color::Green), stats.struct_count);
-    println!("{:<12} {}", "Boundaries".color(Color::Green), stats.polygon_count);
+    println!(
+        "{:<12} {}",
+        "Structs".color(Color::Green),
+        stats.struct_count
+    );
+    println!(
+        "{:<12} {}",
+        "Boundaries".color(Color::Green),
+        stats.polygon_count
+    );
     println!("{:<12} {}", "Paths".color(Color::Green), stats.path_count);
     println!("{:<12} {}", "SRefs".color(Color::Green), stats.sref_count);
     println!("{:<12} {}", "ARefs".color(Color::Green), stats.aref_count);
-    println!("{:<12} {}", "Layers".color(Color::Green), (project.highest_layer() + 1) as usize);
+    println!(
+        "{:<12} {}",
+        "Layers".color(Color::Green),
+        (project.highest_layer() + 1) as usize
+    );
 
     let bounds = project.bounds();
     println!(
@@ -100,7 +116,7 @@ fn main() -> Result<()> {
     if args.gl {
         let mut scene = Scene::new();
         populate_scene(project.render_layers(), &mut scene);
-        spawn_window(scene)?;
+        layout_viewer::spawn_window(scene)?;
     }
 
     Ok(())
@@ -113,4 +129,3 @@ fn pretty_print_float(value: f64) -> String {
         .trim_end_matches('.')
         .to_string()
 }
-

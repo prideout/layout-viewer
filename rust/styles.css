@@ -1,0 +1,69 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.tile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.tile {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: #333;
+}
+
+.tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tile i {
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.tile-text {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.github-tile {
+    background-color: #24292e;
+    color: white;
+}
+
+.github-tile i {
+    color: white;
+}
+
+.drop-tile {
+    border: 2px dashed #666;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.drop-tile:hover {
+    border-color: #333;
+    background-color: rgba(255, 255, 255, 0.5);
+} 
