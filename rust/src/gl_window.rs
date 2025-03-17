@@ -8,7 +8,6 @@ use glutin::{
     surface::{SurfaceAttributesBuilder, WindowSurface},
 };
 use glutin_winit::DisplayBuilder;
-use nalgebra::Point3;
 use raw_window_handle::HasRawWindowHandle;
 use std::num::NonZeroU32;
 use winit::{
@@ -18,23 +17,12 @@ use winit::{
     window::WindowBuilder,
 };
 
-use crate::{
-    controller::Controller, gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene,
-};
+use crate::{controller::Controller, gl_renderer::Renderer, Scene};
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
 
-fn calculate_normalized_dimensions(width: u32, height: u32) -> (f32, f32) {
-    let aspect_ratio = width as f32 / height as f32;
-    if aspect_ratio > 1.0 {
-        (aspect_ratio * 2.0, 2.0) // height is -1 to +1, width scaled by aspect
-    } else {
-        (2.0, 2.0 / aspect_ratio) // width is -1 to +1, height scaled by aspect
-    }
-}
-
-pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
+pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
     let window_builder = WindowBuilder::new()
         .with_title("Layout Viewer")
@@ -105,23 +93,12 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
         (window, gl, surface, context)
     };
 
-    // The following dimensions are in physical pixels and therefore different from the
-    // initial dimensions that were passed into the surface builder.
     let window_size = window.inner_size();
 
     let renderer = Renderer::new(gl);
-    let mut controller = Controller::new(renderer);
-    controller.check_gl_error("Renderer creation");
+    let mut controller = Controller::new(renderer, scene, window_size.width, window_size.height);
 
-    let (width, height) = calculate_normalized_dimensions(window_size.width, window_size.height);
-    let mut camera = Camera::new(Point3::new(0.0, 0.0, 0.0), width, height, -1.0, 1.0);
-
-    controller.set_viewport(Viewport {
-        left: 0.0,
-        top: 0.0,
-        width: window_size.width as f32,
-        height: window_size.height as f32,
-    });
+    controller.resize(window_size.width, window_size.height);
 
     let mut current_cursor_pos: Option<PhysicalPosition<f64>> = None;
     event_loop.run(move |event, elwt| {
@@ -155,9 +132,8 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
                 }
                 WindowEvent::CursorMoved { position, .. } => {
                     current_cursor_pos = Some(position);
-                    controller.handle_mouse_move(position.x as f32, position.y as f32, &mut camera);
-                    controller.render(&mut scene, &camera);
-                    controller.check_gl_error("Scene render");
+                    controller.handle_mouse_move(position.x as f32, position.y as f32);
+                    controller.render();
                     surface.swap_buffers(&context).unwrap();
                 }
                 WindowEvent::Resized(size) => {
@@ -167,24 +143,12 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
                         NonZeroU32::new(size.height).unwrap(),
                     );
 
-                    let (width, height) = calculate_normalized_dimensions(size.width, size.height);
-                    camera.set_size(width, height);
-
-                    controller.set_viewport(Viewport {
-                        left: 0.0,
-                        top: 0.0,
-                        width: size.width as f32,
-                        height: size.height as f32,
-                    });
-                    controller.check_gl_error("Viewport update");
-
-                    controller.render(&mut scene, &camera);
-                    controller.check_gl_error("Scene render");
+                    controller.resize(size.width, size.height);
+                    controller.render();
                     surface.swap_buffers(&context).unwrap();
                 }
                 WindowEvent::RedrawRequested => {
-                    controller.render(&mut scene, &camera);
-                    controller.check_gl_error("Scene render");
+                    controller.render();
                     surface.swap_buffers(&context).unwrap();
                 }
                 _ => (),
@@ -193,8 +157,7 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
                 // This is called right before the event loop starts waiting for new events
                 // It's a good place to do cleanup when exiting
                 if elwt.exiting() {
-                    println!("Cleaning up OpenGL resources");
-                    scene.destroy(controller.gl());
+                    controller.cleanup();
                 }
             }
             _ => (),

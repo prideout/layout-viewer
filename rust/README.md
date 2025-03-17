@@ -12,7 +12,7 @@ cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
 cargo run --release --quiet --bin layout-viewer -- --gl ../public/caravel.gds
 ```
 
-Add mouse panning and scroll zooming using zoom-to-cursor.
+Add scroll zooming using zoom-to-cursor.
 
 Create a web app with trunk and Yew. It should have two routes: a home route and
 a layouts/{id} route.
