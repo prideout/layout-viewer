@@ -219,6 +219,9 @@ impl Project {
             self.render_layers.push(layer);
         }
 
+        // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
+        self.render_layers[self.highest_layer as usize].color = Vector4::new(1.0, 1.0, 1.0, 0.5);
+
         let root_id = CellId(0);
         let identity = &AffineTransform::identity();
         for cell_def_id in self.find_roots() {

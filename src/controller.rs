@@ -163,6 +163,14 @@ impl Controller {
     pub fn scene(&mut self) -> &mut Scene {
         &mut self.scene
     }
+
+    pub fn project(&self) -> Option<&Project> {
+        self.project.as_ref()
+    }
+
+    pub fn project_mut(&mut self) -> Option<&mut Project> {
+        self.project.as_mut()
+    }
 }
 
 impl Drop for Controller {

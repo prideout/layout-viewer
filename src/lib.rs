@@ -7,6 +7,7 @@ mod project;
 mod string_interner;
 mod svg_backend;
 
+pub mod colors;
 pub mod controller;
 pub mod gl_camera;
 pub mod gl_geometry;

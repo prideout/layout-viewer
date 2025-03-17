@@ -8,8 +8,13 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::{
-    components::toast::{ToastContainer, ToastManager},
+    colors::{hex_to_rgb, rgb_to_hex},
+    components::{
+        sidebar::{LayerProxy, Sidebar},
+        toast::{ToastContainer, ToastManager},
+    },
     controller::Controller,
+    gl_mesh::MeshId,
     gl_renderer::Renderer,
     gl_scene::Scene,
     pages::home::take_dropped_file,
@@ -32,6 +37,7 @@ pub enum ViewerMsg {
     Render,
     Tick,
     RemoveToast(usize),
+    UpdateLayer(LayerProxy),
 }
 
 pub struct ViewerPage {
@@ -39,6 +45,7 @@ pub struct ViewerPage {
     controller: Option<Controller>,
     status: String,
     toast_manager: ToastManager,
+    layer_proxies: Vec<LayerProxy>,
 }
 
 impl Component for ViewerPage {
@@ -50,6 +57,7 @@ impl Component for ViewerPage {
         let controller = None;
         let status = "Downloading GDS...".to_string();
         let toast_manager = ToastManager::new();
+        let layer_proxies = Vec::new();
 
         // Check for dropped file
         if let Some((_name, content)) = take_dropped_file() {
@@ -78,6 +86,7 @@ impl Component for ViewerPage {
             controller,
             status,
             toast_manager,
+            layer_proxies,
         }
     }
 
@@ -111,6 +120,7 @@ impl Component for ViewerPage {
         });
 
         let on_remove_toast = ctx.link().callback(ViewerMsg::RemoveToast);
+        let update_layer = ctx.link().callback(ViewerMsg::UpdateLayer);
 
         html! {
             <>
@@ -130,6 +140,7 @@ impl Component for ViewerPage {
                         <span class="status-text">{self.status.clone()}</span>
                     </div>
                 </div>
+                <Sidebar layers={self.layer_proxies.clone()} update_layer={update_layer} />
                 <ToastContainer toasts={self.toast_manager.toasts().to_vec()} on_remove={on_remove_toast} />
             </>
         }
@@ -262,6 +273,30 @@ impl Component for ViewerPage {
                 self.status.clear();
                 self.toast_manager
                     .show("Zoom and pan like a map".to_string());
+
+                // Update layer proxies
+                if let Some(project) = controller.project() {
+                    self.layer_proxies = project
+                        .layers()
+                        .iter()
+                        .enumerate()
+                        .map(|(index, layer)| {
+                            let color = if index == project.layers().len() - 1 {
+                                // Make highest layer white
+                                rgb_to_hex(1.0, 1.0, 1.0)
+                            } else {
+                                rgb_to_hex(layer.color.x, layer.color.y, layer.color.z)
+                            };
+                            LayerProxy {
+                                index,
+                                visible: true,
+                                opacity: layer.color.w,
+                                color,
+                            }
+                        })
+                        .collect();
+                }
+
                 controller.render();
                 true
             }
@@ -271,6 +306,34 @@ impl Component for ViewerPage {
             }
             ViewerMsg::RemoveToast(id) => {
                 self.toast_manager.remove(id);
+                true
+            }
+            ViewerMsg::UpdateLayer(layer_proxy) => {
+                let Some(controller) = &mut self.controller else {
+                    return false;
+                };
+                let color = {
+                    let Some(project) = controller.project_mut() else {
+                        return false;
+                    };
+                    let Some(layer) = project.layers_mut().get_mut(layer_proxy.index) else {
+                        return false;
+                    };
+
+                    if let Some((r, g, b)) = hex_to_rgb(&layer_proxy.color) {
+                        layer.color.w = layer_proxy.opacity;
+                        layer.color.x = r;
+                        layer.color.y = g;
+                        layer.color.z = b;
+                    }
+                    layer.color
+                };
+                let mesh_id = MeshId(1 + layer_proxy.index);
+                let mesh = controller.scene().get_mesh_mut(&mesh_id).unwrap();
+                mesh.set_vec4("color", color);
+                mesh.visible = layer_proxy.visible;
+                self.layer_proxies[layer_proxy.index] = layer_proxy.clone();
+                controller.render();
                 true
             }
         }

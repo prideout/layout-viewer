@@ -37,22 +37,17 @@ trunk serve
 
 ## Next tasks
 
-On the viewer page, there should be a sidebar on the right representing the list
-of layers in the project. Each layer has a color swatch, visibility toggle, and
-opacity slider. Above the layer list are a few buttons: "Enable picking", "Show
-all", and "Hide all". All of this functionality should go into a Sidebar
-component.
-
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally. Use a vec of (layer index, cell id) for
-the lookup table (one entry per triangle).
+the lookup table (one entry per triangle). Add an Enable picking button
+because building the BVH is slow.
 
 For the selection effect, create an outline triangle buffer on the fly using the
 stroke feature in i_overlay.
 
 Test on mobile.
 
-The 6502 has bugs? Sprinkled squares outside the bounds of the chip.
+The 6502 has bugs? I see sprinkled squares outside the bounds of the chip.
 
 Implement array refs.
 
