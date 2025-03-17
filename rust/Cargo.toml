@@ -44,7 +44,12 @@ web-sys = { version = "0.3", features = [
     "FileList",
     "DragEvent",
     "DataTransferItemList",
-    "DataTransferItem"
+    "DataTransferItem",
+    "HtmlCanvasElement",
+    "ResizeObserver",
+    "ResizeObserverEntry",
+    "Element",
+    "DomRect"
 ] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"

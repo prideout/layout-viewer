@@ -16,16 +16,9 @@ trunk serve
 
 ## Tasks
 
-On the layout/{id} page, there should be a GL canvas that fills the entire window that we can render to using glow and our `Renderer` class. There are two floating circular icon buttons in the top-left: a home button (which navigates the user back to the root route) and a github icon (which navigates to https://github.com/prideout/layout-viewer).
-When the page initially loads and the canvas DOM element becomes available, we should create a gloo context (WebGL 2) and pass it into a Renderer constructor. We can store the Renderer in the page state.
-
 On the layout page, there should be a sidebar on the right that shows a list of
 layers. Each layer has a color swatch, visibility toggle, and opacity slider.
-The central area of the app should be a filled a GL canvas that we can render to
-using glow and our `GlRenderer` class. Above the layer list are a few buttons:
-"Back home", "Enable picking", "Show all", and "Hide all".
-
-Add BSD 3-clause and open source it.
+Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
 
 Add blog post.
 
