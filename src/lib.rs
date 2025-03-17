@@ -45,7 +45,7 @@ use yew_router::prelude::*;
 pub enum Route {
     #[at("/")]
     Home,
-    #[at("/layouts/:id")]
+    #[at("/:id")]
     Layout { id: String },
 }
 
@@ -61,9 +61,9 @@ fn switch(routes: Route) -> Html {
 #[function_component(App)]
 pub fn app() -> Html {
     html! {
-        <BrowserRouter basename="/layout-viewer">
+        <HashRouter>
             <Switch<Route> render={switch} />
-        </BrowserRouter>
+        </HashRouter>
     }
 }
 

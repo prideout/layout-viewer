@@ -2,16 +2,16 @@ use anyhow::{anyhow, Result};
 use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::{AffineTransform, Coord};
 use indexmap::IndexMap;
-use wasm_bindgen::prelude::*;
 use nalgebra::Vector4;
+use wasm_bindgen::prelude::*;
 
 use crate::{
     bounds::BoundingBox,
     cells::{Cell, CellDef, CellDefId, CellId},
+    id_map::IdMap,
     layer::Layer,
     string_interner::StringInterner,
     svg_backend,
-    id_map::IdMap,
 };
 
 #[derive(Debug)]
@@ -82,11 +82,11 @@ impl Project {
         let mut cell_defs: IndexMap<CellDefId, CellDef> = IndexMap::new();
 
         let add_cell = |cells: &mut IdMap<CellId, Cell>,
-                       cell_defs: &mut IndexMap<CellDefId, CellDef>,
-                       interner: &mut StringInterner,
-                       name: &str,
-                       xy: &GdsPoint,
-                       strans: &Option<GdsStrans>| {
+                        cell_defs: &mut IndexMap<CellDefId, CellDef>,
+                        interner: &mut StringInterner,
+                        name: &str,
+                        xy: &GdsPoint,
+                        strans: &Option<GdsStrans>| {
             let cell_def_id = CellDefId(interner.intern(name));
             let cell = Cell {
                 cell_id: CellId(0), // Will be set by IdMap
@@ -114,14 +114,28 @@ impl Project {
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
-                        cell_def.cell_elements.push(add_cell(&mut cells, &mut cell_defs, &mut interner, &sref.name, &sref.xy, &sref.strans));
+                        cell_def.cell_elements.push(add_cell(
+                            &mut cells,
+                            &mut cell_defs,
+                            &mut interner,
+                            &sref.name,
+                            &sref.xy,
+                            &sref.strans,
+                        ));
                     }
                     gds21::GdsElement::GdsArrayRef(aref) => {
                         // TODO: I think this isn't a great way to handle it.
                         // Just make one cell ref; the entire array will correspond to a single geo Polygon.
                         let count = aref.cols * aref.rows;
                         for _ in 0..count {
-                            let id = add_cell(&mut cells, &mut cell_defs, &mut interner, &aref.name, &aref.xy[0], &aref.strans);
+                            let id = add_cell(
+                                &mut cells,
+                                &mut cell_defs,
+                                &mut interner,
+                                &aref.name,
+                                &aref.xy[0],
+                                &aref.strans,
+                            );
                             // TODO: array refs are not yet implemented, hide them for now
                             cells.get_mut(&id).unwrap().visible = false;
                         }
@@ -175,8 +189,7 @@ impl Project {
     }
 
     pub fn find_roots(&self) -> Vec<CellDefId> {
-        self
-            .cell_defs
+        self.cell_defs
             .iter()
             .filter(|(_, cell_def)| cell_def.instances_of_self.is_empty())
             .map(|(cell_def_id, _)| *cell_def_id)
@@ -196,7 +209,7 @@ impl Project {
 
     pub fn update_render_layers(&mut self) {
         self.render_layers.clear();
-        
+
         // Create layers with unique colors
         for i in 0..=self.highest_layer {
             let hue = (i as f32) / ((self.highest_layer + 1) as f32);
@@ -294,8 +307,12 @@ impl Project {
         }
     }
 
-    pub fn render_layers(&self) -> &[Layer] {
+    pub fn layers(&self) -> &[Layer] {
         &self.render_layers
+    }
+
+    pub fn layers_mut(&mut self) -> &mut [Layer] {
+        &mut self.render_layers
     }
 
     pub fn bounds(&self) -> &BoundingBox {

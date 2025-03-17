@@ -5,7 +5,6 @@ use yew_router::prelude::*;
 
 #[function_component(Home)]
 pub fn home() -> Html {
-    let _navigator = use_navigator().unwrap();
     let tile_class = use_state(|| "tile drop-tile".to_string());
 
     let on_drop = Callback::from(move |event: DragEvent| {

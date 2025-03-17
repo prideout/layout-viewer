@@ -21,11 +21,13 @@ pub enum LayoutMsg {
     MouseWheel(u32, u32, f32),
     Tick,
     GdsLoaded(Box<Project>),
+    ParsingGds,
 }
 
 pub struct Layout {
     canvas_ref: NodeRef,
     controller: Option<Controller>,
+    status: String,
 }
 
 impl Component for Layout {
@@ -36,6 +38,7 @@ impl Component for Layout {
         Self {
             canvas_ref: NodeRef::default(),
             controller: None,
+            status: "Downloading GDS...".to_string(),
         }
     }
 
@@ -80,13 +83,14 @@ impl Component for Layout {
                 />
                 <div class="floating-buttons">
                     <Link<Route> to={Route::Home} classes="floating-button">
-                        <i class="fas fa-home"></i>
+                        <i class="fas fa-arrow-left fa-lg"></i>
                     </Link<Route>>
                     <a href="https://github.com/prideout/layout-viewer"
                        class="floating-button"
                        target="_blank">
                         <i class="fab fa-github"></i>
                     </a>
+                    <span class="status-text">{self.status.clone()}</span>
                 </div>
             </div>
         }
@@ -101,6 +105,7 @@ impl Component for Layout {
                 match fetch_gds_file(&id).await {
                     Ok(bytes) => {
                         log::info!("Parsing {} bytes from GDS file", bytes.len());
+                        link.send_message(LayoutMsg::ParsingGds);
                         match Project::from_bytes(&bytes) {
                             Ok(project) => {
                                 let stats = project.stats();
@@ -162,57 +167,80 @@ impl Component for Layout {
 
     fn update(&mut self, context: &Context<Self>, msg: Self::Message) -> bool {
         let link = context.link().clone();
-        if let Some(controller) = &mut self.controller {
-            match msg {
-                LayoutMsg::Render => {
-                    if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                        let width = canvas.client_width() as u32;
-                        let height = canvas.client_height() as u32;
-                        canvas.set_width(width);
-                        canvas.set_height(height);
-                        controller.resize(width, height);
-                        controller.render();
-                    }
-                }
-                LayoutMsg::Tick => {
-                    controller.tick();
-                    let closure = Closure::wrap(Box::new(move || {
-                        link.send_message(LayoutMsg::Tick);
-                    }) as Box<dyn FnMut()>);
-                    if let Some(window) = window() {
-                        let _ = window.request_animation_frame(closure.as_ref().unchecked_ref());
-                    }
-                    closure.forget();
-                }
-                LayoutMsg::MousePress(x, y) => {
-                    controller.handle_mouse_press(x, y);
+        let Some(controller) = &mut self.controller else {
+            return false;
+        };
+        match msg {
+            LayoutMsg::Render => {
+                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                    let width = canvas.client_width() as u32;
+                    let height = canvas.client_height() as u32;
+                    canvas.set_width(width);
+                    canvas.set_height(height);
+                    controller.resize(width, height);
                     controller.render();
                 }
-                LayoutMsg::MouseRelease => {
-                    controller.handle_mouse_release();
-                    controller.render();
+                false
+            }
+            LayoutMsg::Tick => {
+                controller.tick();
+                let closure = Closure::wrap(Box::new(move || {
+                    link.send_message(LayoutMsg::Tick);
+                }) as Box<dyn FnMut()>);
+                if let Some(window) = window() {
+                    let _ = window.request_animation_frame(closure.as_ref().unchecked_ref());
                 }
-                LayoutMsg::MouseMove(x, y) => {
-                    controller.handle_mouse_move(x, y);
-                    controller.render();
+                closure.forget();
+                false
+            }
+            LayoutMsg::MousePress(x, y) => {
+                controller.handle_mouse_press(x, y);
+                controller.render();
+                false
+            }
+            LayoutMsg::MouseRelease => {
+                controller.handle_mouse_release();
+                controller.render();
+                false
+            }
+            LayoutMsg::MouseMove(x, y) => {
+                controller.handle_mouse_move(x, y);
+                controller.render();
+                false
+            }
+            LayoutMsg::MouseWheel(x, y, delta) => {
+                controller.handle_mouse_wheel(x, y, -delta);
+                controller.render();
+                false
+            }
+            LayoutMsg::GdsLoaded(mut project) => {
+                let Some(controller) = &mut self.controller else {
+                    log::error!("Controller not ready");
+                    return false;
+                };
+                let stats = project.stats();
+                let layer_count = project.layers().len();
+                log::info!("Number of structs: {}", stats.struct_count);
+                log::info!("Number of polygons: {}", stats.polygon_count);
+                log::info!("Number of paths: {}", stats.path_count);
+                log::info!("Number of layers: {}", layer_count);
+                let mut alpha = 0.6; // looks ok for 4004 & 6502
+                if layer_count > 10 {
+                    alpha = 0.05;
                 }
-                LayoutMsg::MouseWheel(x, y, delta) => {
-                    controller.handle_mouse_wheel(x, y, -delta);
-                    controller.render();
+                for layer in project.layers_mut() {
+                    layer.color.w = alpha;
                 }
-                LayoutMsg::GdsLoaded(project) => {
-                    if let Some(controller) = &mut self.controller {
-                        populate_scene(project.render_layers(), controller.scene());
-                        controller.render();
-                        log::info!("Scene populated");
-                    } else {
-                        // This is a potential race condition, but it's highly unlikely to happen.
-                        log::error!("Controller not ready");
-                    }
-                }
+                populate_scene(project.layers(), controller.scene());
+                controller.render();
+                self.status.clear();
+                true
+            }
+            LayoutMsg::ParsingGds => {
+                self.status = "Parsing GDS...".to_string();
+                true
             }
         }
-        false
     }
 }
 
@@ -222,6 +250,7 @@ async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     opts.set_method("GET");
 
     let url = format!("../gds/{}.gds", id);
+
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
     let window = web_sys::window().unwrap();

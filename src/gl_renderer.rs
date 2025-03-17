@@ -17,7 +17,7 @@ impl Renderer {
                 width: 800.0,
                 height: 600.0,
             },
-            clear_color: (0.2, 0.2, 0.1, 1.0),
+            clear_color: (0.1, 0.1, 0.1, 1.0),
         }
     }
 

@@ -39,10 +39,6 @@ trunk serve
 
 Drag and drop.
 
-Default colors/opacities look terrible.
-
-Status text
-
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
 picking. It uses nalgebra internally. Create an outline triangle buffer on the
 fly using the stroke feature in i_overlay.
