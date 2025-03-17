@@ -31,13 +31,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Trunk and wasm-bindgen-cli
+        run: |
+          cargo install trunk wasm-bindgen-cli
+
+      - name: Cache Trunk and wasm-bindgen-cli
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/trunk
+            ~/.cargo/bin/wasm-bindgen-cli
+          key: ${{ runner.os }}-trunk-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-trunk-
+
+      - name: Build project with Trunk
+        run: trunk build --release
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: './dist'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
