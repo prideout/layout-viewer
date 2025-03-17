@@ -12,8 +12,6 @@ cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
 cargo run --release --quiet --bin layout-viewer -- --gl ../public/caravel.gds
 ```
 
-Add scroll zooming using zoom-to-cursor.
-
 Create a web app with trunk and Yew. It should have two routes: a home route and
 a layouts/{id} route.
 
@@ -23,15 +21,15 @@ github icon), "Intel 4004", "MOS Technology 6502", "Caravel Harness", "SkyWater
 130", and "Drop GDS file".
 
 The "Drop GDS File" tile is a drag-and-drop area that should change color when
-the user hovers a file over it.  It should change to green if you hover a GDS or
-a red if you hover anything else.  If you drop a GDS file, it should navigate to
-the layouts/{id} route with the file loaded.  It can be clicked only if the user
+the user hovers a file over it. It should change to green if you hover a GDS or
+a red if you hover anything else. If you drop a GDS file, it should navigate to
+the layouts/{id} route with the file loaded. It can be clicked only if the user
 has dropped a file.
 
 On the layout page, there should be a sidebar on the right that shows a list of
 layers. Each layer has a color swatch, visibility toggle, and opacity slider.
 The central area of the app should be a filled a GL canvas that we can render to
-using glow and our `GlRenderer` class.  Above the layer list are a few buttons:
+using glow and our `GlRenderer` class. Above the layer list are a few buttons:
 "Back home", "Enable picking", "Show all", and "Hide all".
 
 Add BSD 3-clause and open source it.
@@ -95,4 +93,3 @@ wasm-pack build --target web
 - https://github.com/bumbu/svg-pan-zoom
 - https://docs.rs/specta/latest/specta/
 - https://github.com/jakearchibald/svgomg/blob/1e1a1448f25761e7382cae5de2ba21f1e6ba439d/src/css/_global.scss#L16
-

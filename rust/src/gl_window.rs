@@ -10,10 +10,11 @@ use glutin::{
 use glutin_winit::DisplayBuilder;
 use raw_window_handle::HasRawWindowHandle;
 use std::num::NonZeroU32;
+use std::time::{Duration, Instant};
 use winit::{
     dpi::PhysicalPosition,
     event::{Event, WindowEvent},
-    event_loop::EventLoop,
+    event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
 
@@ -101,17 +102,35 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
     controller.resize(window_size.width, window_size.height);
 
     let mut current_cursor_pos: Option<PhysicalPosition<f64>> = None;
-    event_loop.run(move |event, elwt| {
+    let mut next_tick = Instant::now();
+    let tick_interval = Duration::from_millis(16);
+
+    let _ = event_loop.run(move |event, window_target| {
+        if let Some(next_tick_time) = next_tick.checked_add(tick_interval) {
+            window_target.set_control_flow(ControlFlow::WaitUntil(next_tick_time));
+        }
+
         match event {
+            Event::AboutToWait => {
+                let now = Instant::now();
+                if now >= next_tick {
+                    if controller.tick() {
+                        surface.swap_buffers(&context).unwrap();
+                    }
+                    next_tick = now + tick_interval;
+                }
+            }
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => {
-                    elwt.exit();
+                    controller.cleanup();
+                    window_target.exit();
                 }
                 WindowEvent::KeyboardInput { event, .. } => {
                     use winit::keyboard::{KeyCode, PhysicalKey};
                     if let PhysicalKey::Code(code) = event.physical_key {
                         if code == KeyCode::Escape || code == KeyCode::KeyQ {
-                            elwt.exit();
+                            controller.cleanup();
+                            window_target.exit();
                         }
                     }
                 }
@@ -122,10 +141,12 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
                             winit::event::ElementState::Pressed => {
                                 if let Some(pos) = current_cursor_pos {
                                     controller.handle_mouse_press(pos.x as u32, pos.y as u32);
+                                    controller.render();
                                 }
                             }
                             winit::event::ElementState::Released => {
                                 controller.handle_mouse_release();
+                                controller.render();
                             }
                         }
                     }
@@ -138,14 +159,14 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
                         };
                         controller.handle_mouse_wheel(pos.x as u32, pos.y as u32, delta_y);
                         controller.render();
-                        surface.swap_buffers(&context).unwrap();
                     }
                 }
                 WindowEvent::CursorMoved { position, .. } => {
                     current_cursor_pos = Some(position);
-                    controller.handle_mouse_move(position.x as u32, position.y as u32);
+                    let x = position.x as u32;
+                    let y = position.y as u32;
+                    controller.handle_mouse_move(x, y);
                     controller.render();
-                    surface.swap_buffers(&context).unwrap();
                 }
                 WindowEvent::Resized(size) => {
                     surface.resize(
@@ -156,24 +177,15 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
 
                     controller.resize(size.width, size.height);
                     controller.render();
-                    surface.swap_buffers(&context).unwrap();
                 }
                 WindowEvent::RedrawRequested => {
                     controller.render();
-                    surface.swap_buffers(&context).unwrap();
                 }
                 _ => (),
             },
-            Event::AboutToWait => {
-                // This is called right before the event loop starts waiting for new events
-                // It's a good place to do cleanup when exiting
-                if elwt.exiting() {
-                    controller.cleanup();
-                }
-            }
             _ => (),
         }
-    })?;
+    });
 
     Ok(())
 }

@@ -8,6 +8,7 @@ pub struct Controller {
     is_dragging: bool,
     last_mouse_pos: Option<(f32, f32)>,
     zoom_speed: f32,
+    needs_render: bool,
 }
 
 impl Controller {
@@ -26,6 +27,7 @@ impl Controller {
             is_dragging: false,
             last_mouse_pos: None,
             zoom_speed: 0.05,
+            needs_render: true, // Initial render needed
         }
     }
 
@@ -58,11 +60,19 @@ impl Controller {
     }
 
     pub fn handle_mouse_wheel(&mut self, x: u32, y: u32, delta: f32) {
+        // Ignore very small deltas that might be touchpad bounce
+        const MIN_DELTA: f32 = 0.01;
+        if delta.abs() < MIN_DELTA {
+            return;
+        }
+
         // Convert screen coordinates to world space before zoom
         let (world_x, world_y) = self.screen_to_world(x, y);
 
         // Calculate zoom factor (positive delta = zoom in, negative = zoom out)
-        let zoom_factor = if delta > 0.0 {
+        // Clamp delta to avoid extreme zoom changes
+        let clamped_delta = delta.clamp(-1.0, 1.0);
+        let zoom_factor = if clamped_delta > 0.0 {
             1.0 - self.zoom_speed
         } else {
             1.0 + self.zoom_speed
@@ -95,8 +105,18 @@ impl Controller {
     }
 
     pub fn render(&mut self) {
+        self.needs_render = true;
+    }
+
+    pub fn tick(&mut self) -> bool {
+        if !self.needs_render {
+            return false;
+        }
+
         self.renderer.render(&mut self.scene, &self.camera);
         self.renderer.check_gl_error("Scene render");
+        self.needs_render = false;
+        true // Frame was rendered
     }
 
     pub fn resize(&mut self, physical_width: u32, physical_height: u32) {
