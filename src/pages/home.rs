@@ -45,11 +45,13 @@ pub fn home() -> Html {
 
     html! {
         <div class="tile-container">
+
+
             <a href="https://github.com/prideout/layout-viewer"
-               class="tile github-tile"
+               class="tile"
                target="_blank">
                 <i class="fab fa-github"></i>
-                <span class="tile-text">{"GitHub Repo"}</span>
+                <span class="tile-text">{"prideout/layout-viewer"}</span>
             </a>
 
             <Link<Route> to={Route::Layout { id: "intel-4004".to_string() }} classes="tile">
@@ -62,10 +64,10 @@ pub fn home() -> Html {
                 <span class="tile-text">{"MOS Technology 6502"}</span>
             </Link<Route>>
 
-            <Link<Route> to={Route::Layout { id: "caravel".to_string() }} classes="tile">
-                <i class="fas fa-microchip"></i>
-                <span class="tile-text">{"Caravel Harness"}</span>
-            </Link<Route>>
+            // <Link<Route> to={Route::Layout { id: "caravel".to_string() }} classes="tile">
+            //     <i class="fas fa-microchip"></i>
+            //     <span class="tile-text">{"Caravel Harness"}</span>
+            // </Link<Route>>
 
             <Link<Route> to={Route::Layout { id: "trilomix-sky130".to_string() }} classes="tile">
                 <i class="fas fa-microchip"></i>

@@ -1,6 +1,20 @@
 type Mat4 = nalgebra::Matrix4<f32>;
 type Point = nalgebra::Point3<f32>;
 
+use std::fmt;
+
+impl fmt::Debug for Camera {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Camera")
+            .field("position", &self.position)
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("near", &self.near)
+            .field("far", &self.far)
+            .finish()
+    }
+}
+
 pub struct Camera {
     pub position: Point,
     pub width: f32,

@@ -112,7 +112,6 @@ impl Controller {
         if !self.needs_render {
             return false;
         }
-
         self.renderer.render(&mut self.scene, &self.camera);
         self.renderer.check_gl_error("Scene render");
         self.needs_render = false;
@@ -132,6 +131,10 @@ impl Controller {
 
     pub fn cleanup(&mut self) {
         self.scene.destroy(self.renderer.gl());
+    }
+
+    pub fn scene(&mut self) -> &mut Scene {
+        &mut self.scene
     }
 }
 

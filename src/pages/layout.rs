@@ -1,14 +1,12 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, HtmlCanvasElement, Request, RequestInit, Response, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{controller::Controller, gl_renderer::Renderer, gl_scene::Scene, Project, Route};
-
-type AnimationFrame = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
+use crate::{
+    controller::Controller, gl_renderer::Renderer, gl_scene::Scene, populate_scene, Project, Route,
+};
 
 #[derive(Properties, PartialEq)]
 pub struct LayoutProps {
@@ -22,14 +20,12 @@ pub enum LayoutMsg {
     MouseMove(u32, u32),
     MouseWheel(u32, u32, f32),
     Tick,
-    GdsLoaded(Project),
+    GdsLoaded(Box<Project>),
 }
 
 pub struct Layout {
     canvas_ref: NodeRef,
     controller: Option<Controller>,
-    animation_frame: Option<Closure<dyn FnMut()>>,
-    project: Option<Project>,
 }
 
 impl Component for Layout {
@@ -40,14 +36,11 @@ impl Component for Layout {
         Self {
             canvas_ref: NodeRef::default(),
             controller: None,
-            animation_frame: None,
-            project: None,
         }
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        // Clean up the animation frame closure
-        self.animation_frame = None;
+        // No cleanup needed anymore
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -104,23 +97,26 @@ impl Component for Layout {
             let link = ctx.link().clone();
             wasm_bindgen_futures::spawn_local(async move {
                 match fetch_gds_file(&id).await {
-                    Ok(bytes) => match Project::from_bytes(&bytes) {
-                        Ok(project) => {
-                            let stats = project.stats();
-                            log::info!("Loaded GDS file for project {}", id);
-                            log::info!("Number of structs: {}", stats.struct_count);
-                            log::info!("Number of polygons: {}", stats.polygon_count);
-                            log::info!("Number of paths: {}", stats.path_count);
-                            log::info!(
-                                "Number of layers: {}",
-                                (project.highest_layer() + 1) as usize
-                            );
-                            link.send_message(LayoutMsg::GdsLoaded(project));
+                    Ok(bytes) => {
+                        log::info!("Parsing {} bytes from GDS file", bytes.len());
+                        match Project::from_bytes(&bytes) {
+                            Ok(project) => {
+                                let stats = project.stats();
+                                log::info!("Loaded GDS file for project {}", id);
+                                log::info!("Number of structs: {}", stats.struct_count);
+                                log::info!("Number of polygons: {}", stats.polygon_count);
+                                log::info!("Number of paths: {}", stats.path_count);
+                                log::info!(
+                                    "Number of layers: {}",
+                                    (project.highest_layer() + 1) as usize
+                                );
+                                link.send_message(LayoutMsg::GdsLoaded(Box::new(project)));
+                            }
+                            Err(_) => {
+                                log::error!("Failed to parse GDS file.");
+                            }
                         }
-                        Err(_) => {
-                            log::error!("Failed to parse GDS file.");
-                        }
-                    },
+                    }
                     Err(e) => {
                         log::error!("Failed to fetch GDS file: {:?}", e);
                     }
@@ -144,6 +140,7 @@ impl Component for Layout {
                 let height = canvas.client_height() as u32;
 
                 // Create controller
+                log::info!("Creating controller at {}x{}", width, height);
                 let controller = Controller::new(renderer, scene, width, height);
                 self.controller = Some(controller);
 
@@ -155,37 +152,14 @@ impl Component for Layout {
                 });
                 resize_observer.observe(&canvas_clone);
 
-                // Set up animation frame loop
-                let link = ctx.link().clone();
-                let f: AnimationFrame = Rc::new(RefCell::new(None));
-                let g = f.clone();
-
-                *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-                    link.send_message(LayoutMsg::Tick);
-                    // Request next frame
-                    if let Some(window) = window() {
-                        if let Some(closure) = f.borrow().as_ref() {
-                            let _ =
-                                window.request_animation_frame(closure.as_ref().unchecked_ref());
-                        }
-                    }
-                }) as Box<dyn FnMut()>));
-
-                // Store animation frame closure and start the loop
-                if let Some(window) = window() {
-                    if let Some(closure) = g.borrow().as_ref() {
-                        let _ = window.request_animation_frame(closure.as_ref().unchecked_ref());
-                    }
-                }
-                self.animation_frame = g.borrow_mut().take();
-
-                // Initial render
+                ctx.link().send_message(LayoutMsg::Tick);
                 ctx.link().send_message(LayoutMsg::Render);
             }
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, context: &Context<Self>, msg: Self::Message) -> bool {
+        let link = context.link().clone();
         if let Some(controller) = &mut self.controller {
             match msg {
                 LayoutMsg::Render => {
@@ -200,6 +174,13 @@ impl Component for Layout {
                 }
                 LayoutMsg::Tick => {
                     controller.tick();
+                    let closure = Closure::wrap(Box::new(move || {
+                        link.send_message(LayoutMsg::Tick);
+                    }) as Box<dyn FnMut()>);
+                    if let Some(window) = window() {
+                        let _ = window.request_animation_frame(closure.as_ref().unchecked_ref());
+                    }
+                    closure.forget();
                 }
                 LayoutMsg::MousePress(x, y) => {
                     controller.handle_mouse_press(x, y);
@@ -214,11 +195,18 @@ impl Component for Layout {
                     controller.render();
                 }
                 LayoutMsg::MouseWheel(x, y, delta) => {
-                    controller.handle_mouse_wheel(x, y, delta);
+                    controller.handle_mouse_wheel(x, y, -delta);
                     controller.render();
                 }
                 LayoutMsg::GdsLoaded(project) => {
-                    self.project = Some(project);
+                    if let Some(controller) = &mut self.controller {
+                        populate_scene(project.render_layers(), controller.scene());
+                        controller.render();
+                        log::info!("Scene populated");
+                    } else {
+                        // This is a potential race condition, but it's highly unlikely to happen.
+                        log::error!("Controller not ready");
+                    }
                 }
             }
         }
@@ -231,7 +219,7 @@ async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     let opts = RequestInit::new();
     opts.set_method("GET");
 
-    let url = format!("gds/{}.gds", id);
+    let url = format!("../gds/{}.gds", id);
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
     let window = web_sys::window().unwrap();

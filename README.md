@@ -37,6 +37,8 @@ trunk serve
 
 ## Next tasks
 
+Alt version of the VS.
+
 Drag and drop.
 
 Default colors/opacities look terrible.
