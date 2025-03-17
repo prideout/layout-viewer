@@ -12,13 +12,15 @@ use nalgebra::Point3;
 use raw_window_handle::HasRawWindowHandle;
 use std::num::NonZeroU32;
 use winit::{
+    dpi::PhysicalPosition,
     event::{Event, WindowEvent},
     event_loop::EventLoop,
     window::WindowBuilder,
-    dpi::PhysicalPosition,
 };
 
-use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene};
+use crate::{
+    controller::Controller, gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene,
+};
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
@@ -107,19 +109,14 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
     // initial dimensions that were passed into the surface builder.
     let window_size = window.inner_size();
 
-    let mut renderer = Renderer::new(gl);
-    renderer.check_gl_error("Renderer creation");
+    let renderer = Renderer::new(gl);
+    let mut controller = Controller::new(renderer);
+    controller.check_gl_error("Renderer creation");
 
     let (width, height) = calculate_normalized_dimensions(window_size.width, window_size.height);
-    let mut camera = Camera::new(
-        Point3::new(0.0, 0.0, 0.0), // position at origin
-        width,                      // world space width of the near projection quad
-        height,                     // world space height of the near projection quad
-        -1.0,                       // near
-        1.0,                        // far
-    );
+    let mut camera = Camera::new(Point3::new(0.0, 0.0, 0.0), width, height, -1.0, 1.0);
 
-    renderer.set_viewport(Viewport {
+    controller.set_viewport(Viewport {
         left: 0.0,
         top: 0.0,
         width: window_size.width as f32,
@@ -129,77 +126,75 @@ pub fn spawn_window(mut scene: Scene) -> anyhow::Result<()> {
     let mut current_cursor_pos: Option<PhysicalPosition<f64>> = None;
     event_loop.run(move |event, elwt| {
         match event {
-            Event::WindowEvent { event, .. } => {
-                match event {
-                    WindowEvent::CloseRequested => {
-                        elwt.exit();
-                    }
-                    WindowEvent::KeyboardInput { event, .. } => {
-                        use winit::keyboard::{KeyCode, PhysicalKey};
-                        if let PhysicalKey::Code(code) = event.physical_key {
-                            if code == KeyCode::Escape || code == KeyCode::KeyQ {
-                                elwt.exit();
-                            }
-                        }
-                    }
-                    WindowEvent::MouseInput { state, button, .. } => {
-                        use winit::event::MouseButton;
-                        if button == MouseButton::Left {
-                            match state {
-                                winit::event::ElementState::Pressed => {
-                                    if let Some(pos) = current_cursor_pos {
-                                        renderer.handle_mouse_press(pos.x as f32, pos.y as f32);
-                                    }
-                                }
-                                winit::event::ElementState::Released => {
-                                    renderer.handle_mouse_release();
-                                }
-                            }
-                        }
-                    }
-                    WindowEvent::CursorMoved { position, .. } => {
-                        current_cursor_pos = Some(position);
-                        renderer.handle_mouse_move(position.x as f32, position.y as f32, &mut camera);
-                        renderer.render(&mut scene, &camera);
-                        renderer.check_gl_error("Scene render");
-                        surface.swap_buffers(&context).unwrap();
-                    }
-                    WindowEvent::Resized(size) => {
-                        surface.resize(
-                            &context,
-                            NonZeroU32::new(size.width).unwrap(),
-                            NonZeroU32::new(size.height).unwrap(),
-                        );
-
-                        let (width, height) = calculate_normalized_dimensions(size.width, size.height);
-                        camera.set_size(width, height);
-
-                        renderer.set_viewport(Viewport {
-                            left: 0.0,
-                            top: 0.0,
-                            width: size.width as f32,
-                            height: size.height as f32,
-                        });
-                        renderer.check_gl_error("Viewport update");
-
-                        renderer.render(&mut scene, &camera);
-                        renderer.check_gl_error("Scene render");
-                        surface.swap_buffers(&context).unwrap();
-                    }
-                    WindowEvent::RedrawRequested => {
-                        renderer.render(&mut scene, &camera);
-                        renderer.check_gl_error("Scene render");
-                        surface.swap_buffers(&context).unwrap();
-                    }
-                    _ => (),
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::CloseRequested => {
+                    elwt.exit();
                 }
-            }
+                WindowEvent::KeyboardInput { event, .. } => {
+                    use winit::keyboard::{KeyCode, PhysicalKey};
+                    if let PhysicalKey::Code(code) = event.physical_key {
+                        if code == KeyCode::Escape || code == KeyCode::KeyQ {
+                            elwt.exit();
+                        }
+                    }
+                }
+                WindowEvent::MouseInput { state, button, .. } => {
+                    use winit::event::MouseButton;
+                    if button == MouseButton::Left {
+                        match state {
+                            winit::event::ElementState::Pressed => {
+                                if let Some(pos) = current_cursor_pos {
+                                    controller.handle_mouse_press(pos.x as f32, pos.y as f32);
+                                }
+                            }
+                            winit::event::ElementState::Released => {
+                                controller.handle_mouse_release();
+                            }
+                        }
+                    }
+                }
+                WindowEvent::CursorMoved { position, .. } => {
+                    current_cursor_pos = Some(position);
+                    controller.handle_mouse_move(position.x as f32, position.y as f32, &mut camera);
+                    controller.render(&mut scene, &camera);
+                    controller.check_gl_error("Scene render");
+                    surface.swap_buffers(&context).unwrap();
+                }
+                WindowEvent::Resized(size) => {
+                    surface.resize(
+                        &context,
+                        NonZeroU32::new(size.width).unwrap(),
+                        NonZeroU32::new(size.height).unwrap(),
+                    );
+
+                    let (width, height) = calculate_normalized_dimensions(size.width, size.height);
+                    camera.set_size(width, height);
+
+                    controller.set_viewport(Viewport {
+                        left: 0.0,
+                        top: 0.0,
+                        width: size.width as f32,
+                        height: size.height as f32,
+                    });
+                    controller.check_gl_error("Viewport update");
+
+                    controller.render(&mut scene, &camera);
+                    controller.check_gl_error("Scene render");
+                    surface.swap_buffers(&context).unwrap();
+                }
+                WindowEvent::RedrawRequested => {
+                    controller.render(&mut scene, &camera);
+                    controller.check_gl_error("Scene render");
+                    surface.swap_buffers(&context).unwrap();
+                }
+                _ => (),
+            },
             Event::AboutToWait => {
                 // This is called right before the event loop starts waiting for new events
                 // It's a good place to do cleanup when exiting
                 if elwt.exiting() {
                     println!("Cleaning up OpenGL resources");
-                    scene.destroy(renderer.gl());
+                    scene.destroy(controller.gl());
                 }
             }
             _ => (),
