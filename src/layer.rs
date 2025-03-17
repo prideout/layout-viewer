@@ -11,8 +11,6 @@ use crate::cells::CellId;
 type Polygon = geo::Polygon<f64>;
 type Vec2d = geo::Point<f64>;
 
-const ARC_SUBDIVISIONS: usize = 8;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum PathType {
     Standard = 0,
@@ -35,7 +33,7 @@ pub struct Layer {
     pub bounds: BoundingBox,
     pub paths: Vec<GdsPath>,
     pub boundaries: Vec<GdsBoundary>,
-    pub color: Vector4<f32>,  // RGBA color for this layer
+    pub color: Vector4<f32>, // RGBA color for this layer
 }
 
 impl Layer {
@@ -45,7 +43,7 @@ impl Layer {
             bounds: BoundingBox::new(),
             paths: Vec::new(),
             boundaries: Vec::new(),
-            color: Vector4::new(0.0, 0.0, 0.0, 1.0),  // Default to black
+            color: Vector4::new(0.0, 0.0, 0.0, 1.0), // Default to black
         }
     }
 
@@ -160,4 +158,4 @@ fn gds_point_to_array(p: &GdsPoint) -> [f64; 2] {
 
 fn array_to_geo_point(t: &[f64; 2]) -> Vec2d {
     Vec2d::new(t[0], t[1])
-} 
+}

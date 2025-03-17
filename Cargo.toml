@@ -56,6 +56,8 @@ yew-router = "0.18"
 stylist = { version = "0.13", features = ["yew"] }
 wasm-logger = "0.2.0"
 console_error_panic_hook = "0.1.6"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glutin = "0.31"

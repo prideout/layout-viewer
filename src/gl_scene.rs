@@ -2,11 +2,6 @@ use crate::gl_geometry::{Geometry, GeometryId};
 use crate::gl_material::{Material, MaterialId};
 use crate::gl_mesh::{Mesh, MeshId};
 use crate::id_map::IdMap;
-use nalgebra::{Matrix4, Point3, Vector3};
-
-type Mat4 = Matrix4<f32>;
-type Vec3 = Vector3<f32>;
-type Point = Point3<f32>;
 
 pub struct Scene {
     pub(crate) meshes: IdMap<MeshId, Mesh>,

@@ -1,11 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast};
-use web_sys::{window, HtmlCanvasElement, WebGl2RenderingContext};
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{window, HtmlCanvasElement, Request, RequestInit, Response, WebGl2RenderingContext};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{controller::Controller, gl_renderer::Renderer, gl_scene::Scene, Route};
+use crate::{controller::Controller, gl_renderer::Renderer, gl_scene::Scene, Project, Route};
 
 type AnimationFrame = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
 
@@ -21,12 +22,14 @@ pub enum LayoutMsg {
     MouseMove(u32, u32),
     MouseWheel(u32, u32, f32),
     Tick,
+    GdsLoaded(Project),
 }
 
 pub struct Layout {
     canvas_ref: NodeRef,
     controller: Option<Controller>,
     animation_frame: Option<Closure<dyn FnMut()>>,
+    project: Option<Project>,
 }
 
 impl Component for Layout {
@@ -38,6 +41,7 @@ impl Component for Layout {
             canvas_ref: NodeRef::default(),
             controller: None,
             animation_frame: None,
+            project: None,
         }
     }
 
@@ -95,6 +99,34 @@ impl Component for Layout {
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
+            // Start GDS file fetch
+            let id = ctx.props().id.clone();
+            let link = ctx.link().clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match fetch_gds_file(&id).await {
+                    Ok(bytes) => match Project::from_bytes(&bytes) {
+                        Ok(project) => {
+                            let stats = project.stats();
+                            log::info!("Loaded GDS file for project {}", id);
+                            log::info!("Number of structs: {}", stats.struct_count);
+                            log::info!("Number of polygons: {}", stats.polygon_count);
+                            log::info!("Number of paths: {}", stats.path_count);
+                            log::info!(
+                                "Number of layers: {}",
+                                (project.highest_layer() + 1) as usize
+                            );
+                            link.send_message(LayoutMsg::GdsLoaded(project));
+                        }
+                        Err(_) => {
+                            log::error!("Failed to parse GDS file.");
+                        }
+                    },
+                    Err(e) => {
+                        log::error!("Failed to fetch GDS file: {:?}", e);
+                    }
+                }
+            });
+
             // Get canvas and create WebGL context
             if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
                 let gl: WebGl2RenderingContext = canvas
@@ -185,10 +217,33 @@ impl Component for Layout {
                     controller.handle_mouse_wheel(x, y, delta);
                     controller.render();
                 }
+                LayoutMsg::GdsLoaded(project) => {
+                    self.project = Some(project);
+                }
             }
         }
         false
     }
+}
+
+// Helper function to fetch GDS file
+async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+    let opts = RequestInit::new();
+    opts.set_method("GET");
+
+    let url = format!("gds/{}.gds", id);
+    let request = Request::new_with_str_and_init(&url, &opts)?;
+
+    let window = web_sys::window().unwrap();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await?;
+    let resp: Response = resp_value.dyn_into()?;
+
+    // Get the response as an ArrayBuffer
+    let array_buffer = JsFuture::from(resp.array_buffer()?).await?;
+    let uint8_array = js_sys::Uint8Array::new(&array_buffer);
+    let bytes = uint8_array.to_vec();
+
+    Ok(bytes)
 }
 
 // Helper struct for resize observer
