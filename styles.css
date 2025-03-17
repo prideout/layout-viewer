@@ -13,6 +13,13 @@ body {
     min-height: 100vh;
     gap: 1rem;
     padding: 2rem;
+    margin: 0;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .tile {

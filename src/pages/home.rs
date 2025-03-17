@@ -104,7 +104,7 @@ impl Component for Home {
         let drop_text = if let Some((name, _)) = &self.dropped_file {
             name.clone()
         } else {
-            "Drop GDS file".to_string()
+            "Drop GDS".to_string()
         };
 
         html! {
@@ -145,6 +145,8 @@ impl Component for Home {
                 >
                     <i class="fas fa-upload"></i>
                     <span class="tile-text">{drop_text}</span>
+                    <span class="tile-text" style="font-size: 0.8em;">{"Stays in browser"}</span>
+                    <span class="tile-text" style="font-size: 0.8em;">{"Not sent to server"}</span>
                 </div>
             </div>
         }
