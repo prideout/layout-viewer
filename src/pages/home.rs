@@ -125,11 +125,11 @@ impl Component for Home {
                 </Link<Route>>
                 // <Link<Route> to={Route::Viewer { id: "caravel".to_string() }} classes="tile">
                 //     <i class="fas fa-microchip"></i>
-                //     <span class="tile-text">{"Caravel"}</span>
+                //     <span class="tile-text">{"Caravel Harness"}</span>
                 // </Link<Route>>
                 <Link<Route> to={Route::Viewer { id: "trilomix-sky130".to_string() }} classes="tile">
                     <i class="fas fa-microchip"></i>
-                    <span class="tile-text">{"Trilomix Sky130"}</span>
+                    <span class="tile-text">{"SkyWater SKY130"}</span>
                 </Link<Route>>
                 <div
                     class={classes!(
