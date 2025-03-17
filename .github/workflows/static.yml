@@ -38,6 +38,7 @@ jobs:
       - name: Install Trunk and wasm-bindgen-cli
         run: |
           cargo install trunk wasm-bindgen-cli
+          rustup target add wasm32-unknown-unknown
 
       - name: Cache Trunk and wasm-bindgen-cli
         uses: actions/cache@v4
@@ -48,6 +49,9 @@ jobs:
           key: ${{ runner.os }}-trunk-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-trunk-
+
+      - name: Remove this step
+        run: rustup target add wasm32-unknown-unknown
 
       - name: Build project with Trunk
         run: trunk build --release
