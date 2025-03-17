@@ -121,7 +121,7 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
                         match state {
                             winit::event::ElementState::Pressed => {
                                 if let Some(pos) = current_cursor_pos {
-                                    controller.handle_mouse_press(pos.x as f32, pos.y as f32);
+                                    controller.handle_mouse_press(pos.x as u32, pos.y as u32);
                                 }
                             }
                             winit::event::ElementState::Released => {
@@ -130,9 +130,20 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
                         }
                     }
                 }
+                WindowEvent::MouseWheel { delta, .. } => {
+                    if let Some(pos) = current_cursor_pos {
+                        let delta_y = match delta {
+                            winit::event::MouseScrollDelta::LineDelta(_, y) => y,
+                            winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y as f32,
+                        };
+                        controller.handle_mouse_wheel(pos.x as u32, pos.y as u32, delta_y);
+                        controller.render();
+                        surface.swap_buffers(&context).unwrap();
+                    }
+                }
                 WindowEvent::CursorMoved { position, .. } => {
                     current_cursor_pos = Some(position);
-                    controller.handle_mouse_move(position.x as f32, position.y as f32);
+                    controller.handle_mouse_move(position.x as u32, position.y as u32);
                     controller.render();
                     surface.swap_buffers(&context).unwrap();
                 }
