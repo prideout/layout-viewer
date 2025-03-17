@@ -1,6 +1,7 @@
 [build]
 target = "index.html"
 dist = "dist"
+base-href = "."
 
 [serve]
 port = 8080 
