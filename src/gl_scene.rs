@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::gl_geometry::{Geometry, GeometryId};
 use crate::gl_material::{Material, MaterialId};
 use crate::gl_mesh::{Mesh, MeshId};

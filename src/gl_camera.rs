@@ -1,20 +1,5 @@
-#![allow(dead_code)]
-
-use std::hash::Hash;
-use nalgebra::{Matrix4, Point3};
-use crate::id_map::Id;
-
-type Mat4 = Matrix4<f32>;
-type Point = Point3<f32>;
-
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct CameraId(pub usize);
-
-impl Id for CameraId {
-    fn from_usize(id: usize) -> Self {
-        CameraId(id)
-    }
-}
+type Mat4 = nalgebra::Matrix4<f32>;
+type Point = nalgebra::Point3<f32>;
 
 pub struct Camera {
     pub position: Point,
@@ -58,4 +43,4 @@ impl Camera {
         self.width = width;
         self.height = height;
     }
-} 
+}

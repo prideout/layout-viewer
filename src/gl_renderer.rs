@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{gl_camera::Camera, gl_viewport::Viewport, Scene};
 use glow::*;
 

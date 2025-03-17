@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use gds21::{GdsBoundary, GdsPath, GdsPoint, GdsStrans};
 use geo::AffineTransform;
 
@@ -28,6 +26,7 @@ impl Id for CellId {
 /// Yes there's a naming conflict with std::cell::Cell, but this isn't quite
 /// the same thing as a GDSII SRef so I don't want to call it a StructRef.
 pub(crate) struct Cell {
+    #[allow(dead_code)]
     pub cell_id: CellId,
     pub cell_def_id: CellDefId,
     pub xy: GdsPoint,
@@ -40,6 +39,7 @@ pub(crate) struct Cell {
 /// Corresponds to a single GDSII struct.
 #[derive(Debug, Clone)]
 pub(crate) struct CellDef {
+    #[allow(dead_code)]
     pub cell_def_id: CellDefId,
     pub instances_of_self: Vec<CellId>,
     pub boundary_elements: Vec<GdsBoundary>,

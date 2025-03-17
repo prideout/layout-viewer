@@ -5,30 +5,21 @@ or converting them to SVG format.
 
 The library can be used both natively and as a WebAssembly module.
 
-## Usage
+## Usage examples
 
 ```bash
-cargo run --quiet --bin layout-viewer -- --gl ../public/intel-4004.gds
-cargo run --release --quiet --bin layout-viewer -- --gl ../public/caravel.gds
+# Open a GL window with the Intel 4004 chip:
+cargo run --quiet --bin layout-viewer -- --gl assets/gds/intel-4004.gds
 
+# Open a much larger GDS file using a release build:
+cargo run --release --quiet --bin layout-viewer -- --gl assets/gds/caravel.gds
+
+# Generate a SVG file:
+cargo run --quiet --bin layout-viewer -- --gl assets/gds/mos-6502.gds mos-6502.svg
+
+# Deploy a local web server:
 trunk serve
 ```
-
-## Tasks
-
-On the layout page, there should be a sidebar on the right that shows a list of
-layers. Each layer has a color swatch, visibility toggle, and opacity slider.
-Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
-
-Add blog post.
-
-Default colors/opacities look terrible.
-
-Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
-picking. It uses nalgebra internally. Create an outline triangle buffer on the
-fly using the stroke feature in i_overlay.
-
-Save array refs for last.
 
 ## Limitations
 
@@ -37,29 +28,6 @@ Save array refs for last.
 - The "absolute" flag is ignored for magnitudes and angles.
 - Text, Nodes, and Boxes are ignored.
 
-## Dev usage
-
-```bash
-cargo run --bin layout-viewer -- --help
-cargo run --bin layout-viewer ../public/trilomix-example.gds
-```
-
-## End users
-
-```bash
-cargo install --path .
-layout-viewer input.gds output.svg
-```
-
-### WebAssembly usage
-
-The library can be compiled to WebAssembly and used in web applications. Build
-the WebAssembly module with:
-
-```bash
-wasm-pack build --target web
-```
-
 ## Dependencies
 
 - gds21: GDSII parser
@@ -67,15 +35,18 @@ wasm-pack build --target web
 - wasm-bindgen: WebAssembly bindings
 - anyhow: Error handling
 
-## References
+## Next tasks
 
-- https://www.artwork.com/gdsii/gdsii/page5.htm
-- https://github.com/GraphiteEditor/Graphite/blob/master/node-graph/gcore/src/graphic_element/renderer.rs
-- https://crates.io/crates/gds21
+Drag and drop.
 
-## Web app references
+Default colors/opacities look terrible.
 
-- https://jakearchibald.github.io/svgomg/
-- https://github.com/bumbu/svg-pan-zoom
-- https://docs.rs/specta/latest/specta/
-- https://github.com/jakearchibald/svgomg/blob/1e1a1448f25761e7382cae5de2ba21f1e6ba439d/src/css/_global.scss#L16
+Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
+picking. It uses nalgebra internally. Create an outline triangle buffer on the
+fly using the stroke feature in i_overlay.
+
+On the layout page, there should be a sidebar on the right that shows a list of
+layers. Each layer has a color swatch, visibility toggle, and opacity slider.
+Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
+
+Implement array refs.

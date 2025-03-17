@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::id_map::Id;
 use glow::HasContext;
 use indexmap::IndexMap;

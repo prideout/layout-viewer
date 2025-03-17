@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use gds21::{GdsBoundary, GdsPath, GdsPoint};
 use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use i_overlay::mesh::stroke::offset::StrokeOffset;
