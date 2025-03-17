@@ -4,7 +4,7 @@ use web_sys::DragEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-pub struct Home {
+pub struct HomePage {
     dropped_file: Option<(String, Vec<u8>)>,
     is_dragging: bool,
 }
@@ -15,7 +15,7 @@ pub enum HomeMsg {
     DragOver(bool),
 }
 
-impl Component for Home {
+impl Component for HomePage {
     type Message = HomeMsg;
     type Properties = ();
 

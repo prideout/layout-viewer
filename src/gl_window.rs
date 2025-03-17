@@ -18,12 +18,16 @@ use winit::{
     window::WindowBuilder,
 };
 
-use crate::{controller::Controller, gl_renderer::Renderer, Scene};
+use crate::{controller::Controller, gl_renderer::Renderer, populate_scene, Project, Scene};
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
 
-pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
+pub fn spawn_window(project: Project) -> anyhow::Result<()> {
+
+    let mut scene = Scene::new();
+    populate_scene(project.layers(), &mut scene);
+
     let event_loop = EventLoop::new()?;
     let window_builder = WindowBuilder::new()
         .with_title("Layout Viewer")
@@ -122,14 +126,14 @@ pub fn spawn_window(scene: Scene) -> anyhow::Result<()> {
             }
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => {
-                    controller.cleanup();
+                    controller.destroy();
                     window_target.exit();
                 }
                 WindowEvent::KeyboardInput { event, .. } => {
                     use winit::keyboard::{KeyCode, PhysicalKey};
                     if let PhysicalKey::Code(code) = event.physical_key {
                         if code == KeyCode::Escape || code == KeyCode::KeyQ {
-                            controller.cleanup();
+                            controller.destroy();
                             window_target.exit();
                         }
                     }

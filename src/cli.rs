@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use colored::*;
-use layout_viewer::{generate_svg, populate_scene, Project, Scene};
+use layout_viewer::{generate_svg, Project};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -107,7 +107,7 @@ pub fn run_cli() -> Result<()> {
 
     // Generate and save SVG if output path is provided
     if let Some(ref output_path) = args.output {
-        let svg_content = generate_svg(project.render_layers());
+        let svg_content = generate_svg(project.layers());
 
         fs::write(output_path, svg_content)?;
         println!("SVG file written to: {}", output_path.display());
@@ -116,10 +116,8 @@ pub fn run_cli() -> Result<()> {
     println!();
 
     if args.gl {
-        let mut scene = Scene::new();
-        populate_scene(project.render_layers(), &mut scene);
-        layout_viewer::spawn_window(scene)?;
+        layout_viewer::spawn_window(project)?;
     }
 
     Ok(())
-} 
+}

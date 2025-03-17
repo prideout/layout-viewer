@@ -1,7 +1,7 @@
 # Layout Viewer
 
-Rust library and CLI tool for rendering GDSII layouts with OpenGL / WebGL
-or converting them to SVG format.
+Rust library and CLI tool for rendering GDSII layouts with OpenGL / WebGL or
+converting them to SVG format.
 
 The library can be used both natively and as a WebAssembly module.
 
@@ -37,15 +37,17 @@ trunk serve
 
 ## Next tasks
 
-Refactor: Viewer should have a custom Canvas component.
-
 On the viewer page, there should be a sidebar on the right that shows a list of
 layers. Each layer has a color swatch, visibility toggle, and opacity slider.
-Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide all".
+Above the layer list are a few buttons: "Enable picking", "Show all", and "Hide
+all".
 
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
-picking. It uses nalgebra internally. Create an outline triangle buffer on the
-fly using the stroke feature in i_overlay.
+picking. It uses nalgebra internally. Use a vec of (layer index, cell id) for
+the lookup table (one entry per triangle).
+
+For the selection effect, create an outline triangle buffer on the fly using the
+stroke feature in i_overlay.
 
 Test on mobile.
 

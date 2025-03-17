@@ -1,3 +1,5 @@
+use crate::populate_scene;
+use crate::Project;
 use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene};
 use nalgebra::Point3;
 
@@ -9,6 +11,7 @@ pub struct Controller {
     last_mouse_pos: Option<(f32, f32)>,
     zoom_speed: f32,
     needs_render: bool,
+    project: Option<Project>,
 }
 
 impl Controller {
@@ -28,7 +31,31 @@ impl Controller {
             last_mouse_pos: None,
             zoom_speed: 0.05,
             needs_render: true, // Initial render needed
+            project: None,
         }
+    }
+
+    pub fn set_project(&mut self, mut project: Project) {
+        let stats = project.stats();
+        log::info!("Number of structs: {}", stats.struct_count);
+        log::info!("Number of polygons: {}", stats.polygon_count);
+        log::info!("Number of paths: {}", stats.path_count);
+        log::info!(
+            "Number of layers: {}",
+            (project.highest_layer() + 1) as usize
+        );
+
+        let mut alpha = 0.6; // looks ok for 4004 & 6502
+        if project.layers().len() > 10 {
+            alpha = 0.05;
+        }
+        for layer in project.layers_mut() {
+            layer.color.w = alpha;
+        }
+
+        populate_scene(project.layers(), &mut self.scene);
+        self.project = Some(project);
+        self.render();
     }
 
     pub fn handle_mouse_press(&mut self, x: u32, y: u32) {

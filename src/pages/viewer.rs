@@ -9,7 +9,7 @@ use yew_router::prelude::*;
 
 use crate::{
     controller::Controller, gl_renderer::Renderer, gl_scene::Scene, pages::home::take_dropped_file,
-    populate_scene, Project, Route,
+    resize_observer::ResizeObserver, Project, Route,
 };
 
 #[derive(Properties, PartialEq)]
@@ -28,13 +28,13 @@ pub enum ViewerMsg {
     Tick,
 }
 
-pub struct Viewer {
+pub struct ViewerPage {
     canvas_ref: NodeRef,
     controller: Option<Controller>,
     status: String,
 }
 
-impl Component for Viewer {
+impl Component for ViewerPage {
     type Message = ViewerMsg;
     type Properties = ViewerProps;
 
@@ -176,7 +176,6 @@ impl Component for Viewer {
         let height = canvas.client_height() as u32;
 
         // Create controller
-        log::info!("Creating controller at {}x{}", width, height);
         let controller = Controller::new(renderer, scene, width, height);
         self.controller = Some(controller);
 
@@ -240,27 +239,14 @@ impl Component for Viewer {
                 controller.render();
                 false
             }
-            ViewerMsg::GdsLoaded(mut project) => {
+            ViewerMsg::GdsLoaded(project) => {
                 let Some(controller) = &mut self.controller else {
                     log::error!("Controller not ready");
                     return false;
                 };
-                let stats = project.stats();
-                let layer_count = project.layers().len();
-                log::info!("Number of structs: {}", stats.struct_count);
-                log::info!("Number of polygons: {}", stats.polygon_count);
-                log::info!("Number of paths: {}", stats.path_count);
-                log::info!("Number of layers: {}", layer_count);
-                let mut alpha = 0.6; // looks ok for 4004 & 6502
-                if layer_count > 10 {
-                    alpha = 0.05;
-                }
-                for layer in project.layers_mut() {
-                    layer.color.w = alpha;
-                }
-                populate_scene(project.layers(), controller.scene());
+                controller.set_project(*project);
+                self.status = "Zoom and pan like a map.".to_string();
                 controller.render();
-                self.status.clear();
                 true
             }
             ViewerMsg::ParsingGds => {
@@ -290,23 +276,4 @@ async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     let bytes = uint8_array.to_vec();
 
     Ok(bytes)
-}
-
-// Helper struct for resize observer
-struct ResizeObserver(web_sys::ResizeObserver);
-
-impl ResizeObserver {
-    fn new<F>(callback: F) -> Self
-    where
-        F: FnMut(Vec<web_sys::ResizeObserverEntry>, web_sys::ResizeObserver) + 'static,
-    {
-        let callback = Closure::wrap(Box::new(callback) as Box<dyn FnMut(_, _)>);
-        let observer = web_sys::ResizeObserver::new(callback.as_ref().unchecked_ref()).unwrap();
-        callback.forget();
-        Self(observer)
-    }
-
-    fn observe(&self, target: &web_sys::Element) {
-        self.0.observe(target);
-    }
 }
