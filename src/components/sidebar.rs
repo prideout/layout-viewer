@@ -99,6 +99,9 @@ impl Component for Sidebar {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let find_layer_proxy = |index: usize| {
+            ctx.props().layers.iter().find(|layer| layer.index == index)
+        };
         match msg {
             SidebarMsg::HideAll => {
                 for layer in &ctx.props().layers {
@@ -117,7 +120,7 @@ impl Component for Sidebar {
                 true
             }
             SidebarMsg::ToggleLayer(index) => {
-                if let Some(layer) = ctx.props().layers.get(index) {
+                if let Some(layer) = find_layer_proxy(index) {
                     let mut layer = layer.clone();
                     layer.visible = !layer.visible;
                     ctx.props().update_layer.emit(layer.clone());
@@ -125,7 +128,7 @@ impl Component for Sidebar {
                 true
             }
             SidebarMsg::UpdateOpacity(index, opacity) => {
-                if let Some(layer) = ctx.props().layers.get(index) {
+                if let Some(layer) = find_layer_proxy(index) {
                     let mut layer = layer.clone();
                     layer.opacity = opacity;
                     ctx.props().update_layer.emit(layer.clone());
@@ -133,7 +136,7 @@ impl Component for Sidebar {
                 true
             }
             SidebarMsg::UpdateColor(index, color) => {
-                if let Some(layer) = ctx.props().layers.get(index) {
+                if let Some(layer) = find_layer_proxy(index) {
                     let mut layer = layer.clone();
                     layer.color = color.clone();
                     ctx.props().update_layer.emit(layer.clone());

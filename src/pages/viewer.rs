@@ -280,19 +280,22 @@ impl Component for ViewerPage {
                         .layers()
                         .iter()
                         .enumerate()
-                        .map(|(index, layer)| {
+                        .filter_map(|(index, layer)| {
+                            if layer.polygons.is_empty() {
+                                return None;
+                            }
                             let color = if index == project.layers().len() - 1 {
                                 // Make highest layer white
                                 rgb_to_hex(1.0, 1.0, 1.0)
                             } else {
                                 rgb_to_hex(layer.color.x, layer.color.y, layer.color.z)
                             };
-                            LayerProxy {
+                            Some(LayerProxy {
                                 index,
                                 visible: true,
                                 opacity: layer.color.w,
                                 color,
-                            }
+                            })
                         })
                         .collect();
                 }
@@ -332,7 +335,13 @@ impl Component for ViewerPage {
                 let mesh = controller.scene().get_mesh_mut(&mesh_id).unwrap();
                 mesh.set_vec4("color", color);
                 mesh.visible = layer_proxy.visible;
-                self.layer_proxies[layer_proxy.index] = layer_proxy.clone();
+                if let Some(layer) = self
+                    .layer_proxies
+                    .iter_mut()
+                    .find(|layer| layer.index == layer_proxy.index)
+                {
+                    *layer = layer_proxy.clone();
+                }
                 controller.render();
                 true
             }
