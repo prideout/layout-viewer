@@ -2,7 +2,6 @@ use gds21::{GdsBoundary, GdsPath, GdsPoint};
 use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
-use indexmap::IndexMap;
 use nalgebra::Vector4;
 
 use crate::bounds::BoundingBox;
@@ -29,7 +28,14 @@ impl From<i16> for PathType {
 }
 
 pub struct Layer {
-    pub polygons: IndexMap<CellId, Vec<Polygon>>,
+    index: i16,
+
+    pub polygons: Vec<Polygon>,
+
+    /// Each polygon in the layer has a PolygonInfo entry that tells the app
+    /// which cell the polygon belongs to. Useful for hovering and selecting.
+    pub polygon_info: Vec<CellId>,
+
     pub bounds: BoundingBox,
     pub paths: Vec<GdsPath>,
     pub boundaries: Vec<GdsBoundary>,
@@ -37,9 +43,11 @@ pub struct Layer {
 }
 
 impl Layer {
-    pub fn new() -> Self {
+    pub fn new(index: i16) -> Self {
         Self {
-            polygons: IndexMap::new(),
+            index,
+            polygons: vec![],
+            polygon_info: vec![],
             bounds: BoundingBox::new(),
             paths: Vec::new(),
             boundaries: Vec::new(),
@@ -47,15 +55,17 @@ impl Layer {
         }
     }
 
+    pub fn index(&self) -> i16 {
+        self.index
+    }
+
     pub fn update_bounds(&mut self) {
         self.bounds = BoundingBox::new();
 
-        for cell_polygons in self.polygons.values() {
-            for polygon in cell_polygons {
-                if let Some(bbox) = polygon.bounding_rect() {
-                    let layer_bbox = BoundingBox::from(bbox);
-                    self.bounds.encompass(&layer_bbox);
-                }
+        for polygon in &self.polygons {
+            if let Some(bbox) = polygon.bounding_rect() {
+                let layer_bbox = BoundingBox::from(bbox);
+                self.bounds.encompass(&layer_bbox);
             }
         }
     }
@@ -72,7 +82,8 @@ impl Layer {
         if points.len() >= 3 {
             let polygon = Polygon::new(LineString::from(points), vec![]);
             let transformed = polygon.affine_transform(transform);
-            self.polygons.entry(cell_id).or_default().push(transformed);
+            self.polygons.push(transformed);
+            self.polygon_info.push(cell_id);
         }
     }
 
@@ -97,11 +108,8 @@ impl Layer {
         // Create and transform the polygon
         let polygon = Polygon::new(LineString::from(outline_points), vec![]);
         let transformed = polygon.affine_transform(transform);
-        self.polygons.entry(cell_id).or_default().push(transformed);
-    }
-
-    pub fn get_polygons(&self, cell_id: CellId) -> Option<&[Polygon]> {
-        self.polygons.get(&cell_id).map(|v| v.as_slice())
+        self.polygons.push(transformed);
+        self.polygon_info.push(cell_id);
     }
 
     // Private helper functions
@@ -139,12 +147,6 @@ impl Layer {
 
         log::warn!("Empty contour for path.");
         vec![]
-    }
-}
-
-impl Default for Layer {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

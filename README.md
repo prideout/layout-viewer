@@ -37,15 +37,17 @@ trunk serve
 
 ## Next tasks
 
+Create faux cells for the root cell defs so that they have valid CellIds for
+hover / select.
+
 Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
-picking. It uses nalgebra internally. Use a vec of (layer index, cell id) for
-the lookup table (one entry per triangle). Add an Enable picking button
-because building the BVH is slow.
+picking. It uses nalgebra internally. Uses TriangleInfo. Add an Enable picking
+button because building the BVH is slow.
 
 For the selection effect, create an outline triangle buffer on the fly using the
-stroke feature in i_overlay.
+stroke feature in `i_overlay`.
 
-Test on mobile.
+Test / fix the app on mobile devices.
 
 The 6502 has bugs? I see sprinkled squares outside the bounds of the chip.
 

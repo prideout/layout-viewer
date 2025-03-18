@@ -66,7 +66,7 @@ impl Component for ViewerPage {
                 link.send_message(ViewerMsg::ParsingGds);
                 match Project::from_bytes(&content) {
                     Ok(mut project) => {
-                        project.update_render_layers();
+                        project.update_layers();
                         link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
                     }
                     Err(_) => {

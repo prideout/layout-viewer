@@ -30,7 +30,7 @@ pub struct LayoutStats {
 pub struct Project {
     cells: IdMap<CellId, Cell>,
     cell_defs: IndexMap<CellDefId, CellDef>,
-    render_layers: Vec<Layer>,
+    layers: Vec<Layer>,
     highest_layer: i16,
     stats: LayoutStats,
     interner: StringInterner,
@@ -165,13 +165,13 @@ impl Project {
             interner,
             cells,
             cell_defs,
-            render_layers: Vec::new(),
+            layers: Vec::new(),
             highest_layer,
             bounds: BoundingBox::new(),
         };
 
         project.update_world_transforms();
-        project.update_render_layers();
+        project.update_layers();
 
         Ok(project)
     }
@@ -207,42 +207,42 @@ impl Project {
         }
     }
 
-    pub fn update_render_layers(&mut self) {
-        self.render_layers.clear();
+    pub fn update_layers(&mut self) {
+        self.layers.clear();
 
         // Create layers with unique colors
         for i in 0..=self.highest_layer {
             let hue = (i as f32) / ((self.highest_layer + 1) as f32);
             let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.8);
-            let mut layer = Layer::new();
+            let mut layer = Layer::new(i);
             layer.color = Vector4::new(r, g, b, 0.5);
-            self.render_layers.push(layer);
+            self.layers.push(layer);
         }
 
         // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
-        self.render_layers[self.highest_layer as usize].color = Vector4::new(1.0, 1.0, 1.0, 0.5);
+        self.layers[self.highest_layer as usize].color = Vector4::new(1.0, 1.0, 1.0, 0.5);
 
         let root_id = CellId(0);
         let identity = &AffineTransform::identity();
         for cell_def_id in self.find_roots() {
             let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
             for boundary in &cell_def.boundary_elements {
-                let layer = &mut self.render_layers[boundary.layer as usize];
+                let layer = &mut self.layers[boundary.layer as usize];
                 layer.add_boundary_element(root_id, boundary, identity);
             }
             for path in &cell_def.path_elements {
-                let layer = &mut self.render_layers[path.layer as usize];
+                let layer = &mut self.layers[path.layer as usize];
                 layer.add_path_element(root_id, path, identity);
             }
             let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
             for cell_id in cell_ids {
-                self.update_render_layers_recurse(cell_id);
+                self.update_layers_recurse(cell_id);
             }
         }
 
         // Update bounds for each layer and the overall project
         self.bounds = BoundingBox::new();
-        for layer in &mut self.render_layers {
+        for layer in &mut self.layers {
             layer.update_bounds();
             if !layer.bounds.is_empty() {
                 self.bounds.encompass(&layer.bounds);
@@ -250,7 +250,7 @@ impl Project {
         }
     }
 
-    fn update_render_layers_recurse(&mut self, cell_id: CellId) {
+    fn update_layers_recurse(&mut self, cell_id: CellId) {
         let cell = self.cells.get(&cell_id).unwrap();
         if !cell.visible {
             return;
@@ -258,16 +258,16 @@ impl Project {
         let transform = &cell.world_transform;
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
         for boundary in &cell_def.boundary_elements {
-            let layer = &mut self.render_layers[boundary.layer as usize];
+            let layer = &mut self.layers[boundary.layer as usize];
             layer.add_boundary_element(cell_id, boundary, transform);
         }
         for path in &cell_def.path_elements {
-            let layer = &mut self.render_layers[path.layer as usize];
+            let layer = &mut self.layers[path.layer as usize];
             layer.add_path_element(cell_id, path, transform);
         }
         let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
         for cell_id in cell_ids {
-            self.update_render_layers_recurse(cell_id);
+            self.update_layers_recurse(cell_id);
         }
     }
 
@@ -311,11 +311,11 @@ impl Project {
     }
 
     pub fn layers(&self) -> &[Layer] {
-        &self.render_layers
+        &self.layers
     }
 
     pub fn layers_mut(&mut self) -> &mut [Layer] {
-        &mut self.render_layers
+        &mut self.layers
     }
 
     pub fn bounds(&self) -> &BoundingBox {
@@ -350,6 +350,6 @@ impl Project {
     }
 
     pub fn to_svg_js(&self) -> Result<String, JsValue> {
-        Ok(svg_backend::generate_svg(&self.render_layers))
+        Ok(svg_backend::generate_svg(&self.layers))
     }
 }

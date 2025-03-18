@@ -41,16 +41,10 @@ pub fn generate_svg(layers: &[Layer]) -> String {
 
         let mut group = Group::new().set("fill", color).set("opacity", 0.5);
 
-        let cell_ids: Vec<_> = layer.polygons.keys().collect();
-
-        for &cell_id in &cell_ids {
-            if let Some(polygons) = layer.polygons.get(cell_id) {
-                for polygon in polygons {
-                    let path_data = polygon_to_path_data(polygon);
-                    let path = Path::new().set("d", path_data).set("stroke", "none");
-                    group = group.add(path);
-                }
-            }
+        for polygon in &layer.polygons {
+            let path_data = polygon_to_path_data(polygon);
+            let path = Path::new().set("d", path_data).set("stroke", "none");
+            group = group.add(path);
         }
 
         doc = doc.add(group);
