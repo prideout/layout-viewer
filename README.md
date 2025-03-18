@@ -40,9 +40,21 @@ trunk serve
 Create faux cells for the root cell defs so that they have valid CellIds for
 hover / select.
 
-Use [https://docs.rs/crate/bvh](https://docs.rs/crate/bvh) for accelerated
-picking. It uses nalgebra internally. Uses TriangleInfo. Add an Enable picking
-button because building the BVH is slow.
+---
+
+Choose one of these hit testing strategies:
+
+- [RTree](https://docs.rs/rstar/latest/rstar/trait.RTreeObject.html) with geo polygons
+- RTree with triangles
+- [BVH](https://docs.rs/crate/bvh) with geo polygons
+- BVH with triangles
+
+Leaning towards RTree with polygons:
+
+- No need to build wrappers like a list of "Triangle" objects
+- Can support band boxes (rectangular selection)
+
+---
 
 For the selection effect, create an outline triangle buffer on the fly using the
 stroke feature in `i_overlay`.
