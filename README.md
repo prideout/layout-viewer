@@ -37,19 +37,10 @@ trunk serve
 
 ## Next tasks
 
-Choose one of these hit testing strategies:
+Use the rtree for hover
 
-- [RTree](https://docs.rs/rstar/latest/rstar/trait.RTreeObject.html) with geo polygons
-- RTree with triangles
-- [BVH](https://docs.rs/crate/bvh) with geo polygons
-- BVH with triangles
-
-Leaning towards RTree with polygons:
-
-- No need to build wrappers like a list of "Triangle" objects
-- Can support band boxes (rectangular selection)
-
----
+Go back to making layer indices be actual indices, and just filter out empty
+layers in the UI and/or when assigning colors.
 
 For the selection effect, create an outline triangle buffer on the fly using the
 stroke feature in `i_overlay`.

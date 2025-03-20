@@ -1662,6 +1662,7 @@ dependencies = [
  "log",
  "nalgebra",
  "raw-window-handle 0.5.2",
+ "rstar",
  "stylist",
  "svg",
  "wasm-bindgen",

@@ -77,14 +77,15 @@ impl Layer {
         transform: &AffineTransform,
     ) {
         let points: Vec<Vec2d> = boundary.xy.iter().map(gds_to_geo_point).collect();
-
-        // GDS requires the last point to equal the first point
-        if points.len() >= 3 {
-            let polygon = Polygon::new(LineString::from(points), vec![]);
-            let transformed = polygon.affine_transform(transform);
-            self.polygons.push(transformed);
-            self.polygon_info.push(cell_id);
+        if points.len() < 3 {
+            log::warn!("Boundary has less than 3 points, skipping");
+            return;
         }
+
+        let polygon = Polygon::new(LineString::from(points), vec![]);
+        let transformed = polygon.affine_transform(transform);
+        self.polygons.push(transformed);
+        self.polygon_info.push(cell_id);
     }
 
     pub fn add_path_element(

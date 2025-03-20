@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
 use gds21::{GdsLibrary, GdsPoint, GdsStrans};
-use geo::{AffineTransform, Coord};
+use geo::{AffineTransform, Coord, Point};
 use indexmap::IndexMap;
 use nalgebra::Vector4;
+use rstar::{RTree, RTreeObject, AABB};
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -14,18 +15,6 @@ use crate::{
     svg_backend,
 };
 
-#[derive(Debug)]
-pub struct LayoutStats {
-    pub struct_count: usize,
-    pub polygon_count: usize,
-    pub path_count: usize,
-    pub sref_count: usize,
-    pub aref_count: usize,
-    pub text_count: usize,
-    pub node_count: usize,
-    pub box_count: usize,
-}
-
 #[wasm_bindgen]
 pub struct Project {
     cells: IdMap<CellId, Cell>,
@@ -35,6 +24,7 @@ pub struct Project {
     stats: LayoutStats,
     interner: StringInterner,
     bounds: BoundingBox,
+    rtree: RTree<RTreePolygon>,
 }
 
 impl Project {
@@ -184,6 +174,7 @@ impl Project {
             layers: Vec::new(),
             highest_layer,
             bounds: BoundingBox::new(),
+            rtree: RTree::new(),
         };
 
         let roots = project.find_roots();
@@ -232,6 +223,8 @@ impl Project {
     pub fn update_layers(&mut self) {
         self.layers.clear();
 
+        let mut rtree_items = Vec::new();
+
         // Create layers with unique colors
         for i in 0..=self.highest_layer {
             let hue = (i as f32) / ((self.highest_layer + 1) as f32);
@@ -251,10 +244,20 @@ impl Project {
             for boundary in &cell_def.boundary_elements {
                 let layer = &mut self.layers[boundary.layer as usize];
                 layer.add_boundary_element(root_id, boundary, identity);
+                rtree_items.push(RTreePolygon {
+                    aabb: layer.polygons.last().unwrap().envelope(),
+                    layer: boundary.layer,
+                    polygon: layer.polygons.len() - 1,
+                });
             }
             for path in &cell_def.path_elements {
                 let layer = &mut self.layers[path.layer as usize];
                 layer.add_path_element(root_id, path, identity);
+                rtree_items.push(RTreePolygon {
+                    aabb: layer.polygons.last().unwrap().envelope(),
+                    layer: path.layer,
+                    polygon: layer.polygons.len() - 1,
+                });
             }
             let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
             for cell_id in cell_ids {
@@ -270,6 +273,8 @@ impl Project {
                 self.bounds.encompass(&layer.bounds);
             }
         }
+
+        self.rtree = RTree::bulk_load(rtree_items);
     }
 
     fn update_layers_recurse(&mut self, cell_id: CellId) {
@@ -373,5 +378,32 @@ impl Project {
 
     pub fn to_svg_js(&self) -> Result<String, JsValue> {
         Ok(svg_backend::generate_svg(&self.layers))
+    }
+}
+
+#[derive(Debug)]
+pub struct LayoutStats {
+    pub struct_count: usize,
+    pub polygon_count: usize,
+    pub path_count: usize,
+    pub sref_count: usize,
+    pub aref_count: usize,
+    pub text_count: usize,
+    pub node_count: usize,
+    pub box_count: usize,
+}
+
+#[allow(dead_code)]
+struct RTreePolygon {
+    aabb: AABB<Point<f64>>,
+    polygon: usize,
+    layer: i16,
+}
+
+impl RTreeObject for RTreePolygon {
+    type Envelope = AABB<Point<f64>>;
+
+    fn envelope(&self) -> Self::Envelope {
+        self.aabb
     }
 }
