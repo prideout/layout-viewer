@@ -35,6 +35,7 @@ pub enum ViewerMsg {
     GdsLoaded(Box<Project>),
     ParsingGds,
     Render,
+    Resize,
     Tick,
     RemoveToast(usize),
     UpdateLayer(LayerProxy),
@@ -100,7 +101,10 @@ impl Component for ViewerPage {
         let onmousedown = ctx.link().callback(|e: MouseEvent| {
             let x = e.offset_x() as u32;
             let y = e.offset_y() as u32;
-            ViewerMsg::MousePress(x, y)
+            let scale = window().unwrap().device_pixel_ratio();
+            let x = (x as f64) * scale;
+            let y = (y as f64) * scale;
+            ViewerMsg::MousePress(x as u32, y as u32)
         });
 
         let onmouseup = ctx.link().callback(|_| ViewerMsg::MouseRelease);
@@ -108,15 +112,21 @@ impl Component for ViewerPage {
         let onmousemove = ctx.link().callback(|e: MouseEvent| {
             let x = e.offset_x() as u32;
             let y = e.offset_y() as u32;
-            ViewerMsg::MouseMove(x, y)
+            let scale = window().unwrap().device_pixel_ratio();
+            let x = (x as f64) * scale;
+            let y = (y as f64) * scale;
+            ViewerMsg::MouseMove(x as u32, y as u32)
         });
 
         let onwheel = ctx.link().callback(|e: WheelEvent| {
             e.prevent_default();
             let x = e.offset_x() as u32;
-            let y = e.offset_y() as u32;
+            let y = e.offset_y() as u32;    
+            let scale = window().unwrap().device_pixel_ratio();
+            let x = (x as f64) * scale;
+            let y = (y as f64) * scale;
             let delta = e.delta_y() as f32;
-            ViewerMsg::MouseWheel(x, y, delta)
+            ViewerMsg::MouseWheel(x as u32, y as u32, delta)
         });
 
         let on_remove_toast = ctx.link().callback(ViewerMsg::RemoveToast);
@@ -208,7 +218,7 @@ impl Component for ViewerPage {
         let canvas_clone = canvas.clone();
         let link = ctx.link().clone();
         let resize_observer = ResizeObserver::new(move |_entries, _observer| {
-            link.send_message(ViewerMsg::Render);
+            link.send_message(ViewerMsg::Resize);
         });
         resize_observer.observe(&canvas_clone);
 
@@ -222,15 +232,22 @@ impl Component for ViewerPage {
             return false;
         };
         match msg {
-            ViewerMsg::Render => {
+            ViewerMsg::Resize => {
                 if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
                     let width = canvas.client_width() as u32;
                     let height = canvas.client_height() as u32;
+                    let scale = window().unwrap().device_pixel_ratio();
+                    let width = width * scale as u32;
+                    let height = height * scale as u32;
                     canvas.set_width(width);
                     canvas.set_height(height);
                     controller.resize(width, height);
                     controller.render();
                 }
+                false
+            }
+            ViewerMsg::Render => {
+                controller.render();
                 false
             }
             ViewerMsg::Tick => {
