@@ -1,5 +1,6 @@
 use geo::TriangulateEarcut;
 
+use crate::bounds::BoundingBox;
 use crate::gl_geometry::Geometry;
 use crate::gl_material::Material;
 use crate::gl_mesh::Mesh;
@@ -60,7 +61,7 @@ void main() {
 }
 "#;
 
-pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
+pub fn populate_scene(layers: &[Layer], bounds: &BoundingBox, scene: &mut Scene) {
     let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
 
     material.set_blending(true);
@@ -68,7 +69,7 @@ pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
     let material_id = scene.add_material(material);
 
     for layer in layers {
-        let geometry = create_layer_geometry(layer, &mut scene.triangle_info);
+        let geometry = create_layer_geometry(layer, bounds, &mut scene.triangle_info);
         let geometry_id = scene.add_geometry(geometry);
         let mut mesh = Mesh::new(geometry_id, material_id);
 
@@ -80,20 +81,21 @@ pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
 }
 
 /// Triangulates polygons and appends them to a vertex buffer.
-fn create_layer_geometry(layer: &Layer, triangle_info: &mut Vec<TriangleInfo>) -> Geometry {
+fn create_layer_geometry(
+    layer: &Layer,
+    bounds: &BoundingBox,
+    triangle_info: &mut Vec<TriangleInfo>,
+) -> Geometry {
     let mut geometry = Geometry::new();
 
-    // Get layer bounds for normalization
-    let layer_bounds = layer.bounds;
-
     // Calculate scale based on the larger dimension to ensure both fit in [-1, +1]
-    let width_scale = 2.0 / layer_bounds.width();
-    let height_scale = 2.0 / layer_bounds.height();
+    let width_scale = 2.0 / bounds.width();
+    let height_scale = 2.0 / bounds.height();
     let scale = width_scale.min(height_scale);
 
     // Calculate offsets to center the geometry
-    let x_center = (layer_bounds.min_x + layer_bounds.max_x) / 2.0;
-    let y_center = (layer_bounds.min_y + layer_bounds.max_y) / 2.0;
+    let x_center = (bounds.min_x + bounds.max_x) / 2.0;
+    let y_center = (bounds.min_y + bounds.max_y) / 2.0;
 
     // Process each polygon in the layer
     for (polygon_index, polygon) in layer.polygons.iter().enumerate() {
@@ -113,7 +115,10 @@ fn create_layer_geometry(layer: &Layer, triangle_info: &mut Vec<TriangleInfo>) -
         let triangle_count = triangles.triangle_indices.len() / 3;
 
         for _ in 0..triangle_count {
-            triangle_info.push(TriangleInfo::new(layer.polygon_info[polygon_index], layer.index()));
+            triangle_info.push(TriangleInfo::new(
+                layer.polygon_info[polygon_index],
+                layer.index(),
+            ));
         }
 
         geometry.indices.extend(

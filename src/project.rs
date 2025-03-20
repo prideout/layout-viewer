@@ -3,7 +3,7 @@ use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::{AffineTransform, Coord, Point};
 use indexmap::IndexMap;
 use nalgebra::Vector4;
-use rstar::{RTree, RTreeObject, AABB};
+use rstar::{Envelope, PointDistance, RTree, RTreeObject, AABB};
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -348,6 +348,21 @@ impl Project {
     pub fn bounds(&self) -> &BoundingBox {
         &self.bounds
     }
+
+    pub fn pick_cell(&self, x: f64, y: f64) -> Option<CellId> {
+        let point = Point::new(x, y);
+        let items = self.rtree.locate_all_at_point(&point);
+        let items = items.collect::<Vec<_>>();
+        for item in items.iter().rev() {
+            let layer = self.layers.iter().find(|layer| layer.index() == item.layer);
+            if let Some(layer) = layer {
+                if let Some(cell_id) = layer.polygon_info.get(item.polygon) {
+                    return Some(*cell_id);
+                }
+            }
+        }
+        None
+    }
 }
 
 // Helper function to convert HSV to RGB
@@ -405,5 +420,15 @@ impl RTreeObject for RTreePolygon {
 
     fn envelope(&self) -> Self::Envelope {
         self.aabb
+    }
+}
+
+impl PointDistance for RTreePolygon {
+    fn distance_2(&self, point: &Point<f64>) -> f64 {
+        self.aabb.distance_2(point)
+    }
+
+    fn contains_point(&self, point: &Point<f64>) -> bool {
+        self.aabb.contains_point(point)
     }
 }

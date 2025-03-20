@@ -53,7 +53,7 @@ impl Controller {
             layer.color.w = alpha;
         }
 
-        populate_scene(project.layers(), &mut self.scene);
+        populate_scene(project.layers(), project.bounds(), &mut self.scene);
         self.project = Some(project);
         self.render();
     }
@@ -83,6 +83,17 @@ impl Controller {
                 self.camera.position = pos;
             }
             self.last_mouse_pos = Some((x as f32, y as f32));
+        }
+
+        // Convert screen coordinates to world space
+        let (world_x, world_y) = self.screen_to_world(x, y);
+        if let Some(project) = self.project() {
+            let bounds = project.bounds();
+            let gds_x = (world_x as f64) * bounds.width() + bounds.min_x;
+            let gds_y = (world_y as f64) * bounds.height() + bounds.min_y;
+            if let Some(cell_id) = project.pick_cell(gds_x, gds_y) {
+                log::info!("Picked cell: {:?}", cell_id);
+            }
         }
     }
 
@@ -170,6 +181,10 @@ impl Controller {
 
     pub fn project_mut(&mut self) -> Option<&mut Project> {
         self.project.as_mut()
+    }
+
+    pub fn camera(&self) -> &Camera {
+        &self.camera
     }
 }
 

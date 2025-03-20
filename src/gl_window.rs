@@ -18,16 +18,12 @@ use winit::{
     window::WindowBuilder,
 };
 
-use crate::{controller::Controller, gl_renderer::Renderer, populate_scene, Project, Scene};
+use crate::{controller::Controller, gl_renderer::Renderer, Project, Scene};
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
 
 pub fn spawn_window(project: Project) -> anyhow::Result<()> {
-
-    let mut scene = Scene::new();
-    populate_scene(project.layers(), &mut scene);
-
     let event_loop = EventLoop::new()?;
     let window_builder = WindowBuilder::new()
         .with_title("Layout Viewer")
@@ -103,6 +99,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
     let renderer = Renderer::new(gl);
     let mut controller = Controller::new(renderer, scene, window_size.width, window_size.height);
 
+    controller.set_project(project);
     controller.resize(window_size.width, window_size.height);
 
     let mut current_cursor_pos: Option<PhysicalPosition<f64>> = None;
@@ -169,6 +166,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
                     current_cursor_pos = Some(position);
                     let x = position.x as u32;
                     let y = position.y as u32;
+
                     controller.handle_mouse_move(x, y);
                     controller.render();
                 }
