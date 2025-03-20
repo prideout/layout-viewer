@@ -37,7 +37,13 @@ trunk serve
 
 ## Next tasks
 
-Use the rtree for hover
+Fix pick_cell. Make sure it ignores invisible layers.
+
+Orientation fix. (should be a part of camera)
+
+Hover highlighting.
+
+Use fp64 everywhere.
 
 Go back to making layer indices be actual indices, and just filter out empty
 layers in the UI and/or when assigning colors.
@@ -45,16 +51,14 @@ layers in the UI and/or when assigning colors.
 For the selection effect, create an outline triangle buffer on the fly using the
 stroke feature in `i_overlay`.
 
-Test / fix the app on mobile devices.
-
-The 6502 has bugs? I see sprinkled squares outside the bounds of the chip.
+Test / fix the app on mobile devices. (pointer events, not mouse events; hide sidebar)
 
 Implement array refs.
 
-Performance / smooth zoom
+Performance / smooth zoom.
 
 Camera constraints / frame upon selection / "Reset view".
 
 Van Wijk interpolation / marquee selection.
 
-Better CI (Build & Run CLI, Doc Tests, Unit Tests, Clippy, Formatting)
+Better CI (Build & Run CLI, Doc Tests, Unit Tests, Clippy, Formatting).

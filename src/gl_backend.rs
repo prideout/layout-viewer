@@ -1,6 +1,5 @@
 use geo::TriangulateEarcut;
 
-use crate::bounds::BoundingBox;
 use crate::gl_geometry::Geometry;
 use crate::gl_material::Material;
 use crate::gl_mesh::Mesh;
@@ -61,7 +60,7 @@ void main() {
 }
 "#;
 
-pub fn populate_scene(layers: &[Layer], bounds: &BoundingBox, scene: &mut Scene) {
+pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
     let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
 
     material.set_blending(true);
@@ -69,7 +68,7 @@ pub fn populate_scene(layers: &[Layer], bounds: &BoundingBox, scene: &mut Scene)
     let material_id = scene.add_material(material);
 
     for layer in layers {
-        let geometry = create_layer_geometry(layer, bounds, &mut scene.triangle_info);
+        let geometry = create_layer_geometry(layer, &mut scene.triangle_info);
         let geometry_id = scene.add_geometry(geometry);
         let mut mesh = Mesh::new(geometry_id, material_id);
 
@@ -81,21 +80,8 @@ pub fn populate_scene(layers: &[Layer], bounds: &BoundingBox, scene: &mut Scene)
 }
 
 /// Triangulates polygons and appends them to a vertex buffer.
-fn create_layer_geometry(
-    layer: &Layer,
-    bounds: &BoundingBox,
-    triangle_info: &mut Vec<TriangleInfo>,
-) -> Geometry {
+fn create_layer_geometry(layer: &Layer, triangle_info: &mut Vec<TriangleInfo>) -> Geometry {
     let mut geometry = Geometry::new();
-
-    // Calculate scale based on the larger dimension to ensure both fit in [-1, +1]
-    let width_scale = 2.0 / bounds.width();
-    let height_scale = 2.0 / bounds.height();
-    let scale = width_scale.min(height_scale);
-
-    // Calculate offsets to center the geometry
-    let x_center = (bounds.min_x + bounds.max_x) / 2.0;
-    let y_center = (bounds.min_y + bounds.max_y) / 2.0;
 
     // Process each polygon in the layer
     for (polygon_index, polygon) in layer.polygons.iter().enumerate() {
@@ -104,12 +90,11 @@ fn create_layer_geometry(
         let vertex_offset = geometry.positions.len() as u32 / 3;
 
         for coord in triangles.vertices.chunks(2) {
-            // Center the coordinates and then scale
-            let x = (coord[0] - x_center) * scale;
-            let y = (coord[1] - y_center) * scale;
+            let x = coord[0];
+            let y = coord[1];
             geometry
                 .positions
-                .extend_from_slice(&[y as f32, -x as f32, 0.0]);
+                .extend_from_slice(&[x as f32, y as f32, 0.0]);
         }
 
         let triangle_count = triangles.triangle_indices.len() / 3;

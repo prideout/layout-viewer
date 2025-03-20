@@ -345,8 +345,8 @@ impl Project {
         &mut self.layers
     }
 
-    pub fn bounds(&self) -> &BoundingBox {
-        &self.bounds
+    pub fn bounds(&self) -> BoundingBox {
+        self.bounds.clone()
     }
 
     pub fn pick_cell(&self, x: f64, y: f64) -> Option<CellId> {

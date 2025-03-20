@@ -4,6 +4,7 @@ use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Sce
 use nalgebra::Point3;
 
 pub struct Controller {
+    window_size: (u32, u32),
     renderer: Renderer,
     camera: Camera,
     scene: Scene,
@@ -21,9 +22,9 @@ impl Controller {
         physical_width: u32,
         physical_height: u32,
     ) -> Self {
-        let (width, height) = calculate_normalized_dimensions(physical_width, physical_height);
-        let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), width, height, -1.0, 1.0);
+        let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
         Self {
+            window_size: (physical_width, physical_height),
             renderer,
             camera,
             scene,
@@ -53,8 +54,13 @@ impl Controller {
             layer.color.w = alpha;
         }
 
-        populate_scene(project.layers(), project.bounds(), &mut self.scene);
+        populate_scene(project.layers(), &mut self.scene);
+
+        let bounds = project.bounds();
+        self.camera.fit_to_bounds(self.window_size, bounds);
+
         self.project = Some(project);
+
         self.render();
     }
 
@@ -88,10 +94,7 @@ impl Controller {
         // Convert screen coordinates to world space
         let (world_x, world_y) = self.screen_to_world(x, y);
         if let Some(project) = self.project() {
-            let bounds = project.bounds();
-            let gds_x = (world_x as f64) * bounds.width() + bounds.min_x;
-            let gds_y = (world_y as f64) * bounds.height() + bounds.min_y;
-            if let Some(cell_id) = project.pick_cell(gds_x, gds_y) {
+            if let Some(cell_id) = project.pick_cell(world_x, world_y) {
                 log::info!("Picked cell: {:?}", cell_id);
             }
         }
@@ -124,20 +127,20 @@ impl Controller {
         let (new_world_x, new_world_y) = self.screen_to_world(x, y);
 
         // Adjust camera position to keep cursor point stable
-        self.camera.position.x += world_x - new_world_x;
-        self.camera.position.y += world_y - new_world_y;
+        self.camera.position.x += (world_x - new_world_x) as f32;
+        self.camera.position.y += (world_y - new_world_y) as f32;
     }
 
-    fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f32, f32) {
+    fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {
         let viewport = self.renderer.get_viewport();
 
         // Convert screen coordinates to normalized device coordinates (-1 to 1)
-        let ndc_x = (screen_x as f32 / viewport.width) * 2.0 - 1.0;
-        let ndc_y = -((screen_y as f32 / viewport.height) * 2.0 - 1.0); // Flip Y axis
+        let ndc_x = (screen_x as f64 / viewport.width as f64) * 2.0 - 1.0;
+        let ndc_y = -((screen_y as f64 / viewport.height as f64) * 2.0 - 1.0); // Flip Y axis
 
         // Convert to world space
-        let world_x = self.camera.position.x + ndc_x * self.camera.width / 2.0;
-        let world_y = self.camera.position.y + ndc_y * self.camera.height / 2.0;
+        let world_x = self.camera.position.x as f64 + ndc_x * self.camera.width as f64 / 2.0;
+        let world_y = self.camera.position.y as f64 + ndc_y * self.camera.height as f64 / 2.0;
 
         (world_x, world_y)
     }
@@ -157,14 +160,17 @@ impl Controller {
     }
 
     pub fn resize(&mut self, physical_width: u32, physical_height: u32) {
+        self.window_size = (physical_width, physical_height);
         self.renderer.set_viewport(Viewport {
             left: 0.0,
             top: 0.0,
             width: physical_width as f32,
             height: physical_height as f32,
         });
-        let (width, height) = calculate_normalized_dimensions(physical_width, physical_height);
-        self.camera.set_size(width, height);
+        if let Some(project) = self.project() {
+            let bounds = project.bounds();
+            self.camera.fit_to_bounds(self.window_size, bounds);
+        }
     }
 
     pub fn destroy(&mut self) {
@@ -191,14 +197,5 @@ impl Controller {
 impl Drop for Controller {
     fn drop(&mut self) {
         self.destroy();
-    }
-}
-
-fn calculate_normalized_dimensions(width: u32, height: u32) -> (f32, f32) {
-    let aspect_ratio = width as f32 / height as f32;
-    if aspect_ratio > 1.0 {
-        (aspect_ratio * 2.0, 2.0) // height is -1 to +1, width scaled by aspect
-    } else {
-        (2.0, 2.0 / aspect_ratio) // width is -1 to +1, height scaled by aspect
     }
 }

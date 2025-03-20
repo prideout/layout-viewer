@@ -1,7 +1,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use glutin::{
-    config::ConfigTemplateBuilder,
+    config::ConfigTemplateBuilder,  
     context::{ContextApi, ContextAttributesBuilder, Version},
     display::GetGlDisplay,
     prelude::*,
@@ -97,6 +97,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
     let window_size = window.inner_size();
 
     let renderer = Renderer::new(gl);
+    let scene = Scene::new();
     let mut controller = Controller::new(renderer, scene, window_size.width, window_size.height);
 
     controller.set_project(project);
