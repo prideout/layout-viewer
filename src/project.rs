@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     bounds::BoundingBox,
-    cells::{Cell, CellDef, CellDefId, CellId},
+    cells::{ArrayProperties, Cell, CellDef, CellDefId, CellId},
     id_map::IdMap,
     layer::Layer,
     string_interner::StringInterner,
@@ -89,28 +89,30 @@ impl Project {
                         strans: &Option<GdsStrans>| {
             let cell_def_id = CellDefId(interner.intern(name));
             let cell = Cell {
-                cell_id: CellId(0), // Will be set by IdMap
                 cell_def_id,
                 xy: xy.clone(),
                 local_transform: strans.clone(),
                 visible: true,
                 world_transform: AffineTransform::identity(),
+                array: None,
             };
-            let cell_id = cells.create_id(cell);
+            let cell_id = cells.insert(cell);
             cell_defs
-                .entry(cell_def_id)
-                .or_insert(CellDef::new(cell_def_id))
-                .instances_of_self
+                .get_mut(&cell_def_id)
+                .unwrap()
+                .instances
                 .push(cell_id);
             cell_id
         };
 
         for cell in &library.structs {
             let cell_def_id = CellDefId(interner.intern(&cell.name));
-            let mut cell_def = cell_defs
-                .get(&cell_def_id)
-                .unwrap_or(&CellDef::new(cell_def_id))
-                .clone();
+            cell_defs.insert(cell_def_id, CellDef::new());
+        }
+
+        for cell in &library.structs {
+            let cell_def_id = CellDefId(interner.intern(&cell.name));
+            let mut cell_def = cell_defs.get(&cell_def_id).unwrap().clone();
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
@@ -124,21 +126,34 @@ impl Project {
                         ));
                     }
                     gds21::GdsElement::GdsArrayRef(aref) => {
-                        // TODO: I think this isn't a great way to handle it.
-                        // Just make one cell ref; the entire array will correspond to a single geo Polygon.
-                        let count = aref.cols * aref.rows;
-                        for _ in 0..count {
-                            let id = add_cell(
-                                &mut cells,
-                                &mut cell_defs,
-                                &mut interner,
-                                &aref.name,
-                                &aref.xy[0],
-                                &aref.strans,
-                            );
-                            // TODO: array refs are not yet implemented, hide them for now
-                            cells.get_mut(&id).unwrap().visible = false;
-                        }
+                        let id = add_cell(
+                            &mut cells,
+                            &mut cell_defs,
+                            &mut interner,
+                            &aref.name,
+                            &aref.xy[0],
+                            &aref.strans,
+                        );
+
+                        cell_def.cell_elements.push(id);
+
+                        let cols = aref.cols;
+                        let rows = aref.rows;
+
+                        // TODO: Is this correct?
+                        let width = aref.xy[1].x as f64 - aref.xy[0].x as f64;
+                        let height = aref.xy[2].y as f64 - aref.xy[0].y as f64;
+
+                        // TODO: array refs are not yet implemented, hide them for now
+
+                        let cell = cells.get_mut(&id).unwrap();
+                        cell.visible = false;
+                        cell.array = Some(ArrayProperties {
+                            rows,
+                            cols,
+                            width,
+                            height,
+                        });
                     }
                     gds21::GdsElement::GdsBoundary(boundary) => {
                         cell_def.boundary_elements.push(boundary.clone());
@@ -147,13 +162,14 @@ impl Project {
                         cell_def.path_elements.push(path.clone());
                     }
                     gds21::GdsElement::GdsTextElem(_) => {
-                        // TODO: at least emit a log message
+                        // We do not support text elements yet, but they do
+                        // occur so let's not spam the console with warnings.
                     }
                     gds21::GdsElement::GdsNode(_) => {
-                        // TODO: at least emit a log message
+                        log::warn!("Node elements are not supported");
                     }
                     gds21::GdsElement::GdsBox(_) => {
-                        // TODO: at least emit a log message
+                        log::warn!("Box elements are not supported");
                     }
                 }
             }
@@ -169,6 +185,12 @@ impl Project {
             highest_layer,
             bounds: BoundingBox::new(),
         };
+
+        let roots = project.find_roots();
+        for root in roots {
+            let cell_def = project.cell_defs.get_mut(&root).unwrap();
+            cell_def.root_instance = Some(project.cells.create_id());
+        }
 
         project.update_world_transforms();
         project.update_layers();
@@ -191,7 +213,7 @@ impl Project {
     pub fn find_roots(&self) -> Vec<CellDefId> {
         self.cell_defs
             .iter()
-            .filter(|(_, cell_def)| cell_def.instances_of_self.is_empty())
+            .filter(|(_, cell_def)| cell_def.instances.is_empty())
             .map(|(cell_def_id, _)| *cell_def_id)
             .collect()
     }
@@ -222,10 +244,10 @@ impl Project {
         // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
         self.layers[self.highest_layer as usize].color = Vector4::new(1.0, 1.0, 1.0, 0.5);
 
-        let root_id = CellId(0);
         let identity = &AffineTransform::identity();
         for cell_def_id in self.find_roots() {
             let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
+            let root_id = cell_def.root_instance.unwrap();
             for boundary in &cell_def.boundary_elements {
                 let layer = &mut self.layers[boundary.layer as usize];
                 layer.add_boundary_element(root_id, boundary, identity);

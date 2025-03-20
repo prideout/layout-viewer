@@ -40,15 +40,15 @@ impl Scene {
     }
 
     pub fn add_mesh(&mut self, mesh: Mesh) -> MeshId {
-        self.meshes.create_id(mesh)
+        self.meshes.insert(mesh)
     }
 
     pub fn add_geometry(&mut self, geometry: Geometry) -> GeometryId {
-        self.geometries.create_id(geometry)
+        self.geometries.insert(geometry)
     }
 
     pub fn add_material(&mut self, material: Material) -> MaterialId {
-        self.materials.create_id(material)
+        self.materials.insert(material)
     }
 
     pub fn get_mesh(&self, id: &MeshId) -> Option<&Mesh> {

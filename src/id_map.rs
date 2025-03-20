@@ -22,9 +22,14 @@ impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
         self.items.len()
     }
 
-    pub fn create_id(&mut self, value: V) -> K {
+    pub fn create_id(&mut self) -> K {
         let id = K::from_usize(self.next_id);
         self.next_id += 1;
+        id
+    }
+
+    pub fn insert(&mut self, value: V) -> K {
+        let id = self.create_id();
         self.items.insert(id, value);
         id
     }

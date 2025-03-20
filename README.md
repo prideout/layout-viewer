@@ -37,11 +37,6 @@ trunk serve
 
 ## Next tasks
 
-Create faux cells for the root cell defs so that they have valid CellIds for
-hover / select.
-
----
-
 Choose one of these hit testing strategies:
 
 - [RTree](https://docs.rs/rstar/latest/rstar/trait.RTreeObject.html) with geo polygons
@@ -65,4 +60,10 @@ The 6502 has bugs? I see sprinkled squares outside the bounds of the chip.
 
 Implement array refs.
 
-Performance / smooth zoom / camera constraints.
+Performance / smooth zoom
+
+Camera constraints / frame upon selection / "Reset view".
+
+Van Wijk interpolation / marquee selection.
+
+Better CI (Build & Run CLI, Doc Tests, Unit Tests, Clippy, Formatting)

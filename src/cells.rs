@@ -4,9 +4,6 @@ use geo::AffineTransform;
 use crate::id_map::Id;
 
 /// Simple integer ID for cells, guaranteed to be unique within a project.
-///
-/// 0 is reserved for root cells, which don't actually have a `Cell` object
-/// because they always live at the origin with an identity transform.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct CellId(pub(crate) usize);
 
@@ -20,41 +17,44 @@ impl Id for CellId {
     }
 }
 
-/// Instance of a [CellDef].
-/// Corresponds to a SRef or a sub-instance of an ARef.
-///
-/// Yes there's a naming conflict with std::cell::Cell, but this isn't quite
-/// the same thing as a GDSII SRef so I don't want to call it a StructRef.
+/// Renderable instance of a [CellDef], positioned in the world.
 pub(crate) struct Cell {
-    #[allow(dead_code)]
-    pub cell_id: CellId,
     pub cell_def_id: CellDefId,
     pub xy: GdsPoint,
     pub local_transform: Option<GdsStrans>,
     pub world_transform: AffineTransform, // derived from local_transform by traversing the hierarchy
     pub visible: bool,
+    pub array: Option<ArrayProperties>,
 }
 
-/// Instanceable definition of a cell.
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub(crate) struct ArrayProperties {
+    pub rows: i16,
+    pub cols: i16,
+    pub width: f64,
+    pub height: f64,
+}
+
+/// Instanceable template definition of a cell.
 /// Corresponds to a single GDSII struct.
 #[derive(Debug, Clone)]
 pub(crate) struct CellDef {
-    #[allow(dead_code)]
-    pub cell_def_id: CellDefId,
-    pub instances_of_self: Vec<CellId>,
     pub boundary_elements: Vec<GdsBoundary>,
     pub path_elements: Vec<GdsPath>,
     pub cell_elements: Vec<CellId>,
+    pub instances: Vec<CellId>,
+    pub root_instance: Option<CellId>,
 }
 
 impl CellDef {
-    pub fn new(cell_def_id: CellDefId) -> Self {
+    pub fn new() -> Self {
         Self {
-            cell_def_id,
-            instances_of_self: Vec::new(),
+            instances: vec![],
             boundary_elements: Vec::new(),
             path_elements: Vec::new(),
             cell_elements: Vec::new(),
+            root_instance: None,
         }
     }
-} 
+}
