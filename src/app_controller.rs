@@ -1,10 +1,20 @@
-use crate::graphics::{Camera, Renderer, Scene, Viewport};
-use crate::populate_scene;
+use crate::graphics::Camera;
+use crate::graphics::Geometry;
+use crate::graphics::Material;
+use crate::graphics::Mesh;
+use crate::graphics::Renderer;
+use crate::graphics::Scene;
+use crate::graphics::Viewport;
+use crate::layer::Layer;
 use crate::project::PickResult;
+use crate::shaders::FRAGMENT_SHADER;
+use crate::shaders::VERTEX_SHADER;
 use crate::Project;
+use geo::TriangulateEarcut;
 use nalgebra::Point3;
 
-pub struct Controller {
+/// Encapsulates high-level logic common to both platforms (web / native).
+pub struct AppController {
     window_size: (u32, u32),
     renderer: Renderer,
     camera: Camera,
@@ -17,7 +27,7 @@ pub struct Controller {
     hovered_cell: Option<PickResult>,
 }
 
-impl Controller {
+impl AppController {
     pub fn new(
         renderer: Renderer,
         scene: Scene,
@@ -202,8 +212,56 @@ impl Controller {
     }
 }
 
-impl Drop for Controller {
+impl Drop for AppController {
     fn drop(&mut self) {
         self.destroy();
     }
+}
+
+pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
+    let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+
+    material.set_blending(true);
+
+    let material_id = scene.add_material(material);
+
+    for layer in layers {
+        let geometry = create_layer_geometry(layer);
+        let geometry_id = scene.add_geometry(geometry);
+        let mut mesh = Mesh::new(geometry_id, material_id);
+
+        // Set the color uniform using the layer's color
+        mesh.set_vec4("color", layer.color);
+
+        scene.add_mesh(mesh);
+    }
+}
+
+/// Triangulates polygons and appends them to a vertex buffer.
+fn create_layer_geometry(layer: &Layer) -> Geometry {
+    let mut geometry = Geometry::new();
+
+    // Process each polygon in the layer
+    for polygon in &layer.polygons {
+        let triangles = polygon.earcut_triangles_raw();
+
+        let vertex_offset = geometry.positions.len() as u32 / 3;
+
+        for coord in triangles.vertices.chunks(2) {
+            let x = coord[0];
+            let y = coord[1];
+            geometry
+                .positions
+                .extend_from_slice(&[x as f32, y as f32, 0.0]);
+        }
+
+        geometry.indices.extend(
+            triangles
+                .triangle_indices
+                .iter()
+                .map(|i| (*i as u32 + vertex_offset)),
+        );
+    }
+
+    geometry
 }

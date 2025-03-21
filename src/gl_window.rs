@@ -1,5 +1,5 @@
 use crate::{
-    controller::Controller,
+    app_controller::AppController,
     graphics::{Renderer, Scene},
     Project,
 };
@@ -99,7 +99,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
 
     let renderer = Renderer::new(gl);
     let scene = Scene::new();
-    let mut controller = Controller::new(renderer, scene, window_size.width, window_size.height);
+    let mut controller = AppController::new(renderer, scene, window_size.width, window_size.height);
 
     controller.set_project(project);
     controller.resize(window_size.width, window_size.height);

@@ -3,14 +3,14 @@
 mod bounds;
 mod cells;
 mod colors;
-mod controller;
-mod gl_backend;
+mod app_controller;
 mod graphics;
 mod id_map;
 mod layer;
 mod project;
+mod shaders;
 mod string_interner;
-mod svg_backend;
+mod generate_svg;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod gl_window;
@@ -28,8 +28,7 @@ mod components;
 pub use gl_window::spawn_window;
 
 pub use project::Project;
-pub use gl_backend::populate_scene;
-pub use svg_backend::generate_svg;
+pub use generate_svg::generate_svg;
 
 #[cfg(target_arch = "wasm32")]
 pub use components::app::App;

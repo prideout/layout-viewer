@@ -1,3 +1,10 @@
+use crate::{
+    bounds::BoundingBox,
+    cells::{ArrayProperties, Cell, CellDef, CellDefId, CellId},
+    id_map::IdMap,
+    layer::Layer,
+    string_interner::StringInterner,
+};
 use anyhow::{anyhow, Result};
 use gds21::{GdsLibrary, GdsPoint, GdsStrans};
 use geo::{AffineTransform, Contains, Coord, Point};
@@ -5,18 +12,8 @@ use indexmap::IndexMap;
 use nalgebra::Vector4;
 use rstar::{Envelope, PointDistance, RTree, RTreeObject, AABB};
 use std::fmt::{self, Debug, Formatter};
-use wasm_bindgen::prelude::*;
 
-use crate::{
-    bounds::BoundingBox,
-    cells::{ArrayProperties, Cell, CellDef, CellDefId, CellId},
-    id_map::IdMap,
-    layer::Layer,
-    string_interner::StringInterner,
-    svg_backend,
-};
-
-#[wasm_bindgen]
+/// Owns the data model for the application.
 pub struct Project {
     cells: IdMap<CellId, Cell>,
     cell_defs: IndexMap<CellDefId, CellDef>,
@@ -405,18 +402,6 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
         3 => (p, q, v),
         4 => (t, p, v),
         _ => (v, p, q),
-    }
-}
-
-#[wasm_bindgen]
-impl Project {
-    pub fn from_bytes_js(data: &[u8]) -> Result<Project, JsValue> {
-        Project::from_bytes(data)
-            .map_err(|e| JsValue::from_str(&format!("Failed to parse GDSII: {}", e)))
-    }
-
-    pub fn to_svg_js(&self) -> Result<String, JsValue> {
-        Ok(svg_backend::generate_svg(&self.layers))
     }
 }
 

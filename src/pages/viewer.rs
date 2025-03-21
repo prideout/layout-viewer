@@ -14,7 +14,7 @@ use crate::{
         sidebar::{LayerProxy, Sidebar},
         toast::{ToastContainer, ToastManager},
     },
-    controller::Controller,
+    app_controller::AppController,
     graphics::{MeshId, Renderer, Scene},
     pages::home::take_dropped_file,
     resize_observer::ResizeObserver,
@@ -42,7 +42,7 @@ pub enum ViewerMsg {
 
 pub struct ViewerPage {
     canvas_ref: NodeRef,
-    controller: Option<Controller>,
+    controller: Option<AppController>,
     status: String,
     toast_manager: ToastManager,
     layer_proxies: Vec<LayerProxy>,
@@ -210,7 +210,7 @@ impl Component for ViewerPage {
         let height = canvas.client_height() as u32;
 
         // Create controller
-        let controller = Controller::new(renderer, scene, width, height);
+        let controller = AppController::new(renderer, scene, width, height);
         self.controller = Some(controller);
 
         // Set up resize observer
