@@ -1,7 +1,9 @@
+use crate::graphics::{
+    camera::Camera, renderer::Renderer, scene::Scene, viewport::Viewport,
+};
 use crate::populate_scene;
 use crate::project::PickResult;
 use crate::Project;
-use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene};
 use nalgebra::Point3;
 
 pub struct Controller {

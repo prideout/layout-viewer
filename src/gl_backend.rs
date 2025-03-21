@@ -1,9 +1,9 @@
 use geo::TriangulateEarcut;
 
-use crate::gl_geometry::Geometry;
-use crate::gl_material::Material;
-use crate::gl_mesh::Mesh;
-use crate::gl_scene::Scene;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::scene::Scene;
 use crate::layer::Layer;
 
 #[cfg(target_arch = "wasm32")]

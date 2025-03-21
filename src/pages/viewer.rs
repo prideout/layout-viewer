@@ -14,9 +14,7 @@ use crate::{
         toast::{ToastContainer, ToastManager},
     },
     controller::Controller,
-    gl_mesh::MeshId,
-    gl_renderer::Renderer,
-    gl_scene::Scene,
+    graphics::{mesh::MeshId, renderer::Renderer, scene::Scene},
     pages::home::take_dropped_file,
     resize_observer::ResizeObserver,
     Project, Route,
@@ -121,7 +119,7 @@ impl Component for ViewerPage {
         let onwheel = ctx.link().callback(|e: WheelEvent| {
             e.prevent_default();
             let x = e.offset_x() as u32;
-            let y = e.offset_y() as u32;    
+            let y = e.offset_y() as u32;
             let scale = window().unwrap().device_pixel_ratio();
             let x = (x as f64) * scale;
             let y = (y as f64) * scale;

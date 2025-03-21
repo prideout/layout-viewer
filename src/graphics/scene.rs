@@ -1,6 +1,6 @@
-use crate::gl_geometry::{Geometry, GeometryId};
-use crate::gl_material::{Material, MaterialId};
-use crate::gl_mesh::{Mesh, MeshId};
+use crate::graphics::geometry::{Geometry, GeometryId};
+use crate::graphics::material::{Material, MaterialId};
+use crate::graphics::mesh::{Mesh, MeshId};
 use crate::id_map::IdMap;
 
 pub struct Scene {

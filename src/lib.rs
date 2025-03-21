@@ -1,6 +1,7 @@
 mod bounds;
 mod cells;
 mod gl_backend;
+mod graphics;
 mod id_map;
 mod layer;
 mod project;
@@ -9,13 +10,6 @@ mod svg_backend;
 
 pub mod colors;
 pub mod controller;
-pub mod gl_camera;
-pub mod gl_geometry;
-pub mod gl_material;
-pub mod gl_mesh;
-pub mod gl_renderer;
-pub mod gl_scene;
-pub mod gl_viewport;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use gl_window::spawn_window;
@@ -23,7 +17,6 @@ pub use gl_window::spawn_window;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod gl_window;
 
-pub use gl_scene::Scene;
 pub use project::Project;
 
 pub use gl_backend::populate_scene;

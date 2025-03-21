@@ -1,5 +1,5 @@
-use crate::gl_geometry::{Geometry, GeometryId};
-use crate::gl_material::{Material, MaterialId};
+use crate::graphics::geometry::{Geometry, GeometryId};
+use crate::graphics::material::{Material, MaterialId};
 use crate::id_map::Id;
 use glow::HasContext;
 use indexmap::IndexMap;
