@@ -309,7 +309,7 @@ impl Component for ViewerPage {
                             };
                             Some(LayerProxy {
                                 index,
-                                visible: true,
+                                visible: layer.visible,
                                 opacity: layer.color.w,
                                 color,
                             })
@@ -339,7 +339,7 @@ impl Component for ViewerPage {
                     let Some(layer) = project.layers_mut().get_mut(layer_proxy.index) else {
                         return false;
                     };
-
+                    layer.visible = layer_proxy.visible;
                     if let Some((r, g, b)) = hex_to_rgb(&layer_proxy.color) {
                         layer.color.w = layer_proxy.opacity;
                         layer.color.x = r;

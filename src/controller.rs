@@ -1,4 +1,5 @@
 use crate::populate_scene;
+use crate::project::PickResult;
 use crate::Project;
 use crate::{gl_camera::Camera, gl_renderer::Renderer, gl_viewport::Viewport, Scene};
 use nalgebra::Point3;
@@ -13,6 +14,7 @@ pub struct Controller {
     zoom_speed: f32,
     needs_render: bool,
     project: Option<Project>,
+    hovered_cell: Option<PickResult>,
 }
 
 impl Controller {
@@ -33,6 +35,7 @@ impl Controller {
             zoom_speed: 0.05,
             needs_render: true, // Initial render needed
             project: None,
+            hovered_cell: None,
         }
     }
 
@@ -94,8 +97,13 @@ impl Controller {
         // Convert screen coordinates to world space
         let (world_x, world_y) = self.screen_to_world(x, y);
         if let Some(project) = self.project() {
-            if let Some(cell_id) = project.pick_cell(world_x, world_y) {
-                log::info!("Picked cell: {:?}", cell_id);
+            if let Some(result) = project.pick_cell(world_x, world_y) {
+                if self.hovered_cell != Some(result.clone()) {
+                    log::info!("Picked {:?}", &result);
+                    self.hovered_cell = Some(result);
+                }
+            } else if self.hovered_cell.is_some() {
+                self.hovered_cell = None;
             }
         }
     }

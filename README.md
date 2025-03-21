@@ -37,9 +37,9 @@ trunk serve
 
 ## Next tasks
 
-Fix pick_cell. Make sure it ignores invisible layers.
+Get rid of `screen_to_world`, use `unproject` instead.
 
-Orientation fix. (should be a part of camera)
+Orientation fix. (use camera's `up` vector)
 
 Hover highlighting.
 
