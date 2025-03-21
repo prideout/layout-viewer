@@ -1,4 +1,3 @@
-use crate::cells::CellId;
 use crate::gl_geometry::{Geometry, GeometryId};
 use crate::gl_material::{Material, MaterialId};
 use crate::gl_mesh::{Mesh, MeshId};
@@ -8,25 +7,6 @@ pub struct Scene {
     pub(crate) meshes: IdMap<MeshId, Mesh>,
     pub(crate) geometries: IdMap<GeometryId, Geometry>,
     pub(crate) materials: IdMap<MaterialId, Material>,
-    pub(crate) triangle_info: Vec<TriangleInfo>,
-}
-
-/// Each triangle in the scene has a TriangleInfo that tells the app which cell
-/// and layer the triangle belongs to. Useful for hovering and selecting.
-pub struct TriangleInfo {
-    pub cell_id: u32,
-    pub layer_index: i16,
-    pub padding: u16,
-}
-
-impl TriangleInfo {
-    pub fn new(cell_id: CellId, layer_index: i16) -> Self {
-        Self {
-            cell_id: cell_id.0 as u32,
-            layer_index,
-            padding: 0,
-        }
-    }
 }
 
 impl Scene {
@@ -35,7 +15,6 @@ impl Scene {
             meshes: IdMap::new(),
             geometries: IdMap::new(),
             materials: IdMap::new(),
-            triangle_info: Vec::new(),
         }
     }
 

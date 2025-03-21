@@ -3,7 +3,7 @@ use geo::TriangulateEarcut;
 use crate::gl_geometry::Geometry;
 use crate::gl_material::Material;
 use crate::gl_mesh::Mesh;
-use crate::gl_scene::{Scene, TriangleInfo};
+use crate::gl_scene::Scene;
 use crate::layer::Layer;
 
 #[cfg(target_arch = "wasm32")]
@@ -68,7 +68,7 @@ pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
     let material_id = scene.add_material(material);
 
     for layer in layers {
-        let geometry = create_layer_geometry(layer, &mut scene.triangle_info);
+        let geometry = create_layer_geometry(layer);
         let geometry_id = scene.add_geometry(geometry);
         let mut mesh = Mesh::new(geometry_id, material_id);
 
@@ -80,11 +80,11 @@ pub fn populate_scene(layers: &[Layer], scene: &mut Scene) {
 }
 
 /// Triangulates polygons and appends them to a vertex buffer.
-fn create_layer_geometry(layer: &Layer, triangle_info: &mut Vec<TriangleInfo>) -> Geometry {
+fn create_layer_geometry(layer: &Layer) -> Geometry {
     let mut geometry = Geometry::new();
 
     // Process each polygon in the layer
-    for (polygon_index, polygon) in layer.polygons.iter().enumerate() {
+    for polygon in &layer.polygons {
         let triangles = polygon.earcut_triangles_raw();
 
         let vertex_offset = geometry.positions.len() as u32 / 3;
@@ -95,15 +95,6 @@ fn create_layer_geometry(layer: &Layer, triangle_info: &mut Vec<TriangleInfo>) -
             geometry
                 .positions
                 .extend_from_slice(&[x as f32, y as f32, 0.0]);
-        }
-
-        let triangle_count = triangles.triangle_indices.len() / 3;
-
-        for _ in 0..triangle_count {
-            triangle_info.push(TriangleInfo::new(
-                layer.polygon_info[polygon_index],
-                layer.index(),
-            ));
         }
 
         geometry.indices.extend(
