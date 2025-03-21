@@ -1,7 +1,10 @@
-#![cfg(not(target_arch = "wasm32"))]
-
+use crate::{
+    controller::Controller,
+    graphics::{renderer::Renderer, scene::Scene},
+    Project,
+};
 use glutin::{
-    config::ConfigTemplateBuilder,  
+    config::ConfigTemplateBuilder,
     context::{ContextApi, ContextAttributesBuilder, Version},
     display::GetGlDisplay,
     prelude::*,
@@ -17,8 +20,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-
-use crate::{controller::Controller, gl_renderer::Renderer, Project, Scene};
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
