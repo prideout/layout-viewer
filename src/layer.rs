@@ -1,41 +1,16 @@
+use crate::bounds::BoundingBox;
 use gds21::{GdsBoundary, GdsPath, GdsPoint};
 use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
 use nalgebra::Vector4;
 
-use crate::bounds::BoundingBox;
-use crate::cells::CellId;
-
 type Polygon = geo::Polygon<f64>;
 type Vec2d = geo::Point<f64>;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum PathType {
-    Standard = 0,
-    Round = 1,
-    Extended = 2,
-}
-
-impl From<i16> for PathType {
-    fn from(value: i16) -> Self {
-        match value {
-            1 => PathType::Round,
-            2 => PathType::Extended,
-            _ => PathType::Standard,
-        }
-    }
-}
-
 pub struct Layer {
     index: i16,
-
     pub polygons: Vec<Polygon>,
-
-    /// Each polygon in the layer has a PolygonInfo entry that tells the app
-    /// which cell the polygon belongs to. Useful for hovering and selecting.
-    pub polygon_info: Vec<CellId>,
-
     pub bounds: BoundingBox,
     pub paths: Vec<GdsPath>,
     pub boundaries: Vec<GdsBoundary>,
@@ -48,7 +23,6 @@ impl Layer {
         Self {
             index,
             polygons: vec![],
-            polygon_info: vec![],
             bounds: BoundingBox::new(),
             paths: Vec::new(),
             boundaries: Vec::new(),
@@ -72,12 +46,7 @@ impl Layer {
         }
     }
 
-    pub fn add_boundary_element(
-        &mut self,
-        cell_id: CellId,
-        boundary: &GdsBoundary,
-        transform: &AffineTransform,
-    ) {
+    pub fn add_boundary_element(&mut self, boundary: &GdsBoundary, transform: &AffineTransform) {
         let points: Vec<Vec2d> = boundary.xy.iter().map(gds_to_geo_point).collect();
         if points.len() < 3 {
             log::warn!("Boundary has less than 3 points, skipping");
@@ -87,15 +56,9 @@ impl Layer {
         let polygon = Polygon::new(LineString::from(points), vec![]);
         let transformed = polygon.affine_transform(transform);
         self.polygons.push(transformed);
-        self.polygon_info.push(cell_id);
     }
 
-    pub fn add_path_element(
-        &mut self,
-        cell_id: CellId,
-        path: &GdsPath,
-        transform: &AffineTransform,
-    ) {
+    pub fn add_path_element(&mut self, path: &GdsPath, transform: &AffineTransform) {
         if path.xy.len() < 2 {
             return;
         }
@@ -112,7 +75,6 @@ impl Layer {
         let polygon = Polygon::new(LineString::from(outline_points), vec![]);
         let transformed = polygon.affine_transform(transform);
         self.polygons.push(transformed);
-        self.polygon_info.push(cell_id);
     }
 
     // Private helper functions
@@ -163,4 +125,21 @@ fn gds_point_to_array(p: &GdsPoint) -> [f64; 2] {
 
 fn array_to_geo_point(t: &[f64; 2]) -> Vec2d {
     Vec2d::new(t[0], t[1])
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum PathType {
+    Standard = 0,
+    Round = 1,
+    Extended = 2,
+}
+
+impl From<i16> for PathType {
+    fn from(value: i16) -> Self {
+        match value {
+            1 => PathType::Round,
+            2 => PathType::Extended,
+            _ => PathType::Standard,
+        }
+    }
 }

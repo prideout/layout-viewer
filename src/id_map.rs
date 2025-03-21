@@ -17,7 +17,6 @@ impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
             next_id: 1,
         }
     }
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.items.len()
     }

@@ -1,6 +1,4 @@
-use crate::graphics::{
-    camera::Camera, renderer::Renderer, scene::Scene, viewport::Viewport,
-};
+use crate::graphics::{Camera, Renderer, Scene, Viewport};
 use crate::populate_scene;
 use crate::project::PickResult;
 use crate::Project;

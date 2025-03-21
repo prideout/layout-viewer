@@ -10,14 +10,15 @@ use yew_router::prelude::*;
 use crate::{
     colors::{hex_to_rgb, rgb_to_hex},
     components::{
+        app::Route,
         sidebar::{LayerProxy, Sidebar},
         toast::{ToastContainer, ToastManager},
     },
     controller::Controller,
-    graphics::{mesh::MeshId, renderer::Renderer, scene::Scene},
+    graphics::{MeshId, Renderer, Scene},
     pages::home::take_dropped_file,
     resize_observer::ResizeObserver,
-    Project, Route,
+    Project,
 };
 
 #[derive(Properties, PartialEq)]

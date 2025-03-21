@@ -1,10 +1,9 @@
-use geo::TriangulateEarcut;
-
-use crate::graphics::geometry::Geometry;
-use crate::graphics::material::Material;
-use crate::graphics::mesh::Mesh;
-use crate::graphics::scene::Scene;
+use crate::graphics::Geometry;
+use crate::graphics::Material;
+use crate::graphics::Mesh;
+use crate::graphics::Scene;
 use crate::layer::Layer;
+use geo::TriangulateEarcut;
 
 #[cfg(target_arch = "wasm32")]
 const VERTEX_SHADER: &str = r#"#version 100

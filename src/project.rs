@@ -244,7 +244,7 @@ impl Project {
             let root_id = cell_def.root_instance.unwrap();
             for boundary in &cell_def.boundary_elements {
                 let layer = &mut self.layers[boundary.layer as usize];
-                layer.add_boundary_element(root_id, boundary, identity);
+                layer.add_boundary_element(boundary, identity);
                 rtree_items.push(PickResult {
                     aabb: layer.polygons.last().unwrap().envelope(),
                     layer: boundary.layer,
@@ -254,7 +254,7 @@ impl Project {
             }
             for path in &cell_def.path_elements {
                 let layer = &mut self.layers[path.layer as usize];
-                layer.add_path_element(root_id, path, identity);
+                layer.add_path_element(path, identity);
                 rtree_items.push(PickResult {
                     aabb: layer.polygons.last().unwrap().envelope(),
                     layer: path.layer,
@@ -289,7 +289,7 @@ impl Project {
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
         for boundary in &cell_def.boundary_elements {
             let layer = &mut self.layers[boundary.layer as usize];
-            layer.add_boundary_element(cell_id, boundary, transform);
+            layer.add_boundary_element(boundary, transform);
             rtree_items.push(PickResult {
                 aabb: layer.polygons.last().unwrap().envelope(),
                 layer: boundary.layer,
@@ -299,7 +299,7 @@ impl Project {
         }
         for path in &cell_def.path_elements {
             let layer = &mut self.layers[path.layer as usize];
-            layer.add_path_element(cell_id, path, transform);
+            layer.add_path_element(path, transform);
             rtree_items.push(PickResult {
                 aabb: layer.polygons.last().unwrap().envelope(),
                 layer: path.layer,

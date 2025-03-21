@@ -1,6 +1,6 @@
 use crate::{
     controller::Controller,
-    graphics::{renderer::Renderer, scene::Scene},
+    graphics::{Renderer, Scene},
     Project,
 };
 use glutin::{

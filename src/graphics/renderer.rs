@@ -1,4 +1,4 @@
-use crate::graphics::{camera::Camera, viewport::Viewport, scene::Scene};
+use crate::graphics::{Camera, Scene, Viewport};
 use glow::*;
 
 pub struct Renderer {

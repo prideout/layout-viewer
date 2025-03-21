@@ -1,6 +1,6 @@
-use crate::{
-    components::toast::{ToastContainer, ToastManager},
-    Route,
+use crate::components::{
+    app::Route,
+    toast::{ToastContainer, ToastManager},
 };
 use wasm_bindgen_futures::JsFuture;
 use web_sys::DragEvent;
