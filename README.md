@@ -8,17 +8,16 @@ The library can be used both natively and as a WebAssembly module.
 ## Modules
 
 - `core` is the data model for the application.
-  - No application logic, UI, or graphics code is allowed here.
-  - Everything related to a "project" is defined here.
+  - All types related to **Project** are defined here.
   - May include caches and acceleration structures.
 - `graphics` is a simple WebGL rendering library.
   - Provides abstractions similar to libraries like THREE and Filament.
   - Knows nothing about circuits or app behavior.
-  - Any graphics object except **Renderer** can be constructed without a WebGL
+  - All objects except **Renderer** can be constructed without a WebGL
     context.
-- `components` is a list of Yew components for the web app.
-  - The UI for the web app lives here.
-  - Components with the `Page` suffix are navigation targets.
+- `components` defines a set of Yew components.
+  - The UI for the web application lives here.
+  - Components with the **Page** suffix are navigation targets.
 - `rsutils` are utilities that you could imagine being a part of **std**.
   - Nothing here should know about circuits or the app.
 
