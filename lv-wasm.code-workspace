@@ -1,0 +1,11 @@
+{
+    "folders": [
+      {
+        "path": "."
+      }
+    ],
+    "settings": {
+      "rust-analyzer.cargo.target": "wasm32-unknown-unknown"
+    }
+  }
+  

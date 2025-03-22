@@ -1,7 +1,0 @@
-{
-    "rust-analyzer.cargo.target": "x86_64-unknown-linux-gnu",
-    "rust-analyzer.cargo.features": [],
-    "[rust]": {
-        "editor.defaultFormatter": "rust-lang.rust-analyzer"
-    }
-}
