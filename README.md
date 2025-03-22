@@ -53,8 +53,6 @@ trunk serve
 
 ## Next tasks
 
-Orientation fix. (use camera's `up` vector)
-
 Hover highlighting. Create an outline triangle buffer on the fly using the
 stroke feature in `i_overlay`.
 

@@ -23,7 +23,7 @@ pub struct AppController {
     camera: Camera,
     scene: Scene,
     is_dragging: bool,
-    last_mouse_pos: Option<(f32, f32)>,
+    last_mouse_pos: Option<(u32, u32)>,
     zoom_speed: f32,
     needs_render: bool,
     project: Option<Project>,
@@ -82,7 +82,7 @@ impl AppController {
 
     pub fn handle_mouse_press(&mut self, x: u32, y: u32) {
         self.is_dragging = true;
-        self.last_mouse_pos = Some((x as f32, y as f32));
+        self.last_mouse_pos = Some((x, y));
     }
 
     pub fn handle_mouse_release(&mut self) {
@@ -93,18 +93,17 @@ impl AppController {
     pub fn handle_mouse_move(&mut self, x: u32, y: u32) {
         if self.is_dragging {
             if let Some((last_x, last_y)) = self.last_mouse_pos {
-                // Convert pixel movement to world space movement
-                let viewport = self.renderer.get_viewport();
-                let dx = (x as f32 - last_x) * self.camera.width / viewport.width;
-                let dy = (y as f32 - last_y) * self.camera.height / viewport.height;
+                let p1 = self.screen_to_world(x, y);
+                let p0 = self.screen_to_world(last_x, last_y);
+                let dx = p1.0 - p0.0;
+                let dy = p1.1 - p0.1;
 
-                // Move camera in the opposite direction of mouse movement
                 let mut pos = self.camera.position;
-                pos.x -= dx;
-                pos.y += dy; // Invert Y since screen coordinates are top-down
+                pos.x -= dx as f32;
+                pos.y -= dy as f32;
                 self.camera.position = pos;
             }
-            self.last_mouse_pos = Some((x as f32, y as f32));
+            self.last_mouse_pos = Some((x, y));
         }
 
         // Convert screen coordinates to world space

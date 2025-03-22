@@ -34,7 +34,7 @@ impl Camera {
     pub fn new(position: Point, width: f32, height: f32, near: f32, far: f32) -> Self {
         Self {
             position,
-            up: Vec3::new(0.0, 1.0, 0.0),
+            up: Vec3::new(-1.0, 0.0, 0.0),
             gaze: Vec3::new(0.0, 0.0, -1.0),
             width,
             height,
