@@ -1649,7 +1649,6 @@ dependencies = [
  "clap",
  "colored",
  "console_error_panic_hook",
- "earcutr",
  "env_logger",
  "fastrand",
  "gds21",

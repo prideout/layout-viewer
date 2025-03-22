@@ -13,9 +13,6 @@ use crate::graphics::Viewport;
 use crate::Project;
 
 use geo::TriangulateEarcut;
-use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::LineJoin;
-use i_overlay::mesh::style::StrokeStyle;
 use nalgebra::Point3;
 use nalgebra::Vector4;
 
@@ -118,7 +115,6 @@ impl AppController {
         if let Some(project) = self.project() {
             if let Some(result) = project.pick_cell(world_x, world_y) {
                 if self.hovered_cell != Some(result.clone()) {
-                    // log::info!("Picked {:?}", &result);
                     self.hovered_cell = Some(result.clone());
                     self.update_outline_mesh(result);
                 }
@@ -247,66 +243,26 @@ impl AppController {
         let layer = &project.layers()[selection.layer as usize];
         let polygon = &layer.polygons[selection.polygon];
 
-        let width: f64 = 5000.0; // This is hard to compute
-        let style = StrokeStyle::new(width).line_join(LineJoin::Miter(1.0));
-
-        let spine_points: Vec<[f64; 2]> = polygon
-            .exterior()
-            .points()
-            .map(geo_point_to_array)
-            .collect();
-        let shapes: Vec<Vec<Vec<[f64; 2]>>> = spine_points.stroke(style, true);
-
-        let Some(first_shape) = shapes.first() else {
-            log::error!("No shape found");
-            return;
-        };
-
-        let Some(outer_contour) = first_shape.first() else {
-            log::error!("No outer contour found");
-            return;
-        };
-
-        let mut flat_vertices: Vec<f64> = vec![];
-        for pt in outer_contour {
-            flat_vertices.push(pt[0]);
-            flat_vertices.push(pt[1]);
-        }
-        let mut holes_indices = vec![];
-        if first_shape.len() > 1 {
-            let inner_contour = &first_shape[1];
-            holes_indices.push(flat_vertices.len() / 2);
-            for pt in inner_contour {
-                flat_vertices.push(pt[0]);
-                flat_vertices.push(pt[1]);
-            }
-        }
-
-        log::info!("Starting triangulation");
-        let triangles = earcutr::earcut(&flat_vertices, &holes_indices, 2);
-        log::info!("Done.");
-
-        let Ok(triangles) = triangles else {
-            log::error!("Failed to triangulate contour");
-            return;
-        };
+        let triangles = polygon.earcut_triangles_raw();
 
         let mut geometry = Geometry::new();
 
-        for i in 0..flat_vertices.len() / 2 {
-            let x = flat_vertices[i * 2];
-            let y = flat_vertices[i * 2 + 1];
-            geometry.positions.push(x as f32);
-            geometry.positions.push(y as f32);
+        geometry.positions.reserve(3 * triangles.vertices.len() / 2);
+        geometry.indices.reserve(triangles.triangle_indices.len());
+
+        for coord in triangles.vertices.chunks(2) {
+            geometry.positions.push(coord[0] as f32);
+            geometry.positions.push(coord[1] as f32);
             geometry.positions.push(0.0);
         }
 
-        // Add the triangle indices to the geometry
-        geometry.indices = triangles.into_iter().map(|i| (i as u32)).collect();
+        for index in triangles.triangle_indices {
+            geometry.indices.push(index as u32);
+        }
 
         let mesh = self.get_outline_mesh();
         mesh.visible = true;
-        mesh.set_vec4("color", Vector4::new(0.0, 1.0, 1.0, 1.0));
+        mesh.set_vec4("color", Vector4::new(0.0, 1.0, 1.0, 0.5));
         let geometry_id = mesh.geometry_id;
         let gl = self.renderer.gl();
         self.scene.replace_geometry(gl, geometry_id, geometry);
@@ -351,9 +307,9 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
         for coord in triangles.vertices.chunks(2) {
             let x = coord[0];
             let y = coord[1];
-            geometry
-                .positions
-                .extend_from_slice(&[x as f32, y as f32, 0.0]);
+            geometry.positions.push(x as f32);
+            geometry.positions.push(y as f32);
+            geometry.positions.push(0.0);
         }
 
         geometry.indices.extend(

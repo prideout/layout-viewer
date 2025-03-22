@@ -53,9 +53,6 @@ trunk serve
 
 ## Next tasks
 
-- Simplify `update_outline_mesh`, no stroke, just draw the polygon with half opacity.
-  - Remove earcutr and i_overlay
-
 Resizing window should not reset the camera.
 
 Use fp64 in the graphics layer.

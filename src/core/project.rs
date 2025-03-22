@@ -402,7 +402,7 @@ impl Project {
             }
             let layer = &self.layers[item.layer as usize];
             let polygon = &layer.polygons[item.polygon];
-            if polygon.contains(&point) {
+            if layer.visible && polygon.contains(&point) {
                 result = Some(item.clone());
             }
         }
