@@ -5,6 +5,7 @@ use crate::core::CellDefId;
 use crate::core::CellId;
 use crate::core::Layer;
 use crate::graphics::BoundingBox;
+use crate::rsutils::hsv_to_rgb;
 use crate::rsutils::IdMap;
 use crate::rsutils::StringInterner;
 use anyhow::anyhow;
@@ -234,20 +235,11 @@ impl Project {
 
     pub fn update_layers(&mut self) {
         self.layers.clear();
-
-        let mut rtree_items = Vec::new();
-
-        // Create layers with unique colors
         for i in 0..=self.highest_layer {
-            let hue = (i as f32) / ((self.highest_layer + 1) as f32);
-            let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.8);
-            let mut layer = Layer::new(i);
-            layer.color = Vector4::new(r, g, b, 0.5);
-            self.layers.push(layer);
+            self.layers.push(Layer::new(i));
         }
 
-        // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
-        self.layers[self.highest_layer as usize].color = Vector4::new(1.0, 1.0, 1.0, 0.5);
+        let mut rtree_items = Vec::new();
 
         let identity = &AffineTransform::identity();
         for cell_def_id in self.find_roots() {
@@ -277,6 +269,29 @@ impl Project {
             for cell_id in cell_ids {
                 self.update_layers_recurse(cell_id, &mut rtree_items);
             }
+        }
+
+        let mut count = 0;
+        for layer in &self.layers {
+            if !layer.polygons.is_empty() {
+                count += 1;
+            }
+        }
+
+        let mut i = 0;
+        for layer in &mut self.layers {
+            if layer.polygons.is_empty() {
+                continue;
+            }
+            // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
+            if i == count - 1 {
+                layer.color = Vector4::new(1.0, 1.0, 1.0, 0.5);
+                break;
+            }
+            let hue = (i as f32) / (count as f32);
+            let (r, g, b) = hsv_to_rgb(hue, 0.8, 0.8);
+            layer.color = Vector4::new(r, g, b, 0.5);
+            i += 1;
         }
 
         // Update bounds for each layer and the overall project
@@ -385,37 +400,13 @@ impl Project {
                     continue;
                 }
             }
-            let layer = self
-                .layers
-                .iter()
-                .find(|layer| layer.visible && layer.index() == item.layer);
-            if let Some(layer) = layer {
-                let polygon = &layer.polygons[item.polygon];
-                if polygon.contains(&point) {
-                    result = Some(item.clone());
-                }
+            let layer = &self.layers[item.layer as usize];
+            let polygon = &layer.polygons[item.polygon];
+            if polygon.contains(&point) {
+                result = Some(item.clone());
             }
         }
         result
-    }
-}
-
-// Helper function to convert HSV to RGB
-fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
-    let h = h * 6.0;
-    let i = h.floor();
-    let f = h - i;
-    let p = v * (1.0 - s);
-    let q = v * (1.0 - s * f);
-    let t = v * (1.0 - s * (1.0 - f));
-
-    match i as i32 % 6 {
-        0 => (v, t, p),
-        1 => (q, v, p),
-        2 => (p, v, t),
-        3 => (p, q, v),
-        4 => (t, p, v),
-        _ => (v, p, q),
     }
 }
 

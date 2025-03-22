@@ -53,9 +53,6 @@ trunk serve
 
 ## Next tasks
 
-Go back to making layer indices be actual indices, and just filter out empty
-layers in the UI and/or when assigning colors.
-
 Get rid of `screen_to_world`, use `unproject` instead.
 
 Orientation fix. (use camera's `up` vector)

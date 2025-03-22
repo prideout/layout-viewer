@@ -1,3 +1,7 @@
+use crate::app_shaders::FRAGMENT_SHADER;
+use crate::app_shaders::VERTEX_SHADER;
+use crate::core::Layer;
+use crate::core::PickResult;
 use crate::graphics::Camera;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
@@ -5,11 +9,8 @@ use crate::graphics::Mesh;
 use crate::graphics::Renderer;
 use crate::graphics::Scene;
 use crate::graphics::Viewport;
-use crate::core::Layer;
-use crate::core::PickResult;
-use crate::app_shaders::FRAGMENT_SHADER;
-use crate::app_shaders::VERTEX_SHADER;
 use crate::Project;
+
 use geo::TriangulateEarcut;
 use nalgebra::Point3;
 
