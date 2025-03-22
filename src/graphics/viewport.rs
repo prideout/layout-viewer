@@ -8,10 +8,15 @@ pub struct Viewport {
 
 impl Viewport {
     pub fn new(left: f32, top: f32, width: f32, height: f32) -> Self {
-        Self { left, top, width, height }
+        Self {
+            left,
+            top,
+            width,
+            height,
+        }
     }
 
     pub fn aspect_ratio(&self) -> f32 {
         self.width / self.height
     }
-} 
+}

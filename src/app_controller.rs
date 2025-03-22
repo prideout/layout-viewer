@@ -5,15 +5,15 @@ use crate::graphics::Mesh;
 use crate::graphics::Renderer;
 use crate::graphics::Scene;
 use crate::graphics::Viewport;
-use crate::layer::Layer;
-use crate::project::PickResult;
-use crate::shaders::FRAGMENT_SHADER;
-use crate::shaders::VERTEX_SHADER;
+use crate::core::Layer;
+use crate::core::PickResult;
+use crate::app_shaders::FRAGMENT_SHADER;
+use crate::app_shaders::VERTEX_SHADER;
 use crate::Project;
 use geo::TriangulateEarcut;
 use nalgebra::Point3;
 
-/// Encapsulates high-level logic common to both platforms (web / native).
+/// Encapsulates high-level application logic common to all platforms.
 pub struct AppController {
     window_size: (u32, u32),
     renderer: Renderer,

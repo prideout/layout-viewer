@@ -99,9 +99,8 @@ impl Component for Sidebar {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let find_layer_proxy = |index: usize| {
-            ctx.props().layers.iter().find(|layer| layer.index == index)
-        };
+        let find_layer_proxy =
+            |index: usize| ctx.props().layers.iter().find(|layer| layer.index == index);
         match msg {
             SidebarMsg::HideAll => {
                 for layer in &ctx.props().layers {

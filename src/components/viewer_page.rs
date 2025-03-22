@@ -1,25 +1,31 @@
-use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{
-    window, HtmlCanvasElement, MouseEvent, Request, RequestInit, Response, WebGl2RenderingContext,
-    WheelEvent,
-};
+use web_sys::window;
+use web_sys::HtmlCanvasElement;
+use web_sys::MouseEvent;
+use web_sys::Request;
+use web_sys::RequestInit;
+use web_sys::Response;
+use web_sys::WebGl2RenderingContext;
+use web_sys::WheelEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{
-    colors::{hex_to_rgb, rgb_to_hex},
-    components::{
-        app::Route,
-        sidebar::{LayerProxy, Sidebar},
-        toast::{ToastContainer, ToastManager},
-    },
-    app_controller::AppController,
-    graphics::{MeshId, Renderer, Scene},
-    pages::home::take_dropped_file,
-    resize_observer::ResizeObserver,
-    Project,
-};
+use crate::app_controller::AppController;
+use crate::components::take_dropped_file;
+use crate::components::LayerProxy;
+use crate::components::Route;
+use crate::components::Sidebar;
+use crate::components::ToastContainer;
+use crate::components::ToastManager;
+use crate::graphics::MeshId;
+use crate::graphics::Renderer;
+use crate::graphics::Scene;
+use crate::rsutils::hex_to_rgb;
+use crate::rsutils::rgb_to_hex;
+use crate::rsutils::ResizeObserver;
+use crate::Project;
 
 #[derive(Properties, PartialEq)]
 pub struct ViewerProps {

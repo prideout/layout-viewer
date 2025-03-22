@@ -1,4 +1,5 @@
-use crate::pages::{home::HomePage, viewer::ViewerPage};
+use crate::components::HomePage;
+use crate::components::ViewerPage;
 use yew::prelude::*;
 use yew_router::prelude::*;
 

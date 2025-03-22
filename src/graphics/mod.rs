@@ -1,3 +1,4 @@
+pub mod bounds;
 pub mod camera;
 pub mod geometry;
 pub mod material;
@@ -6,11 +7,11 @@ pub mod renderer;
 pub mod scene;
 pub mod viewport;
 
-pub use self::camera::*;
-pub use self::geometry::*;
-pub use self::material::*;
-pub use self::mesh::*;
-pub use self::renderer::*;
-pub use self::scene::*;
-pub use self::viewport::*;
-
+pub use bounds::*;
+pub use camera::*;
+pub use geometry::*;
+pub use material::*;
+pub use mesh::*;
+pub use renderer::*;
+pub use scene::*;
+pub use viewport::*;

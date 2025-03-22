@@ -1,25 +1,27 @@
-use crate::{
-    app_controller::AppController,
-    graphics::{Renderer, Scene},
-    Project,
-};
-use glutin::{
-    config::ConfigTemplateBuilder,
-    context::{ContextApi, ContextAttributesBuilder, Version},
-    display::GetGlDisplay,
-    prelude::*,
-    surface::{SurfaceAttributesBuilder, WindowSurface},
-};
+use crate::app_controller::AppController;
+use crate::graphics::Renderer;
+use crate::graphics::Scene;
+use crate::Project;
+
+use glutin::config::ConfigTemplateBuilder;
+use glutin::context::ContextApi;
+use glutin::context::ContextAttributesBuilder;
+use glutin::context::Version;
+use glutin::display::GetGlDisplay;
+use glutin::prelude::*;
+use glutin::surface::SurfaceAttributesBuilder;
+use glutin::surface::WindowSurface;
 use glutin_winit::DisplayBuilder;
 use raw_window_handle::HasRawWindowHandle;
 use std::num::NonZeroU32;
-use std::time::{Duration, Instant};
-use winit::{
-    dpi::PhysicalPosition,
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
+use std::time::Duration;
+use std::time::Instant;
+use winit::dpi::PhysicalPosition;
+use winit::event::Event;
+use winit::event::WindowEvent;
+use winit::event_loop::ControlFlow;
+use winit::event_loop::EventLoop;
+use winit::window::WindowBuilder;
 
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
@@ -129,7 +131,8 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
                     window_target.exit();
                 }
                 WindowEvent::KeyboardInput { event, .. } => {
-                    use winit::keyboard::{KeyCode, PhysicalKey};
+                    use winit::keyboard::KeyCode;
+                    use winit::keyboard::PhysicalKey;
                     if let PhysicalKey::Code(code) = event.physical_key {
                         if code == KeyCode::Escape || code == KeyCode::KeyQ {
                             controller.destroy();

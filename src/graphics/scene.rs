@@ -1,7 +1,10 @@
-use crate::graphics::{Geometry, GeometryId};
-use crate::graphics::{Material, MaterialId};
-use crate::graphics::{Mesh, MeshId};
-use crate::id_map::IdMap;
+use crate::graphics::Geometry;
+use crate::graphics::GeometryId;
+use crate::graphics::Material;
+use crate::graphics::MaterialId;
+use crate::graphics::Mesh;
+use crate::graphics::MeshId;
+use crate::rsutils::IdMap;
 
 pub struct Scene {
     pub(crate) meshes: IdMap<MeshId, Mesh>,

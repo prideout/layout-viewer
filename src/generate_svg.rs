@@ -1,6 +1,7 @@
-use crate::bounds::BoundingBox;
-use crate::layer::Layer;
-use svg::node::element::{Group, Path};
+use crate::core::Layer;
+use crate::graphics::BoundingBox;
+use svg::node::element::Group;
+use svg::node::element::Path;
 use svg::Document;
 
 const PRECISION: f64 = 0.0001;

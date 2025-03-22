@@ -1,9 +1,12 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
+use anyhow::Result;
 use clap::Parser;
 use colored::*;
-use layout_viewer::{generate_svg, Project};
+use layout_viewer::generate_svg;
+use layout_viewer::Project;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

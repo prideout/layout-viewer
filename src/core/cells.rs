@@ -1,7 +1,9 @@
-use gds21::{GdsBoundary, GdsPath, GdsPoint, GdsStrans};
+use crate::rsutils::IdMapKey;
+use gds21::GdsBoundary;
+use gds21::GdsPath;
+use gds21::GdsPoint;
+use gds21::GdsStrans;
 use geo::AffineTransform;
-
-use crate::id_map::Id;
 
 /// Simple integer ID for cells, guaranteed to be unique within a project.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
@@ -11,7 +13,7 @@ pub struct CellId(pub(crate) usize);
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct CellDefId(pub(crate) usize);
 
-impl Id for CellId {
+impl IdMapKey for CellId {
     fn from_usize(id: usize) -> Self {
         CellId(id)
     }

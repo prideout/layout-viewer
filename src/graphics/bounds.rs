@@ -1,22 +1,9 @@
-use geo::Rect;
-
 #[derive(Debug, Clone, Copy)]
 pub struct BoundingBox {
     pub min_x: f64,
     pub min_y: f64,
     pub max_x: f64,
     pub max_y: f64,
-}
-
-impl From<Rect<f64>> for BoundingBox {
-    fn from(rect: Rect<f64>) -> Self {
-        Self {
-            min_x: rect.min().x,
-            min_y: rect.min().y,
-            max_x: rect.max().x,
-            max_y: rect.max().y,
-        }
-    }
 }
 
 impl BoundingBox {

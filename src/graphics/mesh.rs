@@ -1,15 +1,20 @@
-use crate::graphics::{Geometry, GeometryId};
-use crate::graphics::{Material, MaterialId};
-use crate::id_map::Id;
+use crate::graphics::Geometry;
+use crate::graphics::GeometryId;
+use crate::graphics::Material;
+use crate::graphics::MaterialId;
+use crate::rsutils::IdMapKey;
 use glow::HasContext;
 use indexmap::IndexMap;
-use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+use nalgebra::Matrix4;
+use nalgebra::Vector2;
+use nalgebra::Vector3;
+use nalgebra::Vector4;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct MeshId(pub usize);
 
-impl Id for MeshId {
+impl IdMapKey for MeshId {
     fn from_usize(id: usize) -> Self {
         MeshId(id)
     }

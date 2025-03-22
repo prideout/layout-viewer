@@ -1,13 +1,16 @@
-use crate::id_map::Id;
+use crate::rsutils::IdMapKey;
 use glow::HasContext;
 use indexmap::IndexMap;
-use nalgebra::{Matrix4, Vector2, Vector3, Vector4};
+use nalgebra::Matrix4;
+use nalgebra::Vector2;
+use nalgebra::Vector3;
+use nalgebra::Vector4;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct MaterialId(pub usize);
 
-impl Id for MaterialId {
+impl IdMapKey for MaterialId {
     fn from_usize(id: usize) -> Self {
         MaterialId(id)
     }
@@ -141,7 +144,10 @@ impl Material {
                 gl.uniform_1_f32(Some(location), value);
             }
         } else {
-            log::warn!("Attempting to set unknown uniform '{}' to float value", name);
+            log::warn!(
+                "Attempting to set unknown uniform '{}' to float value",
+                name
+            );
         }
     }
 

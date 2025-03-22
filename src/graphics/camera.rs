@@ -4,7 +4,7 @@ type Vec3 = nalgebra::Vector3<f32>;
 
 use std::fmt;
 
-use crate::bounds::BoundingBox;
+use crate::graphics::BoundingBox;
 
 impl fmt::Debug for Camera {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

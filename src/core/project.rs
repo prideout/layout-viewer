@@ -1,17 +1,31 @@
-use crate::{
-    bounds::BoundingBox,
-    cells::{ArrayProperties, Cell, CellDef, CellDefId, CellId},
-    id_map::IdMap,
-    layer::Layer,
-    string_interner::StringInterner,
-};
-use anyhow::{anyhow, Result};
-use gds21::{GdsLibrary, GdsPoint, GdsStrans};
-use geo::{AffineTransform, Contains, Coord, Point};
+use crate::core::ArrayProperties;
+use crate::core::Cell;
+use crate::core::CellDef;
+use crate::core::CellDefId;
+use crate::core::CellId;
+use crate::core::Layer;
+use crate::graphics::BoundingBox;
+use crate::rsutils::IdMap;
+use crate::rsutils::StringInterner;
+use anyhow::anyhow;
+use anyhow::Result;
+use gds21::GdsLibrary;
+use gds21::GdsPoint;
+use gds21::GdsStrans;
+use geo::AffineTransform;
+use geo::Contains;
+use geo::Coord;
+use geo::Point;
 use indexmap::IndexMap;
 use nalgebra::Vector4;
-use rstar::{Envelope, PointDistance, RTree, RTreeObject, AABB};
-use std::fmt::{self, Debug, Formatter};
+use rstar::Envelope;
+use rstar::PointDistance;
+use rstar::RTree;
+use rstar::RTreeObject;
+use rstar::AABB;
+use std::fmt::Debug;
+use std::fmt::Formatter;
+use std::fmt::{self};
 
 /// Owns the data model for the application.
 pub struct Project {

@@ -1,11 +1,11 @@
-use crate::id_map::Id;
+use crate::rsutils::IdMapKey;
 use glow::HasContext;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct GeometryId(pub usize);
 
-impl Id for GeometryId {
+impl IdMapKey for GeometryId {
     fn from_usize(id: usize) -> Self {
         GeometryId(id)
     }

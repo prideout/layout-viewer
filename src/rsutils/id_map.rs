@@ -1,16 +1,16 @@
 use indexmap::IndexMap;
 use std::hash::Hash;
 
-pub trait Id {
+pub trait IdMapKey {
     fn from_usize(id: usize) -> Self;
 }
 
-pub struct IdMap<K: Id + Copy + Hash + Eq, V> {
+pub struct IdMap<K: IdMapKey + Copy + Hash + Eq, V> {
     items: IndexMap<K, V>,
     next_id: usize,
 }
 
-impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
+impl<K: IdMapKey + Copy + Hash + Eq, V> IdMap<K, V> {
     pub fn new() -> Self {
         Self {
             items: IndexMap::new(),
@@ -55,8 +55,8 @@ impl<K: Id + Copy + Hash + Eq, V> IdMap<K, V> {
     }
 }
 
-impl<K: Id + Copy + Hash + Eq, V> Default for IdMap<K, V> {
+impl<K: IdMapKey + Copy + Hash + Eq, V> Default for IdMap<K, V> {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

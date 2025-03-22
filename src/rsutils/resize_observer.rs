@@ -1,5 +1,8 @@
-use wasm_bindgen::{closure::Closure, JsCast};
-use web_sys::{Element, ResizeObserver as WebResizeObserver, ResizeObserverEntry};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
+use web_sys::Element;
+use web_sys::ResizeObserver as WebResizeObserver;
+use web_sys::ResizeObserverEntry;
 
 pub struct ResizeObserver(WebResizeObserver);
 

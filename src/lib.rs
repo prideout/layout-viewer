@@ -1,37 +1,26 @@
 #![allow(dead_code)]
 
-mod bounds;
-mod cells;
-mod colors;
 mod app_controller;
-mod graphics;
-mod id_map;
-mod layer;
-mod project;
-mod shaders;
-mod string_interner;
+mod app_shaders;
+mod core;
 mod generate_svg;
+mod graphics;
+mod rsutils;
 
 #[cfg(not(target_arch = "wasm32"))]
-mod gl_window;
-
-#[cfg(target_arch = "wasm32")]
-mod pages;
-
-#[cfg(target_arch = "wasm32")]
-mod resize_observer;
+mod app_window;
 
 #[cfg(target_arch = "wasm32")]
 mod components;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use gl_window::spawn_window;
+pub use app_window::spawn_window;
 
-pub use project::Project;
+pub use core::Project;
 pub use generate_svg::generate_svg;
 
 #[cfg(target_arch = "wasm32")]
-pub use components::app::App;
+pub use components::App;
 
 /// Returns a timestamp in milliseconds.
 #[cfg(target_arch = "wasm32")]

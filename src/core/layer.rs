@@ -1,8 +1,16 @@
-use crate::bounds::BoundingBox;
-use gds21::{GdsBoundary, GdsPath, GdsPoint};
-use geo::{AffineOps, AffineTransform, BoundingRect, LineString};
+use crate::graphics::BoundingBox;
+use gds21::GdsBoundary;
+use gds21::GdsPath;
+use gds21::GdsPoint;
+use geo::AffineOps;
+use geo::AffineTransform;
+use geo::BoundingRect;
+use geo::LineString;
+use geo::Rect;
 use i_overlay::mesh::stroke::offset::StrokeOffset;
-use i_overlay::mesh::style::{LineCap, LineJoin, StrokeStyle};
+use i_overlay::mesh::style::LineCap;
+use i_overlay::mesh::style::LineJoin;
+use i_overlay::mesh::style::StrokeStyle;
 use nalgebra::Vector4;
 
 type Polygon = geo::Polygon<f64>;
@@ -140,6 +148,17 @@ impl From<i16> for PathType {
             1 => PathType::Round,
             2 => PathType::Extended,
             _ => PathType::Standard,
+        }
+    }
+}
+
+impl From<Rect<f64>> for BoundingBox {
+    fn from(rect: Rect<f64>) -> Self {
+        Self {
+            min_x: rect.min().x,
+            min_y: rect.min().y,
+            max_x: rect.max().x,
+            max_y: rect.max().y,
         }
     }
 }
