@@ -36,9 +36,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
         ));
 
     let (window, gl, surface, context) = {
-        let template = ConfigTemplateBuilder::new()
-            .with_alpha_size(8)
-            .with_transparency(true);
+        let template = ConfigTemplateBuilder::new(); // .with_multisampling(16);
 
         let display_builder = DisplayBuilder::new().with_window_builder(Some(window_builder));
         let (window, gl_config) = display_builder

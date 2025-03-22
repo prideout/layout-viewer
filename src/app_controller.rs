@@ -13,7 +13,11 @@ use crate::graphics::Viewport;
 use crate::Project;
 
 use geo::TriangulateEarcut;
+use i_overlay::mesh::stroke::offset::StrokeOffset;
+use i_overlay::mesh::style::LineJoin;
+use i_overlay::mesh::style::StrokeStyle;
 use nalgebra::Point3;
+use nalgebra::Vector4;
 
 type Point = nalgebra::Point3<f32>;
 
@@ -35,23 +39,11 @@ pub struct AppController {
 impl AppController {
     pub fn new(
         renderer: Renderer,
-        mut scene: Scene,
+        scene: Scene,
         physical_width: u32,
         physical_height: u32,
     ) -> Self {
         let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
-
-        let mut outline_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        outline_material.set_blending(true);
-        let outline_material_id = scene.add_material(outline_material);
-
-        let outline_geometry = Geometry::new();
-        // TODO
-        let outline_geometry_id = scene.add_geometry(outline_geometry);
-
-        let mut outline_mesh = Mesh::new(outline_geometry_id, outline_material_id);
-        outline_mesh.visible = false;
-        let outline_mesh = scene.add_mesh(outline_mesh);
 
         Self {
             window_size: (physical_width, physical_height),
@@ -64,7 +56,7 @@ impl AppController {
             needs_render: true,
             project: None,
             hovered_cell: None,
-            outline_mesh,
+            outline_mesh: MeshId(0),
         }
     }
 
@@ -84,6 +76,8 @@ impl AppController {
         }
 
         populate_scene(project.layers(), &mut self.scene);
+
+        self.create_outline_mesh();
 
         let bounds = project.bounds();
         self.camera.fit_to_bounds(self.window_size, bounds);
@@ -124,7 +118,7 @@ impl AppController {
         if let Some(project) = self.project() {
             if let Some(result) = project.pick_cell(world_x, world_y) {
                 if self.hovered_cell != Some(result.clone()) {
-                    log::info!("Picked {:?}", &result);
+                    // log::info!("Picked {:?}", &result);
                     self.hovered_cell = Some(result.clone());
                     self.update_outline_mesh(result);
                 }
@@ -228,11 +222,94 @@ impl AppController {
         self.scene.get_mesh_mut(&self.outline_mesh).unwrap()
     }
 
-    fn update_outline_mesh(&mut self, _selection: PickResult) {
+    fn create_outline_mesh(&mut self) {
+        if self.outline_mesh.0 != 0 {
+            log::error!("Outline mesh already exists");
+        }
+
+        let mut outline_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        outline_material.set_blending(true);
+        let outline_material_id = self.scene.add_material(outline_material);
+
+        let outline_geometry = Geometry::new();
+        let outline_geometry_id = self.scene.add_geometry(outline_geometry);
+
+        let mut outline_mesh = Mesh::new(outline_geometry_id, outline_material_id);
+        outline_mesh.visible = false;
+        self.outline_mesh = self.scene.add_mesh(outline_mesh);
+    }
+
+    fn update_outline_mesh(&mut self, selection: PickResult) {
+        let Some(project) = self.project() else {
+            log::error!("No project");
+            return;
+        };
+        let layer = &project.layers()[selection.layer as usize];
+        let polygon = &layer.polygons[selection.polygon];
+
+        let width: f64 = 5000.0; // This is hard to compute
+        let style = StrokeStyle::new(width).line_join(LineJoin::Miter(1.0));
+
+        let spine_points: Vec<[f64; 2]> = polygon
+            .exterior()
+            .points()
+            .map(geo_point_to_array)
+            .collect();
+        let shapes: Vec<Vec<Vec<[f64; 2]>>> = spine_points.stroke(style, true);
+
+        let Some(first_shape) = shapes.first() else {
+            log::error!("No shape found");
+            return;
+        };
+
+        let Some(outer_contour) = first_shape.first() else {
+            log::error!("No outer contour found");
+            return;
+        };
+
+        let mut flat_vertices: Vec<f64> = vec![];
+        for pt in outer_contour {
+            flat_vertices.push(pt[0]);
+            flat_vertices.push(pt[1]);
+        }
+        let mut holes_indices = vec![];
+        if first_shape.len() > 1 {
+            let inner_contour = &first_shape[1];
+            holes_indices.push(flat_vertices.len() / 2);
+            for pt in inner_contour {
+                flat_vertices.push(pt[0]);
+                flat_vertices.push(pt[1]);
+            }
+        }
+
+        log::info!("Starting triangulation");
+        let triangles = earcutr::earcut(&flat_vertices, &holes_indices, 2);
+        log::info!("Done.");
+
+        let Ok(triangles) = triangles else {
+            log::error!("Failed to triangulate contour");
+            return;
+        };
+
+        let mut geometry = Geometry::new();
+
+        for i in 0..flat_vertices.len() / 2 {
+            let x = flat_vertices[i * 2];
+            let y = flat_vertices[i * 2 + 1];
+            geometry.positions.push(x as f32);
+            geometry.positions.push(y as f32);
+            geometry.positions.push(0.0);
+        }
+
+        // Add the triangle indices to the geometry
+        geometry.indices = triangles.into_iter().map(|i| (i as u32)).collect();
+
         let mesh = self.get_outline_mesh();
         mesh.visible = true;
-
-        // TODO destroy existing geometry
+        mesh.set_vec4("color", Vector4::new(0.0, 1.0, 1.0, 1.0));
+        let geometry_id = mesh.geometry_id;
+        let gl = self.renderer.gl();
+        self.scene.replace_geometry(gl, geometry_id, geometry);
     }
 }
 
@@ -288,4 +365,8 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
     }
 
     geometry
+}
+
+fn geo_point_to_array(point: geo::Point<f64>) -> [f64; 2] {
+    [point.x(), point.y()]
 }

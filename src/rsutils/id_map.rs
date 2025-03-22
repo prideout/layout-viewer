@@ -49,6 +49,13 @@ impl<K: IdMapKey + Copy + Hash + Eq, V> IdMap<K, V> {
         self.items.values_mut()
     }
 
+    pub fn replace(&mut self, id: K, value: V) {
+        if !self.items.contains_key(&id) {
+            log::error!("IdMap: replace called with non-existent id");
+        }
+        self.items.insert(id, value);
+    }
+
     pub fn clear(&mut self) {
         self.items.clear();
         self.next_id = 1;

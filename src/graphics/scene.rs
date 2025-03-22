@@ -57,6 +57,15 @@ impl Scene {
         self.materials.get_mut(id)
     }
 
+    pub fn replace_geometry(&mut self, gl: &glow::Context, id: GeometryId, new_geometry: Geometry) {
+        if let Some(geometry) = self.geometries.get_mut(&id) {
+            geometry.destroy(gl);
+            self.geometries.replace(id, new_geometry);
+        } else {
+            log::error!("Scene: replace_geometry called with non-existent id");
+        }
+    }
+
     pub fn destroy(&mut self, gl: &glow::Context) {
         // Destroy all geometries
         for geometry in self.geometries.values_mut() {

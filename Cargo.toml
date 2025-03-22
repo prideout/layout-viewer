@@ -32,6 +32,7 @@ approx = "0.5"
 log = "0.4"
 env_logger = "0.11"
 rstar = "0.12.2"
+earcutr = "0.4.3"
 
 [patch.crates-io]
 geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }
