@@ -2,6 +2,8 @@
 target = "index.html"
 dist = "dist"
 public_url = "."
+no_sri = true
+# inject_scripts = false
 
 [serve]
-port = 8080 
+port = 8080

@@ -6,6 +6,7 @@ use crate::graphics::Camera;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
 use crate::graphics::Mesh;
+use crate::graphics::MeshId;
 use crate::graphics::Renderer;
 use crate::graphics::Scene;
 use crate::graphics::Viewport;
@@ -28,16 +29,30 @@ pub struct AppController {
     needs_render: bool,
     project: Option<Project>,
     hovered_cell: Option<PickResult>,
+    outline_mesh: MeshId,
 }
 
 impl AppController {
     pub fn new(
         renderer: Renderer,
-        scene: Scene,
+        mut scene: Scene,
         physical_width: u32,
         physical_height: u32,
     ) -> Self {
         let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
+
+        let mut outline_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        outline_material.set_blending(true);
+        let outline_material_id = scene.add_material(outline_material);
+
+        let outline_geometry = Geometry::new();
+        // TODO
+        let outline_geometry_id = scene.add_geometry(outline_geometry);
+
+        let mut outline_mesh = Mesh::new(outline_geometry_id, outline_material_id);
+        outline_mesh.visible = false;
+        let outline_mesh = scene.add_mesh(outline_mesh);
+
         Self {
             window_size: (physical_width, physical_height),
             renderer,
@@ -46,9 +61,10 @@ impl AppController {
             is_dragging: false,
             last_mouse_pos: None,
             zoom_speed: 0.05,
-            needs_render: true, // Initial render needed
+            needs_render: true,
             project: None,
             hovered_cell: None,
+            outline_mesh,
         }
     }
 
@@ -57,10 +73,7 @@ impl AppController {
         log::info!("Number of structs: {}", stats.struct_count);
         log::info!("Number of polygons: {}", stats.polygon_count);
         log::info!("Number of paths: {}", stats.path_count);
-        log::info!(
-            "Number of layers: {}",
-            (project.highest_layer() + 1) as usize
-        );
+        log::info!("Highest layer: {}", project.highest_layer());
 
         let mut alpha = 0.6; // looks ok for 4004 & 6502
         if project.layers().len() > 10 {
@@ -112,10 +125,12 @@ impl AppController {
             if let Some(result) = project.pick_cell(world_x, world_y) {
                 if self.hovered_cell != Some(result.clone()) {
                     log::info!("Picked {:?}", &result);
-                    self.hovered_cell = Some(result);
+                    self.hovered_cell = Some(result.clone());
+                    self.update_outline_mesh(result);
                 }
             } else if self.hovered_cell.is_some() {
                 self.hovered_cell = None;
+                self.get_outline_mesh().visible = false;
             }
         }
     }
@@ -151,17 +166,13 @@ impl AppController {
         self.camera.position.y += (world_y - new_world_y) as f32;
     }
 
-    fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {
-        let ndc_x = (screen_x as f32 / self.window_size.0 as f32) * 2.0 - 1.0;
-        let ndc_y = -((screen_y as f32 / self.window_size.1 as f32) * 2.0 - 1.0);
-        let world = self.camera.unproject(Point::new(ndc_x, ndc_y, 0.0));
-        (world.x as f64, world.y as f64)
-    }
-
+    /// Requests a render to occur during the next tick.
     pub fn render(&mut self) {
         self.needs_render = true;
     }
 
+    /// Unconditionally called every 16 ms, returns "true" if the framebuffer
+    /// was refreshed.
     pub fn tick(&mut self) -> bool {
         if !self.needs_render {
             return false;
@@ -204,6 +215,24 @@ impl AppController {
 
     pub fn camera(&self) -> &Camera {
         &self.camera
+    }
+
+    fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {
+        let ndc_x = (screen_x as f32 / self.window_size.0 as f32) * 2.0 - 1.0;
+        let ndc_y = -((screen_y as f32 / self.window_size.1 as f32) * 2.0 - 1.0);
+        let world = self.camera.unproject(Point::new(ndc_x, ndc_y, 0.0));
+        (world.x as f64, world.y as f64)
+    }
+
+    fn get_outline_mesh(&mut self) -> &mut Mesh {
+        self.scene.get_mesh_mut(&self.outline_mesh).unwrap()
+    }
+
+    fn update_outline_mesh(&mut self, _selection: PickResult) {
+        let mesh = self.get_outline_mesh();
+        mesh.visible = true;
+
+        // TODO destroy existing geometry
     }
 }
 

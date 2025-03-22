@@ -7,9 +7,9 @@ use crate::graphics::MeshId;
 use crate::rsutils::IdMap;
 
 pub struct Scene {
-    pub(crate) meshes: IdMap<MeshId, Mesh>,
-    pub(crate) geometries: IdMap<GeometryId, Geometry>,
-    pub(crate) materials: IdMap<MaterialId, Material>,
+    pub(super) meshes: IdMap<MeshId, Mesh>,
+    pub(super) geometries: IdMap<GeometryId, Geometry>,
+    pub(super) materials: IdMap<MaterialId, Material>,
 }
 
 impl Scene {
