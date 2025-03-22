@@ -53,8 +53,6 @@ trunk serve
 
 ## Next tasks
 
-Get rid of `screen_to_world`, use `unproject` instead.
-
 Orientation fix. (use camera's `up` vector)
 
 Hover highlighting. Create an outline triangle buffer on the fly using the

@@ -14,6 +14,8 @@ use crate::Project;
 use geo::TriangulateEarcut;
 use nalgebra::Point3;
 
+type Point = nalgebra::Point3<f32>;
+
 /// Encapsulates high-level application logic common to all platforms.
 pub struct AppController {
     window_size: (u32, u32),
@@ -151,17 +153,10 @@ impl AppController {
     }
 
     fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {
-        let viewport = self.renderer.get_viewport();
-
-        // Convert screen coordinates to normalized device coordinates (-1 to 1)
-        let ndc_x = (screen_x as f64 / viewport.width as f64) * 2.0 - 1.0;
-        let ndc_y = -((screen_y as f64 / viewport.height as f64) * 2.0 - 1.0); // Flip Y axis
-
-        // Convert to world space
-        let world_x = self.camera.position.x as f64 + ndc_x * self.camera.width as f64 / 2.0;
-        let world_y = self.camera.position.y as f64 + ndc_y * self.camera.height as f64 / 2.0;
-
-        (world_x, world_y)
+        let ndc_x = (screen_x as f32 / self.window_size.0 as f32) * 2.0 - 1.0;
+        let ndc_y = -((screen_y as f32 / self.window_size.1 as f32) * 2.0 - 1.0);
+        let world = self.camera.unproject(Point::new(ndc_x, ndc_y, 0.0));
+        (world.x as f64, world.y as f64)
     }
 
     pub fn render(&mut self) {
