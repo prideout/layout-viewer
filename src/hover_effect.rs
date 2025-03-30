@@ -1,7 +1,7 @@
 use crate::app_shaders::FRAGMENT_SHADER;
 use crate::app_shaders::VERTEX_SHADER;
 
-use crate::core::PolygonRef;
+use crate::core::ElementRef;
 use crate::graphics::BlendMode;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
@@ -17,7 +17,7 @@ type Point2 = nalgebra::Point2<f64>;
 
 /// Parameters for setting a cell in the hover effect
 pub struct HoverParams<'a> {
-    pub selection: PolygonRef,
+    pub selection: ElementRef,
     pub project: &'a Project,
     pub scene: &'a mut Scene,
     pub gl: &'a glow::Context,
@@ -25,7 +25,7 @@ pub struct HoverParams<'a> {
 
 /// Manages graphics primitives for a hover effect
 pub struct HoverEffect {
-    polygon: Option<PolygonRef>,
+    polygon: Option<ElementRef>,
     fill: MeshId,
     stroke: Ribbon,
 }
@@ -59,11 +59,11 @@ impl HoverEffect {
         }
     }
 
-    pub fn contains(&self, polygon: &PolygonRef) -> bool {
+    pub fn contains(&self, polygon: &ElementRef) -> bool {
         self.polygon == Some(polygon.clone())
     }
 
-    pub fn polygon(&self) -> Option<PolygonRef> {
+    pub fn polygon(&self) -> Option<ElementRef> {
         self.polygon.clone()
     }
 

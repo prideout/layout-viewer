@@ -3,6 +3,8 @@ use crate::core::Cell;
 use crate::core::CellDef;
 use crate::core::CellDefId;
 use crate::core::CellId;
+use crate::core::Element;
+use crate::core::GdsSourceShape;
 use crate::core::Layer;
 use crate::graphics::BoundingBox;
 use crate::rsutils::hsv_to_rgb;
@@ -17,13 +19,13 @@ use geo::AffineTransform;
 use geo::Contains;
 use geo::Coord;
 use geo::Point;
-use indexmap::IndexMap;
 use nalgebra::Vector4;
 use rstar::Envelope;
 use rstar::PointDistance;
 use rstar::RTree;
 use rstar::RTreeObject;
 use rstar::AABB;
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::fmt::{self};
@@ -31,13 +33,13 @@ use std::fmt::{self};
 /// Owns the data model for the application.
 pub struct Project {
     cells: IdMap<CellId, Cell>,
-    cell_defs: IndexMap<CellDefId, CellDef>,
+    cell_defs: BTreeMap<CellDefId, CellDef>,
     layers: Vec<Layer>,
     highest_layer: i16,
     stats: LayoutStats,
     interner: StringInterner,
     bounds: BoundingBox,
-    rtree: RTree<PolygonRef>,
+    rtree: RTree<ElementRef>,
 }
 
 impl Project {
@@ -82,10 +84,10 @@ impl Project {
 
         let mut interner = StringInterner::new();
         let mut cells = IdMap::new();
-        let mut cell_defs: IndexMap<CellDefId, CellDef> = IndexMap::new();
+        let mut cell_defs = BTreeMap::new();
 
         let add_cell = |cells: &mut IdMap<CellId, Cell>,
-                        cell_defs: &mut IndexMap<CellDefId, CellDef>,
+                        cell_defs: &mut BTreeMap<CellDefId, CellDef>,
                         interner: &mut StringInterner,
                         name: &str,
                         xy: &GdsPoint,
@@ -115,11 +117,11 @@ impl Project {
 
         for cell in &library.structs {
             let cell_def_id = CellDefId(interner.intern(&cell.name));
-            let mut cell_def = cell_defs.get(&cell_def_id).unwrap().clone();
+            let mut cell_def = cell_defs.remove(&cell_def_id).unwrap();
             for elem in &cell.elems {
                 match elem {
                     gds21::GdsElement::GdsStructRef(sref) => {
-                        cell_def.cell_elements.push(add_cell(
+                        cell_def.child_instances.push(add_cell(
                             &mut cells,
                             &mut cell_defs,
                             &mut interner,
@@ -138,7 +140,7 @@ impl Project {
                             &aref.strans,
                         );
 
-                        cell_def.cell_elements.push(id);
+                        cell_def.child_instances.push(id);
 
                         let cols = aref.cols;
                         let rows = aref.rows;
@@ -159,10 +161,12 @@ impl Project {
                         });
                     }
                     gds21::GdsElement::GdsBoundary(boundary) => {
-                        cell_def.boundary_elements.push(boundary.clone());
+                        let element = Element::from_boundary(boundary.clone());
+                        cell_def.elements.push(element);
                     }
                     gds21::GdsElement::GdsPath(path) => {
-                        cell_def.path_elements.push(path.clone());
+                        let element = Element::from_path(path.clone());
+                        cell_def.elements.push(element);
                     }
                     gds21::GdsElement::GdsTextElem(_) => {
                         // We do not support text elements yet, but they do
@@ -226,7 +230,7 @@ impl Project {
         let roots = self.find_roots();
         let identity = &AffineTransform::identity();
         for cell_def_id in roots {
-            let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
+            let cell_ids = self.cell_defs[&cell_def_id].child_instances.clone();
             for cell_id in cell_ids {
                 self.update_world_transforms_recurse(cell_id, identity);
             }
@@ -245,27 +249,33 @@ impl Project {
         for cell_def_id in self.find_roots() {
             let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
             let root_id = cell_def.root_instance.unwrap();
-            for boundary in &cell_def.boundary_elements {
-                let layer = &mut self.layers[boundary.layer as usize];
-                layer.add_boundary_element(boundary, identity);
-                rtree_items.push(PolygonRef {
-                    aabb: layer.polygons.last().unwrap().envelope(),
-                    layer: boundary.layer,
-                    polygon: layer.polygons.len() - 1,
-                    cell_id: root_id,
-                });
+
+            for element in &cell_def.elements {
+                match element.shape {
+                    GdsSourceShape::Boundary(ref boundary) => {
+                        let layer = &mut self.layers[boundary.layer as usize];
+                        layer.add_boundary_element(boundary, identity);
+                        rtree_items.push(ElementRef {
+                            aabb: layer.polygons.last().unwrap().envelope(),
+                            layer: boundary.layer,
+                            polygon: layer.polygons.len() - 1,
+                            cell_id: root_id,
+                        });
+                    }
+                    GdsSourceShape::Path(ref path) => {
+                        let layer = &mut self.layers[path.layer as usize];
+                        layer.add_path_element(path, identity);
+                        rtree_items.push(ElementRef {
+                            aabb: layer.polygons.last().unwrap().envelope(),
+                            layer: path.layer,
+                            polygon: layer.polygons.len() - 1,
+                            cell_id: root_id,
+                        });
+                    }
+                }
             }
-            for path in &cell_def.path_elements {
-                let layer = &mut self.layers[path.layer as usize];
-                layer.add_path_element(path, identity);
-                rtree_items.push(PolygonRef {
-                    aabb: layer.polygons.last().unwrap().envelope(),
-                    layer: path.layer,
-                    polygon: layer.polygons.len() - 1,
-                    cell_id: root_id,
-                });
-            }
-            let cell_ids = self.cell_defs[&cell_def_id].cell_elements.clone();
+
+            let cell_ids = self.cell_defs[&cell_def_id].child_instances.clone();
             for cell_id in cell_ids {
                 self.update_layers_recurse(cell_id, &mut rtree_items);
             }
@@ -328,34 +338,39 @@ impl Project {
         }
     }
 
-    fn update_layers_recurse(&mut self, cell_id: CellId, rtree_items: &mut Vec<PolygonRef>) {
+    fn update_layers_recurse(&mut self, cell_id: CellId, rtree_items: &mut Vec<ElementRef>) {
         let cell = self.cells.get(&cell_id).unwrap();
         if !cell.visible {
             return;
         }
         let transform = &cell.world_transform;
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
-        for boundary in &cell_def.boundary_elements {
-            let layer = &mut self.layers[boundary.layer as usize];
-            layer.add_boundary_element(boundary, transform);
-            rtree_items.push(PolygonRef {
-                aabb: layer.polygons.last().unwrap().envelope(),
-                layer: boundary.layer,
-                polygon: layer.polygons.len() - 1,
-                cell_id,
-            });
+        for element in &cell_def.elements {
+            match element.shape {
+                GdsSourceShape::Boundary(ref boundary) => {
+                    let layer = &mut self.layers[boundary.layer as usize];
+                    layer.add_boundary_element(boundary, transform);
+                    rtree_items.push(ElementRef {
+                        aabb: layer.polygons.last().unwrap().envelope(),
+                        layer: boundary.layer,
+                        polygon: layer.polygons.len() - 1,
+                        cell_id,
+                    });
+                }
+                GdsSourceShape::Path(ref path) => {
+                    let layer = &mut self.layers[path.layer as usize];
+                    layer.add_path_element(path, transform);
+                    rtree_items.push(ElementRef {
+                        aabb: layer.polygons.last().unwrap().envelope(),
+                        layer: path.layer,
+                        polygon: layer.polygons.len() - 1,
+                        cell_id,
+                    });
+                }
+            }
         }
-        for path in &cell_def.path_elements {
-            let layer = &mut self.layers[path.layer as usize];
-            layer.add_path_element(path, transform);
-            rtree_items.push(PolygonRef {
-                aabb: layer.polygons.last().unwrap().envelope(),
-                layer: path.layer,
-                polygon: layer.polygons.len() - 1,
-                cell_id,
-            });
-        }
-        let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
+
+        let cell_ids = self.cell_defs[&cell.cell_def_id].child_instances.clone();
         for cell_id in cell_ids {
             self.update_layers_recurse(cell_id, rtree_items);
         }
@@ -394,7 +409,7 @@ impl Project {
 
         cell.world_transform = transform;
 
-        let cell_ids = self.cell_defs[&cell.cell_def_id].cell_elements.clone();
+        let cell_ids = self.cell_defs[&cell.cell_def_id].child_instances.clone();
         for cell_id in cell_ids {
             self.update_world_transforms_recurse(cell_id, &transform);
         }
@@ -412,10 +427,10 @@ impl Project {
         self.bounds
     }
 
-    pub fn pick_cell(&self, x: f64, y: f64) -> Option<PolygonRef> {
+    pub fn pick_cell(&self, x: f64, y: f64) -> Option<ElementRef> {
         let point = Point::new(x, y);
         let items = self.rtree.locate_all_at_point(&point);
-        let mut result: Option<PolygonRef> = None;
+        let mut result: Option<ElementRef> = None;
         for item in items {
             if let Some(ref result) = result {
                 if item.layer < result.layer {
@@ -444,15 +459,16 @@ pub struct LayoutStats {
     pub box_count: usize,
 }
 
+/// Identifies a unique instance of [Element].
 #[derive(Clone)]
-pub struct PolygonRef {
+pub struct ElementRef {
     aabb: AABB<Point<f64>>,
     pub polygon: usize,
     pub layer: i16,
     pub cell_id: CellId,
 }
 
-impl Debug for PolygonRef {
+impl Debug for ElementRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -462,15 +478,15 @@ impl Debug for PolygonRef {
     }
 }
 
-impl PartialEq for PolygonRef {
+impl PartialEq for ElementRef {
     fn eq(&self, other: &Self) -> bool {
         self.polygon == other.polygon && self.layer == other.layer && self.cell_id == other.cell_id
     }
 }
 
-impl Eq for PolygonRef {}
+impl Eq for ElementRef {}
 
-impl RTreeObject for PolygonRef {
+impl RTreeObject for ElementRef {
     type Envelope = AABB<Point<f64>>;
 
     fn envelope(&self) -> Self::Envelope {
@@ -478,7 +494,7 @@ impl RTreeObject for PolygonRef {
     }
 }
 
-impl PointDistance for PolygonRef {
+impl PointDistance for ElementRef {
     fn distance_2(&self, point: &Point<f64>) -> f64 {
         self.aabb.distance_2(point)
     }

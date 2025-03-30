@@ -22,8 +22,6 @@ pub struct Layer {
     pub mesh: Option<MeshId>,
     pub polygons: Vec<Polygon>,
     pub bounds: BoundingBox,
-    pub paths: Vec<GdsPath>,
-    pub boundaries: Vec<GdsBoundary>,
     pub color: Vector4<f32>, // RGBA color for this layer
     pub visible: bool,
 }
@@ -35,8 +33,6 @@ impl Layer {
             mesh: None,
             polygons: vec![],
             bounds: BoundingBox::new(),
-            paths: Vec::new(),
-            boundaries: Vec::new(),
             color: Vector4::new(0.0, 0.0, 0.0, 1.0), // Default to black
             visible: true,
         }

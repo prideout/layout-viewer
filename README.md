@@ -56,6 +56,15 @@ trunk serve
 
 ## Next tasks
 
+Faster triangulation
+  - Measure the speed up!
+  - `element.rs` should create polygons and triangulations
+  - `element.rs` should offer a `instantiate` that takes an AffineTransform
+    or `apply_transform`?
+  - Layer's `add_boundary_element` and `add_path_element`
+    should simply clone-and-translate the Element and its triangulation.
+    It should probably just be `add_element_instance`.
+
 Test / fix the app on mobile devices. (pointer events, not mouse events; hide sidebar)
 
 Implement array refs.

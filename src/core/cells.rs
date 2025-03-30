@@ -1,6 +1,5 @@
+use crate::core::Element;
 use crate::rsutils::IdMapKey;
-use gds21::GdsBoundary;
-use gds21::GdsPath;
 use gds21::GdsPoint;
 use gds21::GdsStrans;
 use geo::AffineTransform;
@@ -10,7 +9,7 @@ use geo::AffineTransform;
 pub struct CellId(pub(crate) usize);
 
 /// Simple integer ID for cell defs, guaranteed to be unique within a project.
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct CellDefId(pub(crate) usize);
 
 impl IdMapKey for CellId {
@@ -39,22 +38,29 @@ pub(crate) struct ArrayProperties {
 
 /// Instanceable template definition of a cell.
 /// Corresponds to a single GDSII struct.
-#[derive(Debug, Clone)]
 pub(crate) struct CellDef {
-    pub boundary_elements: Vec<GdsBoundary>,
-    pub path_elements: Vec<GdsPath>,
-    pub cell_elements: Vec<CellId>,
-    pub instances: Vec<CellId>,
+    /// Polygon shapes and cached triangulations.
+    pub elements: Vec<Element>,
+
+    /// Instances that populate this cell.
+    pub child_instances: Vec<CellId>,
+
+    /// Present only for roots; holds a faux "ref" to self.
+    /// This exists only to provide a starting point for recursion.
     pub root_instance: Option<CellId>,
+
+    /// Instances of self, derived at load time.
+    /// This is the reverse direction of [Cell::cell_def_id].
+    /// NOTE: We are not using this, it could be probably be removed.
+    pub instances: Vec<CellId>,
 }
 
 impl CellDef {
     pub fn new() -> Self {
         Self {
             instances: vec![],
-            boundary_elements: Vec::new(),
-            path_elements: Vec::new(),
-            cell_elements: Vec::new(),
+            elements: Vec::new(),
+            child_instances: Vec::new(),
             root_instance: None,
         }
     }
