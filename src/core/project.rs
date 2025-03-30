@@ -36,7 +36,6 @@ pub struct Project {
     cell_defs: BTreeMap<CellDefId, CellDef>,
     layers: Vec<Layer>,
     highest_layer: i16,
-    stats: LayoutStats,
     interner: StringInterner,
     bounds: BoundingBox,
     rtree: RTree<ElementRef>,
@@ -49,17 +48,6 @@ impl Project {
         let library =
             GdsLibrary::from_bytes(data).map_err(|e| anyhow!("Failed to parse GDSII: {}", e))?;
 
-        let mut stats = LayoutStats {
-            struct_count: library.structs.len(),
-            polygon_count: 0,
-            path_count: 0,
-            sref_count: 0,
-            aref_count: 0,
-            text_count: 0,
-            node_count: 0,
-            box_count: 0,
-        };
-
         // Build stats
         let mut highest_layer = 0;
         for gds_struct in &library.structs {
@@ -67,17 +55,11 @@ impl Project {
                 match element {
                     gds21::GdsElement::GdsBoundary(boundary) => {
                         highest_layer = highest_layer.max(boundary.layer);
-                        stats.polygon_count += 1;
                     }
                     gds21::GdsElement::GdsPath(path) => {
                         highest_layer = highest_layer.max(path.layer);
-                        stats.path_count += 1;
                     }
-                    gds21::GdsElement::GdsStructRef(_) => stats.sref_count += 1,
-                    gds21::GdsElement::GdsArrayRef(_) => stats.aref_count += 1,
-                    gds21::GdsElement::GdsTextElem(_) => stats.text_count += 1,
-                    gds21::GdsElement::GdsNode(_) => stats.node_count += 1,
-                    gds21::GdsElement::GdsBox(_) => stats.box_count += 1,
+                    _ => {}
                 }
             }
         }
@@ -184,7 +166,6 @@ impl Project {
         }
 
         let mut project = Project {
-            stats,
             interner,
             cells,
             cell_defs,
@@ -204,10 +185,6 @@ impl Project {
         project.update_layers();
 
         Ok(project)
-    }
-
-    pub fn stats(&self) -> &LayoutStats {
-        &self.stats
     }
 
     pub fn highest_layer(&self) -> i16 {
@@ -285,12 +262,17 @@ impl Project {
 
         // Update bounds for each layer and the overall project
         self.bounds = BoundingBox::new();
+        let mut num_polygons = 0;
         for layer in &mut self.layers {
             layer.update_bounds();
             if !layer.bounds.is_empty() {
                 self.bounds.encompass(&layer.bounds);
             }
+            num_polygons += layer.polygons.len();
         }
+
+        log::info!("--------------------------------");
+        log::info!("Number of polygons: {}", num_polygons);
 
         self.rtree = RTree::bulk_load(rtree_items);
     }

@@ -24,6 +24,7 @@ use crate::components::ToastContainer;
 use crate::components::ToastManager;
 use crate::graphics::Renderer;
 use crate::graphics::Scene;
+use crate::performance_now;
 use crate::rsutils::hex_to_rgb;
 use crate::rsutils::rgb_to_hex;
 use crate::rsutils::ResizeObserver;
@@ -54,9 +55,23 @@ pub struct ViewerPage {
     canvas_ref: NodeRef,
     controller: Option<AppController>,
     status: String,
+    status_timestamp: f64,
     toast_manager: ToastManager,
     layer_proxies: Vec<LayerProxy>,
     is_dark_theme: bool,
+}
+
+impl ViewerPage {
+    fn set_status(&mut self, status: &str) {
+        log::info!("{} took {:.0}ms", self.status, performance_now!() - self.status_timestamp);
+        self.status_timestamp = performance_now!();
+        self.status = status.to_string();
+    }
+
+    fn clear_status(&mut self) {
+        log::info!("{} took {:.0}ms", self.status, performance_now!() - self.status_timestamp);
+        self.status.clear();
+    }
 }
 
 impl Component for ViewerPage {
@@ -66,7 +81,6 @@ impl Component for ViewerPage {
     fn create(ctx: &Context<Self>) -> Self {
         let canvas_ref = NodeRef::default();
         let controller = None;
-        let status = "Downloading GDS...".to_string();
         let toast_manager = ToastManager::new();
         let layer_proxies = Vec::new();
         
@@ -106,7 +120,8 @@ impl Component for ViewerPage {
         Self {
             canvas_ref,
             controller,
-            status,
+            status: "Fetching and reading GDS".to_string(),
+            status_timestamp: performance_now!(),
             toast_manager,
             layer_proxies,
             is_dark_theme,
@@ -114,9 +129,7 @@ impl Component for ViewerPage {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        log::info!("Destroying controller...");
         self.controller = None;
-        log::info!("Done destroying controller.");
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -317,7 +330,7 @@ impl Component for ViewerPage {
                 if self.is_dark_theme {
                     project.apply_rainbow_scheme();
                 }
-                self.status = "Triangulating polygons...".to_string();
+                self.set_status("Triangulating polygons");
                 let timeout = Timeout::new(1, move || link.send_message(ViewerMsg::SetProject(project)));
                 timeout.forget();
                 true
@@ -329,9 +342,7 @@ impl Component for ViewerPage {
                 };
                 controller.set_project(*project);
                 controller.apply_theme(if self.is_dark_theme { Theme::Dark } else { Theme::Light });
-                self.status.clear();
-                self.toast_manager
-                    .show("Zoom and pan like a map".to_string());
+                self.toast_manager.show("Zoom and pan like a map".to_string());
 
                 // Update layer proxies
                 if let Some(project) = controller.project() {
@@ -352,6 +363,7 @@ impl Component for ViewerPage {
                 }
 
                 controller.render();
+                self.clear_status();
                 true
             }
             ViewerMsg::RemoveToast(id) => {

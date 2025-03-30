@@ -56,14 +56,28 @@ trunk serve
 
 ## Next tasks
 
+Performance notes, local dev with dev tools open:
+
+INFO Number of polygons: 6394
+INFO Fetching and reading GDS took 523ms
+INFO Triangulating polygons took 2634ms
+
+INFO Number of polygons: 13998
+INFO Fetching and reading GDS took 861ms
+INFO Triangulating polygons took 2138ms
+
+INFO Number of polygons: 98068
+INFO Fetching and reading GDS took 2486ms
+INFO Triangulating polygons took 2724ms
+
 Faster triangulation
-  - Measure the speed up!
-  - `element.rs` should create polygons and triangulations
-  - `element.rs` should offer a `instantiate` that takes an AffineTransform
-    or `apply_transform`?
-  - Layer's `add_boundary_element` and `add_path_element`
-    should simply clone-and-translate the Element and its triangulation.
-    It should probably just be `add_element_instance`.
+
+- `element.rs` should create polygons and triangulations
+- `element.rs` should offer a `instantiate` that takes an AffineTransform
+  or `apply_transform`?
+- Layer's `add_boundary_element` and `add_path_element`
+  should simply clone-and-translate the Element and its triangulation.
+  It should probably just be `add_element_instance`.
 
 Test / fix the app on mobile devices. (pointer events, not mouse events; hide sidebar)
 

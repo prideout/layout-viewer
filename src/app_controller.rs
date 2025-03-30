@@ -81,12 +81,6 @@ impl AppController {
     }
 
     pub fn set_project(&mut self, mut project: Project) {
-        let stats = project.stats();
-        log::info!("Number of structs: {}", stats.struct_count);
-        log::info!("Number of polygons: {}", stats.polygon_count);
-        log::info!("Number of paths: {}", stats.path_count);
-        log::info!("Highest layer: {}", project.highest_layer());
-
         let mut alpha = 0.6; // looks ok for 4004 & 6502
         if project.layers().len() > 10 {
             alpha = 0.05;
