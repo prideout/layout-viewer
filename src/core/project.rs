@@ -196,6 +196,14 @@ impl Project {
         self.interner.get(cell_def_id.0)
     }
 
+    pub fn get_cell_def(&self, cell_def_id: CellDefId) -> Option<&CellDef> {
+        self.cell_defs.get(&cell_def_id)
+    }
+
+    pub fn get_cell(&self, cell_id: CellId) -> Option<&Cell> {
+        self.cells.get(&cell_id)
+    }
+
     pub fn find_roots(&self) -> Vec<CellDefId> {
         self.cell_defs
             .iter()
@@ -229,18 +237,16 @@ impl Project {
             let root_id = cell_def.root_instance.unwrap();
 
             for (element_index, element) in cell_def.elements.iter().enumerate() {
-                let polygon = element.polygon.clone();
+                let element_instance = ElementInstance {
+                    polygon: element.polygon.clone(),
+                    cell_def_id,
+                    element_index,
+                    cell_id: root_id,
+                };
                 match &element.shape {
                     GdsSourceShape::Boundary(ref boundary) => {
                         let layer = &mut self.layers[boundary.layer as usize];
-                        layer.add_element_instance(
-                            ElementInstance {
-                                polygon,
-                                cell_def_id,
-                                element_index,
-                            },
-                            identity,
-                        );
+                        layer.add_element_instance(element_instance, identity);
                         rtree_items.push(ElementRef {
                             aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: boundary.layer,
@@ -250,14 +256,7 @@ impl Project {
                     }
                     GdsSourceShape::Path(ref path) => {
                         let layer = &mut self.layers[path.layer as usize];
-                        layer.add_element_instance(
-                            ElementInstance {
-                                polygon,
-                                cell_def_id,
-                                element_index,
-                            },
-                            identity,
-                        );
+                        layer.add_element_instance(element_instance, identity);
                         rtree_items.push(ElementRef {
                             aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: path.layer,
@@ -344,18 +343,16 @@ impl Project {
         let transform = &cell.world_transform;
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
         for (element_index, element) in cell_def.elements.iter().enumerate() {
-            let polygon = element.polygon.clone();
+            let element_instance = ElementInstance {
+                polygon: element.polygon.clone(),
+                cell_def_id: cell.cell_def_id,
+                element_index,
+                cell_id,
+            };
             match element.shape {
                 GdsSourceShape::Boundary(ref boundary) => {
                     let layer = &mut self.layers[boundary.layer as usize];
-                    layer.add_element_instance(
-                        ElementInstance {
-                            polygon,
-                            cell_def_id: cell.cell_def_id,
-                            element_index,
-                        },
-                        transform,
-                    );
+                    layer.add_element_instance(element_instance, transform);
                     rtree_items.push(ElementRef {
                         aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: boundary.layer,
@@ -365,14 +362,7 @@ impl Project {
                 }
                 GdsSourceShape::Path(ref path) => {
                     let layer = &mut self.layers[path.layer as usize];
-                    layer.add_element_instance(
-                        ElementInstance {
-                            polygon,
-                            cell_def_id: cell.cell_def_id,
-                            element_index,
-                        },
-                        transform,
-                    );
+                    layer.add_element_instance(element_instance, transform);
                     rtree_items.push(ElementRef {
                         aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: path.layer,

@@ -19,7 +19,7 @@ impl IdMapKey for CellId {
 }
 
 /// Renderable instance of a [CellDef], positioned in the world.
-pub(crate) struct Cell {
+pub struct Cell {
     pub cell_def_id: CellDefId,
     pub xy: GdsPoint,
     pub local_transform: Option<GdsStrans>,
@@ -30,7 +30,7 @@ pub(crate) struct Cell {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub(crate) struct ArrayProperties {
+pub struct ArrayProperties {
     pub rows: i16,
     pub cols: i16,
     pub width: f64,
@@ -39,7 +39,7 @@ pub(crate) struct ArrayProperties {
 
 /// Instanceable template definition of a cell.
 /// Corresponds to a single GDSII struct.
-pub(crate) struct CellDef {
+pub struct CellDef {
     /// Polygon shapes and cached triangulations.
     pub elements: Vec<Element>,
 
@@ -64,5 +64,11 @@ impl CellDef {
             child_instances: Vec::new(),
             root_instance: None,
         }
+    }
+}
+
+impl Default for CellDef {
+    fn default() -> Self {
+        Self::new()
     }
 }

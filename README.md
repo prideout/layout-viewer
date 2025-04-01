@@ -56,21 +56,7 @@ trunk serve
 
 ## Next tasks
 
-Performance notes, local dev with dev tools open:
-
-INFO Number of polygons: 6394
-INFO Fetching and reading GDS took 523ms
-INFO Triangulating polygons took 2634ms
-
-INFO Number of polygons: 13998
-INFO Fetching and reading GDS took 861ms
-INFO Triangulating polygons took 2138ms
-
-INFO Number of polygons: 98068
-INFO Fetching and reading GDS took 2486ms
-INFO Triangulating polygons took 2724ms
-
-Faster triangulation
+Fix the status text
 
 Refactor: `ElementRef`, `ElementInstance` serve similar purposes;
   remove one of them, or simplify one of them

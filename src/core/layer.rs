@@ -6,12 +6,15 @@ use geo::AffineTransform;
 use geo::BoundingRect;
 use nalgebra::Vector4;
 
+use super::CellId;
+
 type Polygon = geo::Polygon<f64>;
 
 pub struct ElementInstance {
     pub polygon: Polygon,
     pub cell_def_id: CellDefId,
     pub element_index: usize,
+    pub cell_id: CellId,
 }
 
 pub struct Layer {

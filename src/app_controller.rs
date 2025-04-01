@@ -1,6 +1,7 @@
+use geo::AffineTransform;
+
 use crate::app_shaders::FRAGMENT_SHADER;
 use crate::app_shaders::VERTEX_SHADER;
-use crate::core::Layer;
 use crate::graphics::BlendMode;
 use crate::graphics::Camera;
 use crate::graphics::Geometry;
@@ -13,8 +14,6 @@ use crate::graphics::Viewport;
 use crate::hover_effect::HoverEffect;
 use crate::hover_effect::HoverParams;
 use crate::Project;
-
-use geo::TriangulateEarcut;
 
 type Point3 = nalgebra::Point3<f64>;
 
@@ -82,12 +81,34 @@ impl AppController {
             layer.color.w = alpha;
         }
 
-        self.create_meshes(project.layers_mut());
-
         self.hover_effect.move_to_back(&mut self.scene);
 
         let bounds = project.bounds();
         self.camera.fit_to_bounds(self.window_size, bounds);
+
+        let mut meshes = Vec::with_capacity(project.layers().len());
+        for layer in project.layers() {
+            let mut geometry = Geometry::new();
+            for element_instance in &layer.element_instances {
+                let affine_transform =
+                    if let Some(cell) = project.get_cell(element_instance.cell_id) {
+                        cell.world_transform
+                    } else {
+                        AffineTransform::identity()
+                    };
+                let cell_def = project.get_cell_def(element_instance.cell_def_id).unwrap();
+                let element_index = element_instance.element_index;
+                let element = &cell_def.elements[element_index];
+                element.append_triangles(&mut geometry, &affine_transform);
+            }
+            let geometry_id = self.scene.add_geometry(geometry);
+            let mesh = Mesh::new(geometry_id, self.layer_material);
+            meshes.push(self.scene.add_mesh(mesh));
+        }
+
+        for (i, layer) in project.layers_mut().iter_mut().enumerate() {
+            layer.mesh = Some(meshes[i]);
+        }
 
         self.project = Some(project);
     }
@@ -198,7 +219,8 @@ impl AppController {
         }
 
         let width = 5.0 * self.camera.width / self.window_size.0 as f64;
-        self.hover_effect.update_stroke_width(width, &mut self.scene, self.renderer.gl());
+        self.hover_effect
+            .update_stroke_width(width, &mut self.scene, self.renderer.gl());
 
         self.renderer.render(&mut self.scene, &self.camera);
         self.renderer.check_gl_error("Scene render");
@@ -262,50 +284,10 @@ impl AppController {
         let world = self.camera.unproject(Point3::new(ndc_x, ndc_y, 0.0));
         (world.x, world.y)
     }
-
-    fn create_meshes(&mut self, layers: &mut [Layer]) {
-        for layer in layers {
-            let geometry = create_layer_geometry(layer);
-            let geometry_id = self.scene.add_geometry(geometry);
-            let mesh = Mesh::new(geometry_id, self.layer_material);
-            let id = self.scene.add_mesh(mesh);
-            layer.mesh = Some(id);
-        }
-    }
 }
 
 impl Drop for AppController {
     fn drop(&mut self) {
         self.destroy();
     }
-}
-
-/// Triangulates polygons and appends them to a vertex buffer.
-fn create_layer_geometry(layer: &Layer) -> Geometry {
-    let mut geometry = Geometry::new();
-
-    // Process each polygon in the layer
-    // This is the slowest part of the load process (at the time of this writing)
-    for element_instance in &layer.element_instances {
-        let triangles = element_instance.polygon.earcut_triangles_raw();
-
-        let vertex_offset = geometry.positions.len() as u32 / 3;
-
-        for coord in triangles.vertices.chunks(2) {
-            let x = coord[0];
-            let y = coord[1];
-            geometry.positions.push(x as f32);
-            geometry.positions.push(y as f32);
-            geometry.positions.push(0.0);
-        }
-
-        geometry.indices.extend(
-            triangles
-                .triangle_indices
-                .iter()
-                .map(|i| (*i as u32 + vertex_offset)),
-        );
-    }
-
-    geometry
 }

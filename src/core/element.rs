@@ -1,6 +1,9 @@
+use crate::graphics::Geometry;
 use gds21::GdsBoundary;
 use gds21::GdsPath;
 use gds21::GdsPoint;
+use geo::AffineOps;
+use geo::AffineTransform;
 use geo::TriangulateEarcut;
 use i_overlay::mesh::stroke::offset::StrokeOffset;
 use i_overlay::mesh::style::LineCap;
@@ -76,6 +79,20 @@ impl Element {
             polygon,
             triangles,
             vertices,
+        }
+    }
+
+    pub fn append_triangles(&self, geometry: &mut Geometry, affine_transform: &AffineTransform) {
+        let offset = (geometry.positions.len() / 3) as u32;
+        for coord in self.vertices.chunks(2) {
+            let v = geo::Point::new(coord[0] as f64, coord[1] as f64);
+            let v = v.affine_transform(affine_transform);
+            geometry.positions.push(v.x() as f32);
+            geometry.positions.push(v.y() as f32);
+            geometry.positions.push(0.0);
+        }
+        for i in &self.triangles {
+            geometry.indices.push(*i + offset);
         }
     }
 }
