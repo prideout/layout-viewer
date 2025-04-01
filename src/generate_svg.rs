@@ -42,8 +42,8 @@ pub fn generate_svg(layers: &[Layer]) -> String {
 
         let mut group = Group::new().set("fill", color).set("opacity", 0.5);
 
-        for polygon in &layer.polygons {
-            let path_data = polygon_to_path_data(polygon);
+        for element_instance in &layer.element_instances {
+            let path_data = polygon_to_path_data(&element_instance.polygon);
             let path = Path::new().set("d", path_data).set("stroke", "none");
             group = group.add(path);
         }

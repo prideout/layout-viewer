@@ -356,7 +356,7 @@ impl Component for ViewerPage {
                                 visible: layer.visible,
                                 opacity: layer.color.w,
                                 color: rgb_to_hex(layer.color.x, layer.color.y, layer.color.z),
-                                is_empty: layer.polygons.is_empty(),
+                                is_empty: layer.element_instances.is_empty(),
                             }
                         })
                         .collect();

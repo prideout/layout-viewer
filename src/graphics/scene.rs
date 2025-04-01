@@ -33,6 +33,7 @@ impl Scene {
         self.materials.insert(material)
     }
 
+    #[allow(dead_code)]
     pub fn get_mesh(&self, id: &MeshId) -> Option<&Mesh> {
         self.meshes.get(id)
     }
@@ -41,14 +42,17 @@ impl Scene {
         self.meshes.get_mut(id)
     }
 
+    #[allow(dead_code)]
     pub fn get_geometry(&self, id: &GeometryId) -> Option<&Geometry> {
         self.geometries.get(id)
     }
 
+    #[allow(dead_code)]
     pub fn get_geometry_mut(&mut self, id: &GeometryId) -> Option<&mut Geometry> {
         self.geometries.get_mut(id)
     }
 
+    #[allow(dead_code)]
     pub fn get_material(&self, id: &MaterialId) -> Option<&Material> {
         self.materials.get(id)
     }

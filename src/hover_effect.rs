@@ -63,10 +63,6 @@ impl HoverEffect {
         self.polygon == Some(polygon.clone())
     }
 
-    pub fn polygon(&self) -> Option<ElementRef> {
-        self.polygon.clone()
-    }
-
     pub fn move_to_back(&mut self, scene: &mut Scene) {
         scene.move_mesh_to_back(self.fill);
         scene.move_mesh_to_back(self.stroke.mesh());
@@ -96,7 +92,7 @@ impl HoverEffect {
         self.polygon = Some(selection.clone());
 
         let layer = &project.layers()[selection.layer as usize];
-        let polygon = &layer.polygons[selection.polygon];
+        let polygon = &layer.element_instances[selection.element_instance_index].polygon;
 
         let triangles = polygon.earcut_triangles_raw();
 

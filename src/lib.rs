@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod app_controller;
 mod app_shaders;
 mod core;

@@ -46,6 +46,7 @@ impl Material {
         self.blend_mode = mode;
     }
 
+    #[allow(dead_code)]
     pub fn blend_mode(&self) -> BlendMode {
         self.blend_mode
     }

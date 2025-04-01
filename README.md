@@ -72,12 +72,10 @@ INFO Triangulating polygons took 2724ms
 
 Faster triangulation
 
-- `element.rs` should create polygons and triangulations
-- `element.rs` should offer a `instantiate` that takes an AffineTransform
-  or `apply_transform`?
-- Layer's `add_boundary_element` and `add_path_element`
-  should simply clone-and-translate the Element and its triangulation.
-  It should probably just be `add_element_instance`.
+Refactor: `ElementRef`, `ElementInstance` serve similar purposes;
+  remove one of them, or simplify one of them
+
+Zooming out should probably contrain pan (internally optional)
 
 Test / fix the app on mobile devices. (pointer events, not mouse events; hide sidebar)
 

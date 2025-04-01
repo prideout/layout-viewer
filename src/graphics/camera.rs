@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 type Mat4 = nalgebra::Matrix4<f64>;
 type Point = nalgebra::Point3<f64>;
 type Vec3 = nalgebra::Vector3<f64>;

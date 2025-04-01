@@ -66,16 +66,9 @@ impl Renderer {
         self.viewport = viewport;
     }
 
-    pub fn get_viewport(&self) -> Viewport {
-        self.viewport
-    }
-
+    #[allow(dead_code)]
     pub fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         self.clear_color = (r, g, b, a);
-    }
-
-    pub fn get_clear_color(&self) -> (f32, f32, f32, f32) {
-        self.clear_color
     }
 
     pub fn render(&self, scene: &mut Scene, camera: &Camera) {

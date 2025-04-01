@@ -28,6 +28,7 @@ pub(crate) struct Cell {
     pub array: Option<ArrayProperties>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct ArrayProperties {
     pub rows: i16,

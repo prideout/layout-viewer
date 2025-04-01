@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::graphics::Geometry;
 use crate::graphics::GeometryId;
 use crate::graphics::Material;

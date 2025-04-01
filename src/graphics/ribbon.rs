@@ -47,6 +47,7 @@ impl Ribbon {
         scene.get_mesh_mut(&self.mesh).unwrap().visible = false;
     }
 
+    #[allow(dead_code)]
     pub fn show(&self, scene: &mut Scene) {
         scene.get_mesh_mut(&self.mesh).unwrap().visible = true;
     }

@@ -64,20 +64,6 @@ pub fn run_cli() -> Result<()> {
     let file_content = fs::read(&args.input)?;
     let project = Project::from_bytes(&file_content)?;
 
-    let stats = project.stats();
-    println!(
-        "{:<12} {}",
-        "Structs".color(Color::Green),
-        stats.struct_count
-    );
-    println!(
-        "{:<12} {}",
-        "Boundaries".color(Color::Green),
-        stats.polygon_count
-    );
-    println!("{:<12} {}", "Paths".color(Color::Green), stats.path_count);
-    println!("{:<12} {}", "SRefs".color(Color::Green), stats.sref_count);
-    println!("{:<12} {}", "ARefs".color(Color::Green), stats.aref_count);
     println!(
         "{:<12} {}",
         "Layers".color(Color::Green),

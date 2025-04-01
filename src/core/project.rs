@@ -4,6 +4,7 @@ use crate::core::CellDef;
 use crate::core::CellDefId;
 use crate::core::CellId;
 use crate::core::Element;
+use crate::core::ElementInstance;
 use crate::core::GdsSourceShape;
 use crate::core::Layer;
 use crate::graphics::BoundingBox;
@@ -227,25 +228,40 @@ impl Project {
             let cell_def = self.cell_defs.get(&cell_def_id).unwrap();
             let root_id = cell_def.root_instance.unwrap();
 
-            for element in &cell_def.elements {
-                match element.shape {
+            for (element_index, element) in cell_def.elements.iter().enumerate() {
+                let polygon = element.polygon.clone();
+                match &element.shape {
                     GdsSourceShape::Boundary(ref boundary) => {
                         let layer = &mut self.layers[boundary.layer as usize];
-                        layer.add_boundary_element(boundary, identity);
+                        layer.add_element_instance(
+                            ElementInstance {
+                                polygon,
+                                cell_def_id,
+                                element_index,
+                            },
+                            identity,
+                        );
                         rtree_items.push(ElementRef {
-                            aabb: layer.polygons.last().unwrap().envelope(),
+                            aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: boundary.layer,
-                            polygon: layer.polygons.len() - 1,
+                            element_instance_index: layer.element_instances.len() - 1,
                             cell_id: root_id,
                         });
                     }
                     GdsSourceShape::Path(ref path) => {
                         let layer = &mut self.layers[path.layer as usize];
-                        layer.add_path_element(path, identity);
+                        layer.add_element_instance(
+                            ElementInstance {
+                                polygon,
+                                cell_def_id,
+                                element_index,
+                            },
+                            identity,
+                        );
                         rtree_items.push(ElementRef {
-                            aabb: layer.polygons.last().unwrap().envelope(),
+                            aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: path.layer,
-                            polygon: layer.polygons.len() - 1,
+                            element_instance_index: layer.element_instances.len() - 1,
                             cell_id: root_id,
                         });
                     }
@@ -268,7 +284,7 @@ impl Project {
             if !layer.bounds.is_empty() {
                 self.bounds.encompass(&layer.bounds);
             }
-            num_polygons += layer.polygons.len();
+            num_polygons += layer.element_instances.len();
         }
 
         log::info!("--------------------------------");
@@ -280,14 +296,14 @@ impl Project {
     pub fn apply_rainbow_scheme(&mut self) {
         let mut count = 0;
         for layer in &self.layers {
-            if !layer.polygons.is_empty() {
+            if !layer.element_instances.is_empty() {
                 count += 1;
             }
         }
 
         let mut i = 0;
         for layer in &mut self.layers {
-            if layer.polygons.is_empty() {
+            if layer.element_instances.is_empty() {
                 continue;
             }
             // Make the last layer white. To my eyes this looks somewhat better, aesthetically.
@@ -305,7 +321,7 @@ impl Project {
     pub fn apply_light_scheme(&mut self) {
         let mut count = 0;
         for layer in &self.layers {
-            if !layer.polygons.is_empty() {
+            if !layer.element_instances.is_empty() {
                 count += 1;
             }
         }
@@ -313,7 +329,7 @@ impl Project {
         let alpha = 1.0 / (count as f32);
 
         for layer in &mut self.layers {
-            if layer.polygons.is_empty() {
+            if layer.element_instances.is_empty() {
                 continue;
             }
             layer.color = Vector4::new(0.0, 0.0, 0.0, alpha);
@@ -327,25 +343,40 @@ impl Project {
         }
         let transform = &cell.world_transform;
         let cell_def = self.cell_defs.get(&cell.cell_def_id).unwrap();
-        for element in &cell_def.elements {
+        for (element_index, element) in cell_def.elements.iter().enumerate() {
+            let polygon = element.polygon.clone();
             match element.shape {
                 GdsSourceShape::Boundary(ref boundary) => {
                     let layer = &mut self.layers[boundary.layer as usize];
-                    layer.add_boundary_element(boundary, transform);
+                    layer.add_element_instance(
+                        ElementInstance {
+                            polygon,
+                            cell_def_id: cell.cell_def_id,
+                            element_index,
+                        },
+                        transform,
+                    );
                     rtree_items.push(ElementRef {
-                        aabb: layer.polygons.last().unwrap().envelope(),
+                        aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: boundary.layer,
-                        polygon: layer.polygons.len() - 1,
+                        element_instance_index: layer.element_instances.len() - 1,
                         cell_id,
                     });
                 }
                 GdsSourceShape::Path(ref path) => {
                     let layer = &mut self.layers[path.layer as usize];
-                    layer.add_path_element(path, transform);
+                    layer.add_element_instance(
+                        ElementInstance {
+                            polygon,
+                            cell_def_id: cell.cell_def_id,
+                            element_index,
+                        },
+                        transform,
+                    );
                     rtree_items.push(ElementRef {
-                        aabb: layer.polygons.last().unwrap().envelope(),
+                        aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: path.layer,
-                        polygon: layer.polygons.len() - 1,
+                        element_instance_index: layer.element_instances.len() - 1,
                         cell_id,
                     });
                 }
@@ -420,7 +451,7 @@ impl Project {
                 }
             }
             let layer = &self.layers[item.layer as usize];
-            let polygon = &layer.polygons[item.polygon];
+            let polygon = &layer.element_instances[item.element_instance_index].polygon;
             if layer.visible && polygon.contains(&point) {
                 result = Some(item.clone());
             }
@@ -429,23 +460,11 @@ impl Project {
     }
 }
 
-#[derive(Debug)]
-pub struct LayoutStats {
-    pub struct_count: usize,
-    pub polygon_count: usize,
-    pub path_count: usize,
-    pub sref_count: usize,
-    pub aref_count: usize,
-    pub text_count: usize,
-    pub node_count: usize,
-    pub box_count: usize,
-}
-
 /// Identifies a unique instance of [Element].
 #[derive(Clone)]
 pub struct ElementRef {
     aabb: AABB<Point<f64>>,
-    pub polygon: usize,
+    pub element_instance_index: usize,
     pub layer: i16,
     pub cell_id: CellId,
 }
@@ -455,14 +474,16 @@ impl Debug for ElementRef {
         write!(
             f,
             "{{ polygon {}, layer {}, cell_id {} }}",
-            self.polygon, self.layer, self.cell_id.0
+            self.element_instance_index, self.layer, self.cell_id.0
         )
     }
 }
 
 impl PartialEq for ElementRef {
     fn eq(&self, other: &Self) -> bool {
-        self.polygon == other.polygon && self.layer == other.layer && self.cell_id == other.cell_id
+        self.element_instance_index == other.element_instance_index
+            && self.layer == other.layer
+            && self.cell_id == other.cell_id
     }
 }
 

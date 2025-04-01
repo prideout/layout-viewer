@@ -17,7 +17,6 @@ use crate::Project;
 use geo::TriangulateEarcut;
 
 type Point3 = nalgebra::Point3<f64>;
-type Point2 = nalgebra::Point2<f64>;
 
 /// Encapsulates high-level application logic common to all platforms.
 pub struct AppController {
@@ -66,12 +65,6 @@ impl AppController {
             hover_effect,
             layer_material: layer_material_id,
         }
-    }
-
-    pub fn get_mesh_for_layer(&self, layer_index: usize) -> &Mesh {
-        let layer = &self.project.as_ref().unwrap().layers()[layer_index];
-        let id = layer.mesh.unwrap();
-        self.scene.get_mesh(&id).unwrap()
     }
 
     pub fn get_mesh_for_layer_mut(&mut self, layer_index: usize) -> &mut Mesh {
@@ -232,20 +225,12 @@ impl AppController {
         self.scene.destroy(self.renderer.gl());
     }
 
-    pub fn scene(&mut self) -> &mut Scene {
-        &mut self.scene
-    }
-
     pub fn project(&self) -> Option<&Project> {
         self.project.as_ref()
     }
 
     pub fn project_mut(&mut self) -> Option<&mut Project> {
         self.project.as_mut()
-    }
-
-    pub fn camera(&self) -> &Camera {
-        &self.camera
     }
 
     pub fn apply_theme(&mut self, theme: Theme) {
@@ -301,8 +286,8 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
 
     // Process each polygon in the layer
     // This is the slowest part of the load process (at the time of this writing)
-    for polygon in &layer.polygons {
-        let triangles = polygon.earcut_triangles_raw();
+    for element_instance in &layer.element_instances {
+        let triangles = element_instance.polygon.earcut_triangles_raw();
 
         let vertex_offset = geometry.positions.len() as u32 / 3;
 
@@ -323,8 +308,4 @@ fn create_layer_geometry(layer: &Layer) -> Geometry {
     }
 
     geometry
-}
-
-fn geo_point_to_array(point: geo::Point<f64>) -> [f64; 2] {
-    [point.x(), point.y()]
 }
