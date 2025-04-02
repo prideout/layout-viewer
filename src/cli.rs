@@ -62,7 +62,9 @@ pub fn run_cli() -> Result<()> {
 
     // Read and process the GDSII file
     let file_content = fs::read(&args.input)?;
-    let project = Project::from_bytes(&file_content)?;
+    let mut project = Project::from_bytes(&file_content)?;
+    project.update_world_transforms();
+    project.update_layers();
 
     println!(
         "{:<12} {}",

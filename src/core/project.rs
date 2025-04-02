@@ -182,9 +182,6 @@ impl Project {
             cell_def.root_instance = Some(project.cells.create_id());
         }
 
-        project.update_world_transforms();
-        project.update_layers();
-
         Ok(project)
     }
 
@@ -251,7 +248,6 @@ impl Project {
                             aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: boundary.layer,
                             element_instance_index: layer.element_instances.len() - 1,
-                            cell_id: root_id,
                         });
                     }
                     GdsSourceShape::Path(ref path) => {
@@ -261,7 +257,6 @@ impl Project {
                             aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                             layer: path.layer,
                             element_instance_index: layer.element_instances.len() - 1,
-                            cell_id: root_id,
                         });
                     }
                 }
@@ -286,7 +281,6 @@ impl Project {
             num_polygons += layer.element_instances.len();
         }
 
-        log::info!("--------------------------------");
         log::info!("Number of polygons: {}", num_polygons);
 
         self.rtree = RTree::bulk_load(rtree_items);
@@ -357,7 +351,6 @@ impl Project {
                         aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: boundary.layer,
                         element_instance_index: layer.element_instances.len() - 1,
-                        cell_id,
                     });
                 }
                 GdsSourceShape::Path(ref path) => {
@@ -367,7 +360,6 @@ impl Project {
                         aabb: layer.element_instances.last().unwrap().polygon.envelope(),
                         layer: path.layer,
                         element_instance_index: layer.element_instances.len() - 1,
-                        cell_id,
                     });
                 }
             }
@@ -456,15 +448,14 @@ pub struct ElementRef {
     aabb: AABB<Point<f64>>,
     pub element_instance_index: usize,
     pub layer: i16,
-    pub cell_id: CellId,
 }
 
 impl Debug for ElementRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ polygon {}, layer {}, cell_id {} }}",
-            self.element_instance_index, self.layer, self.cell_id.0
+            "{{ polygon {}, layer {} }}",
+            self.element_instance_index, self.layer
         )
     }
 }
@@ -473,7 +464,6 @@ impl PartialEq for ElementRef {
     fn eq(&self, other: &Self) -> bool {
         self.element_instance_index == other.element_instance_index
             && self.layer == other.layer
-            && self.cell_id == other.cell_id
     }
 }
 

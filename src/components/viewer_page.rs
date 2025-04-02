@@ -11,6 +11,7 @@ use web_sys::RequestInit;
 use web_sys::Response;
 use web_sys::WebGl2RenderingContext;
 use web_sys::WheelEvent;
+use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -24,11 +25,12 @@ use crate::components::ToastContainer;
 use crate::components::ToastManager;
 use crate::graphics::Renderer;
 use crate::graphics::Scene;
-use crate::performance_now;
 use crate::rsutils::hex_to_rgb;
 use crate::rsutils::rgb_to_hex;
 use crate::rsutils::ResizeObserver;
 use crate::Project;
+
+use super::has_dropped_file;
 
 #[derive(Properties, PartialEq)]
 pub struct ViewerProps {
@@ -41,8 +43,10 @@ pub enum ViewerMsg {
     MouseMove(u32, u32),
     MouseWheel(u32, u32, f64),
     MouseLeave,
-    GdsLoaded(Box<Project>),
-    SetProject(Box<Project>),
+    DoneFetching(Vec<u8>),
+    ParseGds(Vec<u8>),
+    Triangulate(Box<Project>),
+    GenerateVerts(Box<Project>),
     Render,
     Resize,
     Tick,
@@ -54,23 +58,27 @@ pub enum ViewerMsg {
 pub struct ViewerPage {
     canvas_ref: NodeRef,
     controller: Option<AppController>,
-    status: String,
-    status_timestamp: f64,
     toast_manager: ToastManager,
     layer_proxies: Vec<LayerProxy>,
     is_dark_theme: bool,
+    status: String,
 }
 
 impl ViewerPage {
-    fn set_status(&mut self, status: &str) {
-        log::info!("{} took {:.0}ms", self.status, performance_now!() - self.status_timestamp);
-        self.status_timestamp = performance_now!();
+    fn enqueue<T>(&mut self, status: &str, callback: Callback<T>, data: T)
+    where
+        T: 'static,
+    {
         self.status = status.to_string();
-    }
+        log::info!("{}", status);
 
-    fn clear_status(&mut self) {
-        log::info!("{} took {:.0}ms", self.status, performance_now!() - self.status_timestamp);
-        self.status.clear();
+        // NOTE: This does not consistently give enough time for a refresh.
+        // However we cannot use requestAnimationFrame without requiring
+        // T to be cloneable.
+        Timeout::new(1, move || {
+            callback.emit(data);
+        })
+        .forget();
     }
 }
 
@@ -83,11 +91,13 @@ impl Component for ViewerPage {
         let controller = None;
         let toast_manager = ToastManager::new();
         let layer_proxies = Vec::new();
-        
+
         // Read theme from local storage
         let is_dark_theme = if let Some(window) = window() {
             if let Some(storage) = window.local_storage().unwrap() {
-                storage.get_item("dark_theme").unwrap_or(None)
+                storage
+                    .get_item("dark_theme")
+                    .unwrap_or(None)
                     .map(|s| s == "true")
                     .unwrap_or(false)
             } else {
@@ -97,20 +107,7 @@ impl Component for ViewerPage {
             false
         };
 
-        // Check for dropped file
-        if let Some((_name, content)) = take_dropped_file() {
-            let link = ctx.link().clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                match Project::from_bytes(&content) {
-                    Ok(project) => {
-                        link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
-                    }
-                    Err(_) => {
-                        log::error!("Failed to parse dropped GDS.");
-                    }
-                }
-            });
-        } else if ctx.props().id == "dropped-file" {
+        if !has_dropped_file() && ctx.props().id == "dropped-file" {
             // No dropped file but on the dropped-file route, navigate back to home
             let navigator = ctx.link().navigator().unwrap();
             navigator.push(&Route::Home);
@@ -120,11 +117,10 @@ impl Component for ViewerPage {
         Self {
             canvas_ref,
             controller,
-            status: "Fetching and reading GDS".to_string(),
-            status_timestamp: performance_now!(),
             toast_manager,
             layer_proxies,
             is_dark_theme,
+            status: "Fetching GDS".to_string(),
         }
     }
 
@@ -204,25 +200,15 @@ impl Component for ViewerPage {
         if !first_render {
             return;
         }
-        // Start GDS file fetch
-        let id = ctx.props().id.clone();
 
-        if id != "dropped-file" {
-            let link = ctx.link().clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                match fetch_gds_file(&id).await {
-                    Ok(bytes) => {
-                        let Ok(project) = Project::from_bytes(&bytes) else {
-                            log::error!("Failed to parse fetched GDS.");
-                            return;
-                        };
-                        link.send_message(ViewerMsg::GdsLoaded(Box::new(project)));
-                    }
-                    Err(e) => {
-                        log::error!("Failed to fetch GDS file: {:?}", e);
-                    }
-                }
-            });
+        let id = ctx.props().id.clone();
+        let link = ctx.link().clone();
+
+        if let Some((_name, content)) = take_dropped_file() {
+            let cb = link.callback(ViewerMsg::ParseGds);
+            self.enqueue("Parsing GDS", cb, content);
+        } else if id != "dropped-file" {
+            download(link, id);
         }
 
         // Get canvas and create WebGL context
@@ -240,7 +226,8 @@ impl Component for ViewerPage {
         let options = serde_wasm_bindgen::to_value(&Options {
             alpha: true,
             antialias: true,
-        }).unwrap();
+        })
+        .unwrap();
 
         let gl: WebGl2RenderingContext = canvas
             .get_context_with_context_options("webgl2", &options)
@@ -326,23 +313,44 @@ impl Component for ViewerPage {
                 controller.handle_mouse_leave();
                 false
             }
-            ViewerMsg::GdsLoaded(mut project) => {
+            ViewerMsg::DoneFetching(content) => {
+                let cb = link.callback(ViewerMsg::ParseGds);
+                self.enqueue("Parsing GDS", cb, content);
+                true
+            }
+            ViewerMsg::ParseGds(content) => {
+                let project = Project::from_bytes(&content);
+                let Ok(mut project) = project else {
+                    log::error!("Failed to parse dropped GDS.");
+                    return true;
+                };
+                project.update_world_transforms();
+                let cb = link.callback(ViewerMsg::Triangulate);
+                self.enqueue("Triangulating polygons", cb, Box::new(project));
+                true
+            }
+            ViewerMsg::Triangulate(mut project) => {
+                project.update_layers();
+                let cb = link.callback(ViewerMsg::GenerateVerts);
+                self.enqueue("Generating vertex buffers", cb, project);
+                true
+            }
+            ViewerMsg::GenerateVerts(mut project) => {
                 if self.is_dark_theme {
                     project.apply_rainbow_scheme();
                 }
-                self.set_status("Triangulating polygons");
-                let timeout = Timeout::new(1, move || link.send_message(ViewerMsg::SetProject(project)));
-                timeout.forget();
-                true
-            }
-            ViewerMsg::SetProject(project) => {
                 let Some(controller) = &mut self.controller else {
                     log::error!("Controller not ready");
                     return false;
                 };
                 controller.set_project(*project);
-                controller.apply_theme(if self.is_dark_theme { Theme::Dark } else { Theme::Light });
-                self.toast_manager.show("Zoom and pan like a map".to_string());
+                controller.apply_theme(if self.is_dark_theme {
+                    Theme::Dark
+                } else {
+                    Theme::Light
+                });
+                self.toast_manager
+                    .show("Zoom and pan like a map".to_string());
 
                 // Update layer proxies
                 if let Some(project) = controller.project() {
@@ -350,20 +358,18 @@ impl Component for ViewerPage {
                         .layers()
                         .iter()
                         .enumerate()
-                        .map(|(index, layer)| {
-                            LayerProxy {
-                                index,
-                                visible: layer.visible,
-                                opacity: layer.color.w,
-                                color: rgb_to_hex(layer.color.x, layer.color.y, layer.color.z),
-                                is_empty: layer.element_instances.is_empty(),
-                            }
+                        .map(|(index, layer)| LayerProxy {
+                            index,
+                            visible: layer.visible,
+                            opacity: layer.color.w,
+                            color: rgb_to_hex(layer.color.x, layer.color.y, layer.color.z),
+                            is_empty: layer.element_instances.is_empty(),
                         })
                         .collect();
                 }
 
                 controller.render();
-                self.clear_status();
+                self.status.clear();
                 true
             }
             ViewerMsg::RemoveToast(id) => {
@@ -399,7 +405,11 @@ impl Component for ViewerPage {
             }
             ViewerMsg::ToggleTheme => {
                 self.is_dark_theme = !self.is_dark_theme;
-                controller.apply_theme(if self.is_dark_theme { Theme::Dark } else { Theme::Light });
+                controller.apply_theme(if self.is_dark_theme {
+                    Theme::Dark
+                } else {
+                    Theme::Light
+                });
                 for layer in controller.project().unwrap().layers() {
                     let proxy = &mut self.layer_proxies[layer.index() as usize];
                     proxy.color = rgb_to_hex(layer.color.x, layer.color.y, layer.color.z);
@@ -407,7 +417,10 @@ impl Component for ViewerPage {
                 }
                 if let Some(window) = window() {
                     if let Some(storage) = window.local_storage().unwrap() {
-                        let _ = storage.set_item("dark_theme", if self.is_dark_theme { "true" } else { "false" });
+                        let _ = storage.set_item(
+                            "dark_theme",
+                            if self.is_dark_theme { "true" } else { "false" },
+                        );
                     }
                 }
                 true
@@ -417,11 +430,11 @@ impl Component for ViewerPage {
 }
 
 // Helper function to fetch GDS file
-async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
+async fn fetch_gds_file(filename: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     let opts = RequestInit::new();
     opts.set_method("GET");
 
-    let url = format!("gds/{}.gds", id);
+    let url = format!("gds/{}.gds", filename);
 
     let request = Request::new_with_str_and_init(&url, &opts)?;
 
@@ -435,4 +448,17 @@ async fn fetch_gds_file(id: &str) -> Result<Vec<u8>, wasm_bindgen::JsValue> {
     let bytes = uint8_array.to_vec();
 
     Ok(bytes)
+}
+
+fn download(link: Scope<ViewerPage>, filename: String) {
+    wasm_bindgen_futures::spawn_local(async move {
+        match fetch_gds_file(&filename).await {
+            Ok(bytes) => {
+                link.send_message(ViewerMsg::DoneFetching(bytes));
+            }
+            Err(e) => {
+                log::error!("Failed to fetch GDS file: {:?}", e);
+            }
+        }
+    });
 }

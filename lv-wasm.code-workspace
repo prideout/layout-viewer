@@ -6,7 +6,7 @@
     ],
     "settings": {
       "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
-      "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"]
+      // "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"]
     }
   }
   

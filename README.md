@@ -56,16 +56,20 @@ trunk serve
 
 ## Next tasks
 
-Fix the status text
+Refactorings
+  - Simplify `update_layers` so that _recurse works on the roots (DRY)
+  - I think we need faux cells for the roots
+  - Should `ElementInstance` be stored in `Cell`?
 
-Refactor: `ElementRef`, `ElementInstance` serve similar purposes;
-  remove one of them, or simplify one of them
-
-Zooming out should probably contrain pan (internally optional)
+Zooming out should constrain pan (internally optional)
 
 Test / fix the app on mobile devices. (pointer events, not mouse events; hide sidebar)
 
+Try to fix the status text issues. Use Evan's state diagram generator.
+
 Implement array refs.
+
+Integer grid.
 
 Performance / smooth zoom.
 

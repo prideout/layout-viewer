@@ -1,6 +1,7 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+/// Represents a layer in the sidebar.
 #[derive(Clone, PartialEq)]
 pub struct LayerProxy {
     pub index: usize,

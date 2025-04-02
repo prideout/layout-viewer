@@ -73,14 +73,6 @@ impl AppController {
     }
 
     pub fn set_project(&mut self, mut project: Project) {
-        let mut alpha = 0.6; // looks ok for 4004 & 6502
-        if project.layers().len() > 10 {
-            alpha = 0.05;
-        }
-        for layer in project.layers_mut() {
-            layer.color.w = alpha;
-        }
-
         self.hover_effect.move_to_back(&mut self.scene);
 
         let bounds = project.bounds();

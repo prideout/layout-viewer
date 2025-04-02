@@ -180,3 +180,8 @@ static mut DROPPED_FILE: Option<(String, Vec<u8>)> = None;
 pub fn take_dropped_file() -> Option<(String, Vec<u8>)> {
     unsafe { DROPPED_FILE.take() }
 }
+
+#[allow(static_mut_refs)]
+pub fn has_dropped_file() -> bool {
+    unsafe { DROPPED_FILE.is_some() }
+}
