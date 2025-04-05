@@ -22,19 +22,16 @@ pub struct Ribbon {
 
 impl Ribbon {
     pub fn new(world: &mut World) -> Self {
-        let geometry = world.spawn_empty().id();
-        world.entity_mut(geometry).insert(Geometry::new());
+        let geometry = world.spawn(Geometry::new()).id();
 
         let mut material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
         material_component.set_blending(BlendMode::SourceOver);
-        let material = world.spawn_empty().id();
-        world.entity_mut(material).insert(material_component);
+        let material = world.spawn(material_component).id();
 
         let mut mesh_component = Mesh::new(geometry, material);
         mesh_component.visible = false;
         mesh_component.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
-        let mesh = world.spawn_empty().id();
-        world.entity_mut(mesh).insert(mesh_component);
+        let mesh = world.spawn(mesh_component).id();
 
         Self {
             mesh,

@@ -32,25 +32,19 @@ pub struct HoverEffect {
 
 impl HoverEffect {
     pub fn new(world: &mut World) -> Self {
-        let mut fill_material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        fill_material_component.set_blending(BlendMode::SourceOver);
-        let fill_material = world.spawn_empty().id();
-        world.entity_mut(fill_material).insert(fill_material_component);
+        let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        material.set_blending(BlendMode::SourceOver);
+        let fill_material = world.spawn(material).id();
 
-        let fill_geometry = world.spawn_empty().id();
-        world.entity_mut(fill_geometry).insert(Geometry::new());
+        let geometry = world.spawn(Geometry::new()).id();
 
-        let mut fill_mesh = Mesh::new(fill_geometry, fill_material);
-        fill_mesh.visible = false;
-
-        let fill = world.spawn_empty().id();
-        world.entity_mut(fill).insert(fill_mesh);
-        let ribbon = Ribbon::new(world);
+        let mut mesh = Mesh::new(geometry, fill_material);
+        mesh.visible = false;
 
         Self {
             polygon: None,
-            fill,
-            stroke: ribbon,
+            fill: world.spawn(mesh).id(),
+            stroke: Ribbon::new(world),
         }
     }
 

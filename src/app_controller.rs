@@ -99,8 +99,7 @@ impl AppController {
             if mesh.render_order > highest_render_order {
                 highest_render_order = mesh.render_order;
             }
-            let mesh_entity = self.world.spawn_empty().id();
-            self.world.entity_mut(mesh_entity).insert(mesh);
+            let mesh_entity = self.world.spawn(mesh).id();
 
             meshes.push(mesh_entity);
         }

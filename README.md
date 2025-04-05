@@ -56,8 +56,6 @@ trunk serve
 
 ## Next tasks
 
-Simplify all calls to `spawn_empty`
-
 By adding a `GlowOwner` component, maybe we can simplify the destroy call in AppController?
 
 Rename components/ to webui/
