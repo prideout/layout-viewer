@@ -64,12 +64,6 @@ impl<K: IdMapKey + Copy + Hash + Eq, V> IdMap<K, V> {
         self.items.values_mut()
     }
 
-    pub fn replace(&mut self, id: K, value: V) -> V {
-        self.items
-            .insert(id, value)
-            .expect("IdMap: replace called with non-existent id")
-    }
-
     pub fn move_to_back(&mut self, id: K) {
         let value = self.take(id);
         self.items.insert(id, value);

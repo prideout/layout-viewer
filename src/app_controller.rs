@@ -1,3 +1,6 @@
+use bevy_ecs::entity::Entity;
+use bevy_ecs::query::With;
+use bevy_ecs::world::World;
 use geo::AffineTransform;
 
 use crate::app_shaders::FRAGMENT_SHADER;
@@ -23,6 +26,7 @@ pub struct AppController {
     renderer: Renderer,
     camera: Camera,
     scene: Scene,
+    world: World,
     is_dragging: bool,
     last_mouse_pos: Option<(u32, u32)>,
     zoom_speed: f64,
@@ -33,10 +37,12 @@ pub struct AppController {
 }
 
 pub enum Theme {
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
     Light,
     Dark,
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 impl AppController {
     pub fn new(
         renderer: Renderer,
@@ -46,7 +52,9 @@ impl AppController {
     ) -> Self {
         let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
 
-        let hover_effect = HoverEffect::new(&mut scene);
+        let mut world = World::new();
+
+        let hover_effect = HoverEffect::new(&mut world, &mut scene);
 
         let layer_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
         let layer_material_id = scene.add_material(layer_material);
@@ -56,6 +64,7 @@ impl AppController {
             renderer,
             camera,
             scene,
+            world,
             is_dragging: false,
             last_mouse_pos: None,
             zoom_speed: 0.05,
@@ -93,8 +102,11 @@ impl AppController {
                 let element = &cell_def.elements[element_index];
                 element.append_triangles(&mut geometry, &affine_transform);
             }
-            let geometry_id = self.scene.add_geometry(geometry);
-            let mesh = Mesh::new(geometry_id, self.layer_material);
+
+            let geometry_entity = self.world.spawn_empty().id();
+            self.world.entity_mut(geometry_entity).insert(geometry);
+
+            let mesh = Mesh::new(geometry_entity, self.layer_material);
             meshes.push(self.scene.add_mesh(mesh));
         }
 
@@ -146,6 +158,7 @@ impl AppController {
                     selection: hit,
                     project: &project,
                     scene: &mut self.scene,
+                    world: &mut self.world,
                     gl: self.renderer.gl(),
                 });
                 self.render();
@@ -211,10 +224,15 @@ impl AppController {
         }
 
         let width = 5.0 * self.camera.width / self.window_size.0 as f64;
-        self.hover_effect
-            .update_stroke_width(width, &mut self.scene, self.renderer.gl());
+        self.hover_effect.update_stroke_width(
+            width,
+            &mut self.world,
+            &mut self.scene,
+            self.renderer.gl(),
+        );
 
-        self.renderer.render(&mut self.scene, &self.camera);
+        self.renderer
+            .render(&mut self.world, &mut self.scene, &self.camera);
         self.renderer.check_gl_error("Scene render");
         self.needs_render = false;
         true // Frame was rendered
@@ -231,11 +249,29 @@ impl AppController {
         let window_aspect = physical_width as f64 / physical_height as f64;
         self.camera.height = self.camera.width / window_aspect;
 
-        self.renderer.render(&mut self.scene, &self.camera);
+        self.renderer
+            .render(&mut self.world, &mut self.scene, &self.camera);
         self.renderer.check_gl_error("Scene render");
     }
 
     pub fn destroy(&mut self) {
+        let mut geo_query = self.world.query::<&mut Geometry>();
+        for mut geo in geo_query.iter_mut(&mut self.world) {
+            geo.destroy(self.renderer.gl());
+        }
+
+        let entities = self
+            .world
+            .query_filtered::<Entity, With<Geometry>>()
+            .iter(&self.world)
+            .collect::<Vec<_>>();
+
+        for entity in entities {
+            if let Some(mut entity_mut) = self.world.get_entity_mut(entity) {
+                entity_mut.remove::<Geometry>();
+            }
+        }
+
         self.scene.destroy(self.renderer.gl());
     }
 

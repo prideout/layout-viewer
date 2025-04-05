@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
 use crate::graphics::Geometry;
-use crate::graphics::GeometryId;
 use crate::graphics::Material;
 use crate::graphics::MaterialId;
 use crate::rsutils::IdMapKey;
+use bevy_ecs::entity::Entity;
 use glow::HasContext;
 use indexmap::IndexMap;
 use nalgebra::Matrix4;
@@ -23,7 +23,7 @@ impl IdMapKey for MeshId {
 }
 
 pub struct Mesh {
-    pub geometry_id: GeometryId,
+    pub geometry: Entity,
     pub material_id: MaterialId,
     pub visible: bool,
     pub matrix: Matrix4<f32>,
@@ -37,9 +37,9 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(geometry_id: GeometryId, material_id: MaterialId) -> Self {
+    pub fn new(geometry: Entity, material_id: MaterialId) -> Self {
         Self {
-            geometry_id,
+            geometry,
             material_id,
             visible: true,
             matrix: Matrix4::identity(),
@@ -160,12 +160,17 @@ impl Mesh {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
+    use bevy_ecs::world::World;
 
     #[test]
     fn test_float_uniform() {
-        let geom_id = GeometryId(0);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
+
         let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+
+        let mut mesh = Mesh::new(geometry, mat_id);
 
         mesh.set_float("scale", 2.5);
         assert_relative_eq!(*mesh.get_float("scale").unwrap(), 2.5);
@@ -174,9 +179,12 @@ mod tests {
 
     #[test]
     fn test_vec2_uniform() {
-        let geom_id = GeometryId(0);
-        let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
+
+        let material = MaterialId(0);
+        let mut mesh = Mesh::new(geometry, material);
 
         // Test basic set/get
         let pos = Vector2::new(1.5, -2.3);
@@ -204,9 +212,11 @@ mod tests {
 
     #[test]
     fn test_vector_uniforms() {
-        let geom_id = GeometryId(0);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
         let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+        let mut mesh = Mesh::new(geometry, mat_id);
 
         let vec2 = Vector2::new(1.0, 2.0);
         let vec3 = Vector3::new(1.0, 2.0, 3.0);
@@ -223,9 +233,11 @@ mod tests {
 
     #[test]
     fn test_matrix_uniform() {
-        let geom_id = GeometryId(0);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
         let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+        let mut mesh = Mesh::new(geometry, mat_id);
 
         let mat = Matrix4::new_scaling(2.0);
         mesh.set_mat4("transform", mat);
@@ -234,9 +246,11 @@ mod tests {
 
     #[test]
     fn test_primitive_uniforms() {
-        let geom_id = GeometryId(0);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
         let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+        let mut mesh = Mesh::new(geometry, mat_id);
 
         mesh.set_int("count", 42);
         mesh.set_bool("enabled", true);
@@ -247,9 +261,11 @@ mod tests {
 
     #[test]
     fn test_overwrite_uniform() {
-        let geom_id = GeometryId(0);
+        let mut world = World::new();
+
+        let geometry = world.spawn_empty().id();
         let mat_id = MaterialId(0);
-        let mut mesh = Mesh::new(geom_id, mat_id);
+        let mut mesh = Mesh::new(geometry, mat_id);
 
         mesh.set_float("value", 1.0);
         assert_relative_eq!(*mesh.get_float("value").unwrap(), 1.0);

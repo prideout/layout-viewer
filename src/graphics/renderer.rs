@@ -1,7 +1,10 @@
 use crate::graphics::Camera;
 use crate::graphics::Scene;
 use crate::graphics::Viewport;
+use bevy_ecs::world::World;
 use glow::*;
+
+use super::Geometry;
 
 pub struct Renderer {
     gl: glow::Context,
@@ -71,7 +74,7 @@ impl Renderer {
         self.clear_color = (r, g, b, a);
     }
 
-    pub fn render(&self, scene: &mut Scene, camera: &Camera) {
+    pub fn render(&self, world: &mut World, scene: &mut Scene, camera: &Camera) {
         unsafe {
             let gl = &self.gl;
             let vp = &self.viewport;
@@ -91,7 +94,11 @@ impl Renderer {
 
             for mesh in scene.meshes.values() {
                 let material = scene.materials.get_mut(&mesh.material_id).unwrap();
-                let geometry = scene.geometries.get_mut(&mesh.geometry_id).unwrap();
+
+                let geometry = world
+                    .get_mut::<Geometry>(mesh.geometry)
+                    .unwrap()
+                    .into_inner();
 
                 let model_matrix = mesh.matrix;
                 material.bind(gl);

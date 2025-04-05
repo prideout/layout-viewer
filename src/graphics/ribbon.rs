@@ -1,8 +1,10 @@
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
+
 use super::ribbon_shaders::FRAGMENT_SHADER;
 use super::ribbon_shaders::VERTEX_SHADER;
 use super::BlendMode;
 use super::Geometry;
-use super::GeometryId;
 use super::Material;
 use super::Mesh;
 use super::MeshId;
@@ -14,29 +16,29 @@ type Vector4f = nalgebra::Vector4<f32>;
 
 pub struct Ribbon {
     mesh: MeshId,
-    geometry: GeometryId,
+    geometry: Entity,
     pub spine: Vec<Point2d>,
     pub width: f64,
     pub closed: bool,
 }
 
 impl Ribbon {
-    pub fn new(scene: &mut Scene) -> Self {
-        let geometry = Geometry::new();
-        let geometry_id = scene.add_geometry(geometry);
+    pub fn new(world: &mut World, scene: &mut Scene) -> Self {
+        let geometry = world.spawn_empty().id();
+        world.entity_mut(geometry).insert(Geometry::new());
 
         let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
         material.set_blending(BlendMode::SourceOver);
         let material_id = scene.add_material(material);
 
-        let mut mesh = Mesh::new(geometry_id, material_id);
+        let mut mesh = Mesh::new(geometry, material_id);
         mesh.visible = false;
         mesh.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
         let mesh_id = scene.add_mesh(mesh);
 
         Self {
             mesh: mesh_id,
-            geometry: geometry_id,
+            geometry,
             spine: Vec::new(),
             width: 5000.0,
             closed: true,
@@ -56,7 +58,7 @@ impl Ribbon {
         self.mesh
     }
 
-    pub fn update(&mut self, scene: &mut Scene, gl: &glow::Context) {
+    pub fn update(&mut self, world: &mut World, scene: &mut Scene, gl: &glow::Context) {
         let points = &self.spine;
 
         if points.len() < 2 {
@@ -79,7 +81,11 @@ impl Ribbon {
             indices.extend_from_slice(&[a, b, c]);
         };
 
-        let count = if self.closed { points.len() - 1 } else { points.len() };
+        let count = if self.closed {
+            points.len() - 1
+        } else {
+            points.len()
+        };
 
         let upper = if self.closed { count + 1 } else { count };
 
@@ -119,8 +125,6 @@ impl Ribbon {
         let mut new_geometry = Geometry::new();
         new_geometry.positions = positions;
         new_geometry.indices = indices;
-
-        // Replace the geometry in the scene
-        scene.replace_geometry(gl, self.geometry, new_geometry);
+        new_geometry.replace(world, gl, self.geometry);
     }
 }

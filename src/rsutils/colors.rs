@@ -1,4 +1,5 @@
 /// Convert a hex color string (with or without #) to RGB values in range [0, 1]
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 pub fn hex_to_rgb(hex: &str) -> Option<(f32, f32, f32)> {
     let hex = hex.trim_start_matches('#');
     if hex.len() != 6 {
@@ -13,6 +14,7 @@ pub fn hex_to_rgb(hex: &str) -> Option<(f32, f32, f32)> {
 }
 
 /// Convert RGB values in range [0, 1] to a hex color string
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 pub fn rgb_to_hex(r: f32, g: f32, b: f32) -> String {
     format!(
         "#{:02x}{:02x}{:02x}",

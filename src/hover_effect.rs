@@ -11,6 +11,7 @@ use crate::graphics::Ribbon;
 use crate::graphics::Scene;
 use crate::Project;
 
+use bevy_ecs::world::World;
 use geo::TriangulateEarcut;
 
 type Point2 = nalgebra::Point2<f64>;
@@ -19,6 +20,7 @@ type Point2 = nalgebra::Point2<f64>;
 pub struct HoverParams<'a> {
     pub selection: ElementRef,
     pub project: &'a Project,
+    pub world: &'a mut World,
     pub scene: &'a mut Scene,
     pub gl: &'a glow::Context,
 }
@@ -31,19 +33,19 @@ pub struct HoverEffect {
 }
 
 impl HoverEffect {
-    pub fn new(scene: &mut Scene) -> Self {
+    pub fn new(world: &mut World, scene: &mut Scene) -> Self {
         let mut fill_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
         fill_material.set_blending(BlendMode::SourceOver);
         let fill_material = scene.add_material(fill_material);
 
-        let fill_geometry = Geometry::new();
-        let fill_geometry_id = scene.add_geometry(fill_geometry);
+        let fill_geometry = world.spawn_empty().id();
+        world.entity_mut(fill_geometry).insert(Geometry::new());
 
-        let mut fill_mesh = Mesh::new(fill_geometry_id, fill_material);
+        let mut fill_mesh = Mesh::new(fill_geometry, fill_material);
         fill_mesh.visible = false;
 
         let fill_mesh = scene.add_mesh(fill_mesh);
-        let ribbon = Ribbon::new(scene);
+        let ribbon = Ribbon::new(world, scene);
 
         Self {
             polygon: None,
@@ -52,10 +54,10 @@ impl HoverEffect {
         }
     }
 
-    pub fn update_stroke_width(&mut self, width: f64, scene: &mut Scene, gl: &glow::Context) {
+    pub fn update_stroke_width(&mut self, width: f64, world: &mut World, scene: &mut Scene, gl: &glow::Context) {
         if self.stroke.width != width {
             self.stroke.width = width;
-            self.stroke.update(scene, gl);
+            self.stroke.update(world,scene, gl);
         }
     }
 
@@ -85,6 +87,7 @@ impl HoverEffect {
         HoverParams {
             selection,
             project,
+            world,
             scene,
             gl,
         }: HoverParams,
@@ -105,7 +108,7 @@ impl HoverEffect {
         }
 
         self.stroke.spine = points;
-        self.stroke.update(scene, gl);
+        self.stroke.update(world, scene, gl);
 
         let mut geometry = Geometry::new();
 
@@ -125,7 +128,6 @@ impl HoverEffect {
         let mesh = scene.get_mesh_mut(&self.fill).unwrap();
         mesh.visible = true;
         mesh.set_vec4("color", color);
-        let geometry_id = mesh.geometry_id;
-        scene.replace_geometry(gl, geometry_id, geometry);
+        geometry.replace(world, gl, mesh.geometry);
     }
 }
