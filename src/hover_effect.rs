@@ -6,11 +6,11 @@ use crate::graphics::BlendMode;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
 use crate::graphics::Mesh;
-use crate::graphics::MeshId;
 use crate::graphics::Ribbon;
 use crate::graphics::Scene;
 use crate::Project;
 
+use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
 use geo::TriangulateEarcut;
 
@@ -21,14 +21,13 @@ pub struct HoverParams<'a> {
     pub selection: ElementRef,
     pub project: &'a Project,
     pub world: &'a mut World,
-    pub scene: &'a mut Scene,
     pub gl: &'a glow::Context,
 }
 
 /// Manages graphics primitives for a hover effect
 pub struct HoverEffect {
     polygon: Option<ElementRef>,
-    fill: MeshId,
+    fill: Entity,
     stroke: Ribbon,
 }
 
@@ -44,20 +43,21 @@ impl HoverEffect {
         let mut fill_mesh = Mesh::new(fill_geometry, fill_material);
         fill_mesh.visible = false;
 
-        let fill_mesh = scene.add_mesh(fill_mesh);
+        let fill = world.spawn_empty().id();
+        world.entity_mut(fill).insert(fill_mesh);
         let ribbon = Ribbon::new(world, scene);
 
         Self {
             polygon: None,
-            fill: fill_mesh,
+            fill,
             stroke: ribbon,
         }
     }
 
-    pub fn update_stroke_width(&mut self, width: f64, world: &mut World, scene: &mut Scene, gl: &glow::Context) {
+    pub fn update_stroke_width(&mut self, width: f64, world: &mut World, gl: &glow::Context) {
         if self.stroke.width != width {
             self.stroke.width = width;
-            self.stroke.update(world,scene, gl);
+            self.stroke.update(world, gl);
         }
     }
 
@@ -65,20 +65,20 @@ impl HoverEffect {
         self.polygon == Some(polygon.clone())
     }
 
-    pub fn move_to_back(&mut self, scene: &mut Scene) {
-        scene.move_mesh_to_back(self.fill);
-        scene.move_mesh_to_back(self.stroke.mesh());
+    pub fn move_to_back(&mut self) {
+        // scene.move_mesh_to_back(self.fill);
+        // scene.move_mesh_to_back(self.stroke.mesh());
     }
 
     pub fn is_visible(&self) -> bool {
         self.polygon.is_some()
     }
 
-    pub fn hide(&mut self, scene: &mut Scene) {
+    pub fn hide(&mut self, world: &mut World) {
         self.polygon = None;
-        let mesh = scene.get_mesh_mut(&self.fill).unwrap();
+        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
         mesh.visible = false;
-        self.stroke.hide(scene);
+        self.stroke.hide(world);
     }
 
     /// Activates the hover effect for a specific polygon.
@@ -88,7 +88,6 @@ impl HoverEffect {
             selection,
             project,
             world,
-            scene,
             gl,
         }: HoverParams,
     ) {
@@ -108,7 +107,7 @@ impl HoverEffect {
         }
 
         self.stroke.spine = points;
-        self.stroke.update(world, scene, gl);
+        self.stroke.update(world, gl);
 
         let mut geometry = Geometry::new();
 
@@ -125,9 +124,10 @@ impl HoverEffect {
             geometry.indices.push(index as u32);
         }
 
-        let mesh = scene.get_mesh_mut(&self.fill).unwrap();
+        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
         mesh.visible = true;
         mesh.set_vec4("color", color);
-        geometry.replace(world, gl, mesh.geometry);
+        let geometry_entity = mesh.geometry;
+        geometry.replace(world, gl, geometry_entity);
     }
 }

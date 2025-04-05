@@ -56,27 +56,8 @@ impl<K: IdMapKey + Copy + Hash + Eq, V> IdMap<K, V> {
         self.items.get_mut(id)
     }
 
-    pub fn values(&self) -> impl Iterator<Item = &V> {
-        self.items.values()
-    }
-
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
         self.items.values_mut()
-    }
-
-    pub fn move_to_back(&mut self, id: K) {
-        let value = self.take(id);
-        self.items.insert(id, value);
-    }
-
-    pub fn take(&mut self, id: K) -> V {
-        self.items
-            .shift_remove(&id)
-            .expect("IdMap: take called with non-existent id")
-    }
-
-    pub fn get_index_of(&self, id: K) -> Option<usize> {
-        self.items.get_index_of(&id)
     }
 
     pub fn clear(&mut self) {

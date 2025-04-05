@@ -1,4 +1,6 @@
-use bevy_ecs::{component::Component, entity::Entity, world::World};
+use bevy_ecs::component::Component;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
 use glow::HasContext;
 
 #[derive(Component)]
@@ -46,7 +48,22 @@ impl Geometry {
         world.entity_mut(entity).insert(self);
     }
 
-    pub fn bind(&mut self, gl: &glow::Context) {
+    pub fn draw(&mut self, gl: &glow::Context) {
+        if self.indices.is_empty() {
+            return;
+        }
+        self.bind(gl);
+        unsafe {
+            gl.draw_elements(
+                glow::TRIANGLES,
+                self.indices.len() as i32,
+                glow::UNSIGNED_INT,
+                0,
+            );
+        }
+    }
+
+    fn bind(&mut self, gl: &glow::Context) {
         if !self.positions_uploaded {
             self.upload_positions(gl);
         }

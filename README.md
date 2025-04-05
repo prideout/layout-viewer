@@ -56,6 +56,8 @@ trunk serve
 
 ## Next tasks
 
+Meshes need a `render_order`
+
 Refactorings
   - Simplify `update_layers` so that _recurse works on the roots (DRY)
   - I think we need faux cells for the roots

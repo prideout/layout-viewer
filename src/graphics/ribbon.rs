@@ -7,7 +7,6 @@ use super::BlendMode;
 use super::Geometry;
 use super::Material;
 use super::Mesh;
-use super::MeshId;
 use super::Scene;
 
 type Point2d = nalgebra::Point2<f64>;
@@ -15,7 +14,7 @@ type Vector2d = nalgebra::Vector2<f64>;
 type Vector4f = nalgebra::Vector4<f32>;
 
 pub struct Ribbon {
-    mesh: MeshId,
+    mesh: Entity,
     geometry: Entity,
     pub spine: Vec<Point2d>,
     pub width: f64,
@@ -31,13 +30,14 @@ impl Ribbon {
         material.set_blending(BlendMode::SourceOver);
         let material_id = scene.add_material(material);
 
-        let mut mesh = Mesh::new(geometry, material_id);
-        mesh.visible = false;
-        mesh.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
-        let mesh_id = scene.add_mesh(mesh);
+        let mut mesh_component = Mesh::new(geometry, material_id);
+        mesh_component.visible = false;
+        mesh_component.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
+        let mesh = world.spawn_empty().id();
+        world.entity_mut(mesh).insert(mesh_component);
 
         Self {
-            mesh: mesh_id,
+            mesh,
             geometry,
             spine: Vec::new(),
             width: 5000.0,
@@ -45,28 +45,26 @@ impl Ribbon {
         }
     }
 
-    pub fn hide(&self, scene: &mut Scene) {
-        scene.get_mesh_mut(&self.mesh).unwrap().visible = false;
+    pub fn hide(&self, world: &mut World) {
+        let mesh = world.get_mut::<Mesh>(self.mesh).unwrap().into_inner();
+        mesh.visible = false;
     }
 
     #[allow(dead_code)]
-    pub fn show(&self, scene: &mut Scene) {
-        scene.get_mesh_mut(&self.mesh).unwrap().visible = true;
+    pub fn show(&self, world: &mut World) {
+        let mesh = world.get_mut::<Mesh>(self.mesh).unwrap().into_inner();
+        mesh.visible = true;
     }
 
-    pub fn mesh(&self) -> MeshId {
-        self.mesh
-    }
-
-    pub fn update(&mut self, world: &mut World, scene: &mut Scene, gl: &glow::Context) {
+    pub fn update(&mut self, world: &mut World, gl: &glow::Context) {
         let points = &self.spine;
 
         if points.len() < 2 {
-            scene.get_mesh_mut(&self.mesh).unwrap().visible = false;
+            self.hide(world);
             return;
         }
 
-        scene.get_mesh_mut(&self.mesh).unwrap().visible = true;
+        self.show(world);
 
         let mut positions = Vec::new();
         let mut indices = Vec::new();

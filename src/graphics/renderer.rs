@@ -1,10 +1,13 @@
 use crate::graphics::Camera;
 use crate::graphics::Scene;
 use crate::graphics::Viewport;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::query::With;
 use bevy_ecs::world::World;
 use glow::*;
 
 use super::Geometry;
+use super::Mesh;
 
 pub struct Renderer {
     gl: glow::Context,
@@ -92,21 +95,27 @@ impl Renderer {
             let projection = camera.get_projection_matrix().cast::<f32>();
             let view_matrix = camera.get_view_matrix().cast::<f32>();
 
-            for mesh in scene.meshes.values() {
+            let meshes = world
+                .query_filtered::<Entity, With<Mesh>>()
+                .iter(world)
+                .collect::<Vec<_>>();
+
+            for entity in meshes {
+                let mesh = world.get::<Mesh>(entity).unwrap();
+                if !mesh.visible {
+                    continue;
+                }
+
                 let material = scene.materials.get_mut(&mesh.material_id).unwrap();
-
-                let geometry = world
-                    .get_mut::<Geometry>(mesh.geometry)
-                    .unwrap()
-                    .into_inner();
-
-                let model_matrix = mesh.matrix;
                 material.bind(gl);
-                material.set_mat4(&self.gl, "model", &model_matrix);
+                material.set_mat4(&self.gl, "model", &mesh.matrix);
                 material.set_mat4(&self.gl, "view", &view_matrix);
                 material.set_mat4(&self.gl, "projection", &projection);
 
-                mesh.draw(gl, material, geometry);
+                mesh.prerender(scene, gl);
+
+                let mut geometry = world.get_mut::<Geometry>(mesh.geometry).unwrap();
+                geometry.draw(gl);
             }
         }
     }

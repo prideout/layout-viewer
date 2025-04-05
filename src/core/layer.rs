@@ -1,6 +1,6 @@
 use crate::core::CellDefId;
 use crate::graphics::BoundingBox;
-use crate::graphics::MeshId;
+use bevy_ecs::entity::Entity;
 use geo::AffineOps;
 use geo::AffineTransform;
 use geo::BoundingRect;
@@ -19,7 +19,7 @@ pub struct ElementInstance {
 
 pub struct Layer {
     index: i16,
-    pub mesh: Option<MeshId>,
+    pub mesh: Option<Entity>,
     pub element_instances: Vec<ElementInstance>,
     pub bounds: BoundingBox,
     pub color: Vector4<f32>, // RGBA color for this layer

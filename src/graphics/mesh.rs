@@ -1,27 +1,15 @@
-#![allow(dead_code)]
-
-use crate::graphics::Geometry;
-use crate::graphics::Material;
 use crate::graphics::MaterialId;
-use crate::rsutils::IdMapKey;
+use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
-use glow::HasContext;
 use indexmap::IndexMap;
 use nalgebra::Matrix4;
 use nalgebra::Vector2;
 use nalgebra::Vector3;
 use nalgebra::Vector4;
-use std::hash::Hash;
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct MeshId(pub usize);
+use super::Scene;
 
-impl IdMapKey for MeshId {
-    fn from_usize(id: usize) -> Self {
-        MeshId(id)
-    }
-}
-
+#[derive(Component)]
 pub struct Mesh {
     pub geometry: Entity,
     pub material_id: MaterialId,
@@ -36,6 +24,7 @@ pub struct Mesh {
     bool_uniforms: IndexMap<String, bool>,
 }
 
+#[allow(dead_code)]
 impl Mesh {
     pub fn new(geometry: Entity, material_id: MaterialId) -> Self {
         Self {
@@ -109,49 +98,33 @@ impl Mesh {
         self.bool_uniforms.get(name)
     }
 
-    pub fn draw(&self, gl: &glow::Context, material: &mut Material, geometry: &mut Geometry) {
+    pub fn prerender(&self, scene: &mut Scene, gl: &glow::Context) {
         if !self.visible {
             return;
         }
 
-        // Do not emit a warning here, we already did.
-        if geometry.indices.is_empty() {
-            return;
+        let material = scene.materials.get_mut(&self.material_id).unwrap();
+
+        for (name, value) in &self.float_uniforms {
+            material.set_float(gl, name, *value);
         }
-
-        // Assumes material is already bound.
-
-        unsafe {
-            for (name, value) in &self.float_uniforms {
-                material.set_float(gl, name, *value);
-            }
-            for (name, value) in &self.vec2_uniforms {
-                material.set_vec2(gl, name, value);
-            }
-            for (name, value) in &self.vec3_uniforms {
-                material.set_vec3(gl, name, value);
-            }
-            for (name, value) in &self.vec4_uniforms {
-                material.set_vec4(gl, name, value);
-            }
-            for (name, value) in &self.mat4_uniforms {
-                material.set_mat4(gl, name, value);
-            }
-            for (name, value) in &self.int_uniforms {
-                material.set_int(gl, name, *value);
-            }
-            for (name, value) in &self.bool_uniforms {
-                material.set_bool(gl, name, *value);
-            }
-
-            geometry.bind(gl);
-
-            gl.draw_elements(
-                glow::TRIANGLES,
-                geometry.indices.len() as i32,
-                glow::UNSIGNED_INT,
-                0,
-            );
+        for (name, value) in &self.vec2_uniforms {
+            material.set_vec2(gl, name, value);
+        }
+        for (name, value) in &self.vec3_uniforms {
+            material.set_vec3(gl, name, value);
+        }
+        for (name, value) in &self.vec4_uniforms {
+            material.set_vec4(gl, name, value);
+        }
+        for (name, value) in &self.mat4_uniforms {
+            material.set_mat4(gl, name, value);
+        }
+        for (name, value) in &self.int_uniforms {
+            material.set_int(gl, name, *value);
+        }
+        for (name, value) in &self.bool_uniforms {
+            material.set_bool(gl, name, *value);
         }
     }
 }

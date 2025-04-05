@@ -78,11 +78,11 @@ impl AppController {
     pub fn get_mesh_for_layer_mut(&mut self, layer_index: usize) -> &mut Mesh {
         let layer = &self.project.as_ref().unwrap().layers()[layer_index];
         let id = layer.mesh.unwrap();
-        self.scene.get_mesh_mut(&id).unwrap()
+        self.world.get_mut::<Mesh>(id).unwrap().into_inner()
     }
 
     pub fn set_project(&mut self, mut project: Project) {
-        self.hover_effect.move_to_back(&mut self.scene);
+        self.hover_effect.move_to_back();
 
         let bounds = project.bounds();
         self.camera.fit_to_bounds(self.window_size, bounds);
@@ -107,7 +107,10 @@ impl AppController {
             self.world.entity_mut(geometry_entity).insert(geometry);
 
             let mesh = Mesh::new(geometry_entity, self.layer_material);
-            meshes.push(self.scene.add_mesh(mesh));
+            let mesh_entity = self.world.spawn_empty().id();
+            self.world.entity_mut(mesh_entity).insert(mesh);
+
+            meshes.push(mesh_entity);
         }
 
         for (i, layer) in project.layers_mut().iter_mut().enumerate() {
@@ -157,14 +160,13 @@ impl AppController {
                 self.hover_effect.show(HoverParams {
                     selection: hit,
                     project: &project,
-                    scene: &mut self.scene,
                     world: &mut self.world,
                     gl: self.renderer.gl(),
                 });
                 self.render();
             }
         } else if self.hover_effect.is_visible() {
-            self.hover_effect.hide(&mut self.scene);
+            self.hover_effect.hide(&mut self.world);
             self.render();
         }
 
@@ -206,7 +208,7 @@ impl AppController {
 
     pub fn handle_mouse_leave(&mut self) {
         if self.hover_effect.is_visible() {
-            self.hover_effect.hide(&mut self.scene);
+            self.hover_effect.hide(&mut self.world);
             self.render();
         }
     }
@@ -224,12 +226,8 @@ impl AppController {
         }
 
         let width = 5.0 * self.camera.width / self.window_size.0 as f64;
-        self.hover_effect.update_stroke_width(
-            width,
-            &mut self.world,
-            &mut self.scene,
-            self.renderer.gl(),
-        );
+        self.hover_effect
+            .update_stroke_width(width, &mut self.world, self.renderer.gl());
 
         self.renderer
             .render(&mut self.world, &mut self.scene, &self.camera);
@@ -297,10 +295,9 @@ impl AppController {
             }
         }
         for layer in project.layers() {
-            if let Some(mesh) = layer.mesh {
-                let mesh = self.scene.get_mesh_mut(&mesh).unwrap();
-                mesh.set_vec4("color", layer.color);
-            }
+            let id = layer.mesh.unwrap();
+            let mesh = self.world.get_mut::<Mesh>(id).unwrap().into_inner();
+            mesh.set_vec4("color", layer.color);
         }
         self.project = Some(project);
         self.render();
