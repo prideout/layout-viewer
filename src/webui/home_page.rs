@@ -1,6 +1,6 @@
-use crate::components::Route;
-use crate::components::ToastContainer;
-use crate::components::ToastManager;
+use crate::webui::Route;
+use crate::webui::ToastContainer;
+use crate::webui::ToastManager;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::DragEvent;
 use yew::prelude::*;

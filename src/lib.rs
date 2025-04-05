@@ -10,7 +10,7 @@ mod rsutils;
 mod app_window;
 
 #[cfg(target_arch = "wasm32")]
-mod components;
+mod webui;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use app_window::spawn_window;
@@ -19,7 +19,7 @@ pub use core::Project;
 pub use generate_svg::generate_svg;
 
 #[cfg(target_arch = "wasm32")]
-pub use components::App;
+pub use webui::App;
 
 /// Returns a timestamp in milliseconds.
 #[cfg(target_arch = "wasm32")]

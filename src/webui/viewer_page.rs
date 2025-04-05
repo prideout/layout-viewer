@@ -17,12 +17,12 @@ use yew_router::prelude::*;
 
 use crate::app_controller::AppController;
 use crate::app_controller::Theme;
-use crate::components::take_dropped_file;
-use crate::components::LayerProxy;
-use crate::components::Route;
-use crate::components::Sidebar;
-use crate::components::ToastContainer;
-use crate::components::ToastManager;
+use crate::webui::take_dropped_file;
+use crate::webui::LayerProxy;
+use crate::webui::Route;
+use crate::webui::Sidebar;
+use crate::webui::ToastContainer;
+use crate::webui::ToastManager;
 use crate::graphics::Renderer;
 use crate::rsutils::hex_to_rgb;
 use crate::rsutils::rgb_to_hex;

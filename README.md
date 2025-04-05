@@ -18,7 +18,7 @@ a static site hosted with GitHub Pages.
   - Knows nothing about circuits or app behavior.
   - All objects except **Renderer** can be constructed without a WebGL
     context.
-- `components` defines a set of Yew components.
+- `webui` defines a set of Yew components.
   - The UI for the web application lives here.
   - Components with the **Page** suffix are navigation targets.
 - `rsutils` are utilities that you could imagine being a part of **std**.
@@ -55,10 +55,6 @@ trunk serve
 - anyhow: Error handling
 
 ## Next tasks
-
-By adding a `GlowOwner` component, maybe we can simplify the destroy call in AppController?
-
-Rename components/ to webui/
 
 Minor CI things: cargo test and sep jobs (see the static.yml at root)
 
