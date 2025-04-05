@@ -56,8 +56,15 @@ trunk serve
 
 ## Next tasks
 
+Simplify all calls to `spawn_empty`
 
-Refactorings
+By adding a `GlowOwner` component, maybe we can simplify the destroy call in AppController?
+
+Rename components/ to webui/
+
+Minor CI things: cargo test and sep jobs (see the static.yml at root)
+
+Refactorings (defunct plan)
   - Simplify `update_layers` so that _recurse works on the roots (DRY)
   - I think we need faux cells for the roots
   - Should `ElementInstance` be stored in `Cell`?

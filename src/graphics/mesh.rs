@@ -1,18 +1,19 @@
-use crate::graphics::MaterialId;
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
+use glow::HasContext;
 use indexmap::IndexMap;
 use nalgebra::Matrix4;
 use nalgebra::Vector2;
 use nalgebra::Vector3;
 use nalgebra::Vector4;
 
-use super::Scene;
+use super::Geometry;
+use super::Material;
 
 #[derive(Component)]
 pub struct Mesh {
     pub geometry: Entity,
-    pub material_id: MaterialId,
+    pub material: Entity,
     pub visible: bool,
     pub matrix: Matrix4<f32>,
     pub render_order: i32,
@@ -27,10 +28,10 @@ pub struct Mesh {
 
 #[allow(dead_code)]
 impl Mesh {
-    pub fn new(geometry: Entity, material_id: MaterialId) -> Self {
+    pub fn new(geometry: Entity, material: Entity) -> Self {
         Self {
             geometry,
-            material_id,
+            material,
             visible: true,
             matrix: Matrix4::identity(),
             render_order: 0,
@@ -100,13 +101,11 @@ impl Mesh {
         self.bool_uniforms.get(name)
     }
 
-    pub fn prerender(&self, scene: &mut Scene, gl: &glow::Context) {
-        if !self.visible {
+    pub fn draw(&self, gl: &glow::Context, material: &mut Material, geometry: &mut Geometry) {
+        if geometry.indices.is_empty() {
             return;
         }
-
-        let material = scene.materials.get_mut(&self.material_id).unwrap();
-
+        material.set_mat4(gl, "model", &self.matrix);
         for (name, value) in &self.float_uniforms {
             material.set_float(gl, name, *value);
         }
@@ -128,6 +127,15 @@ impl Mesh {
         for (name, value) in &self.bool_uniforms {
             material.set_bool(gl, name, *value);
         }
+        geometry.bind(gl);
+        unsafe {
+            gl.draw_elements(
+                glow::TRIANGLES,
+                geometry.indices.len() as i32,
+                glow::UNSIGNED_INT,
+                0,
+            );
+        }
     }
 }
 
@@ -143,7 +151,7 @@ mod tests {
 
         let geometry = world.spawn_empty().id();
 
-        let mat_id = MaterialId(0);
+        let mat_id = world.spawn_empty().id();
 
         let mut mesh = Mesh::new(geometry, mat_id);
 
@@ -158,7 +166,7 @@ mod tests {
 
         let geometry = world.spawn_empty().id();
 
-        let material = MaterialId(0);
+        let material = world.spawn_empty().id();
         let mut mesh = Mesh::new(geometry, material);
 
         // Test basic set/get
@@ -190,7 +198,7 @@ mod tests {
         let mut world = World::new();
 
         let geometry = world.spawn_empty().id();
-        let mat_id = MaterialId(0);
+        let mat_id = world.spawn_empty().id();
         let mut mesh = Mesh::new(geometry, mat_id);
 
         let vec2 = Vector2::new(1.0, 2.0);
@@ -211,7 +219,7 @@ mod tests {
         let mut world = World::new();
 
         let geometry = world.spawn_empty().id();
-        let mat_id = MaterialId(0);
+        let mat_id = world.spawn_empty().id();
         let mut mesh = Mesh::new(geometry, mat_id);
 
         let mat = Matrix4::new_scaling(2.0);
@@ -224,7 +232,7 @@ mod tests {
         let mut world = World::new();
 
         let geometry = world.spawn_empty().id();
-        let mat_id = MaterialId(0);
+        let mat_id = world.spawn_empty().id();
         let mut mesh = Mesh::new(geometry, mat_id);
 
         mesh.set_int("count", 42);
@@ -239,7 +247,7 @@ mod tests {
         let mut world = World::new();
 
         let geometry = world.spawn_empty().id();
-        let mat_id = MaterialId(0);
+        let mat_id = world.spawn_empty().id();
         let mut mesh = Mesh::new(geometry, mat_id);
 
         mesh.set_float("value", 1.0);

@@ -1,5 +1,4 @@
 use bevy_ecs::entity::Entity;
-use bevy_ecs::query::With;
 use bevy_ecs::world::World;
 use geo::AffineTransform;
 
@@ -9,10 +8,8 @@ use crate::graphics::BlendMode;
 use crate::graphics::Camera;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
-use crate::graphics::MaterialId;
 use crate::graphics::Mesh;
 use crate::graphics::Renderer;
-use crate::graphics::Scene;
 use crate::graphics::Viewport;
 use crate::hover_effect::HoverEffect;
 use crate::hover_effect::HoverParams;
@@ -25,7 +22,6 @@ pub struct AppController {
     window_size: (u32, u32),
     renderer: Renderer,
     camera: Camera,
-    scene: Scene,
     world: World,
     is_dragging: bool,
     last_mouse_pos: Option<(u32, u32)>,
@@ -33,7 +29,7 @@ pub struct AppController {
     needs_render: bool,
     project: Option<Project>,
     hover_effect: HoverEffect,
-    layer_material: MaterialId,
+    layer_material: Entity,
 }
 
 pub enum Theme {
@@ -44,26 +40,20 @@ pub enum Theme {
 
 #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 impl AppController {
-    pub fn new(
-        renderer: Renderer,
-        mut scene: Scene,
-        physical_width: u32,
-        physical_height: u32,
-    ) -> Self {
+    pub fn new(renderer: Renderer, physical_width: u32, physical_height: u32) -> Self {
         let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
 
         let mut world = World::new();
 
-        let hover_effect = HoverEffect::new(&mut world, &mut scene);
+        let hover_effect = HoverEffect::new(&mut world);
 
-        let layer_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        let layer_material_id = scene.add_material(layer_material);
+        let layer_material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        let layer_material = world.spawn(layer_material_component).id();
 
         Self {
             window_size: (physical_width, physical_height),
             renderer,
             camera,
-            scene,
             world,
             is_dragging: false,
             last_mouse_pos: None,
@@ -71,7 +61,7 @@ impl AppController {
             needs_render: true,
             project: None,
             hover_effect,
-            layer_material: layer_material_id,
+            layer_material,
         }
     }
 
@@ -102,8 +92,7 @@ impl AppController {
                 element.append_triangles(&mut geometry, &affine_transform);
             }
 
-            let geometry_entity = self.world.spawn_empty().id();
-            self.world.entity_mut(geometry_entity).insert(geometry);
+            let geometry_entity = self.world.spawn(geometry).id();
 
             let mut mesh = Mesh::new(geometry_entity, self.layer_material);
             mesh.render_order = layer.index() as i32;
@@ -235,8 +224,7 @@ impl AppController {
         self.hover_effect
             .update_stroke_width(width, &mut self.world, self.renderer.gl());
 
-        self.renderer
-            .render(&mut self.world, &mut self.scene, &self.camera);
+        self.renderer.render(&mut self.world, &self.camera);
         self.renderer.check_gl_error("Scene render");
         self.needs_render = false;
         true // Frame was rendered
@@ -253,8 +241,7 @@ impl AppController {
         let window_aspect = physical_width as f64 / physical_height as f64;
         self.camera.height = self.camera.width / window_aspect;
 
-        self.renderer
-            .render(&mut self.world, &mut self.scene, &self.camera);
+        self.renderer.render(&mut self.world, &self.camera);
         self.renderer.check_gl_error("Scene render");
     }
 
@@ -264,19 +251,12 @@ impl AppController {
             geo.destroy(self.renderer.gl());
         }
 
-        let entities = self
-            .world
-            .query_filtered::<Entity, With<Geometry>>()
-            .iter(&self.world)
-            .collect::<Vec<_>>();
-
-        for entity in entities {
-            if let Some(mut entity_mut) = self.world.get_entity_mut(entity) {
-                entity_mut.remove::<Geometry>();
-            }
+        let mut mat_query = self.world.query::<&mut Material>();
+        for mut mat in mat_query.iter_mut(&mut self.world) {
+            mat.destroy(self.renderer.gl());
         }
 
-        self.scene.destroy(self.renderer.gl());
+        // TODO: despawn the entities too
     }
 
     pub fn project(&self) -> Option<&Project> {
@@ -289,7 +269,7 @@ impl AppController {
 
     pub fn apply_theme(&mut self, theme: Theme) {
         let mut project = self.project.take().unwrap();
-        let material = self.scene.get_material_mut(&self.layer_material).unwrap();
+        let mut material = self.world.get_mut::<Material>(self.layer_material).unwrap();
         match theme {
             Theme::Light => {
                 material.set_blending(BlendMode::Additive);

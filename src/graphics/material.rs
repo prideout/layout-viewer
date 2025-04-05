@@ -1,4 +1,4 @@
-use crate::rsutils::IdMapKey;
+use bevy_ecs::component::Component;
 use glow::HasContext;
 use indexmap::IndexMap;
 use nalgebra::Matrix4;
@@ -8,21 +8,13 @@ use nalgebra::Vector4;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct MaterialId(pub usize);
-
-impl IdMapKey for MaterialId {
-    fn from_usize(id: usize) -> Self {
-        MaterialId(id)
-    }
-}
-
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum BlendMode {
     Disabled,
     SourceOver,
     Additive,
 }
 
+#[derive(Component)]
 pub struct Material {
     program: Option<glow::Program>,
     uniform_locations: IndexMap<String, glow::UniformLocation>,
@@ -30,6 +22,13 @@ pub struct Material {
     fragment_shader: String,
     blend_mode: BlendMode,
 }
+
+// SAFETY: This is safe because:
+// 1. The app is single-threaded
+// 2. OpenGL resources are only accessed from the render thread
+// 3. The uniform locations are only modified during program creation
+unsafe impl Send for Material {}
+unsafe impl Sync for Material {}
 
 impl Material {
     pub fn new(vertex_shader: &str, fragment_shader: &str) -> Self {
@@ -99,7 +98,6 @@ impl Material {
             }
 
             self.program = Some(program);
-
             self.gather_uniforms(gl);
         }
     }

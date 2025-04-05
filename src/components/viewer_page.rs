@@ -24,7 +24,6 @@ use crate::components::Sidebar;
 use crate::components::ToastContainer;
 use crate::components::ToastManager;
 use crate::graphics::Renderer;
-use crate::graphics::Scene;
 use crate::rsutils::hex_to_rgb;
 use crate::rsutils::rgb_to_hex;
 use crate::rsutils::ResizeObserver;
@@ -239,12 +238,11 @@ impl Component for ViewerPage {
         // Create renderer with glow context
         let gl = glow::Context::from_webgl2_context(gl);
         let renderer = Renderer::new(gl);
-        let scene = Scene::new();
         let width = canvas.client_width() as u32;
         let height = canvas.client_height() as u32;
 
         // Create controller
-        let controller = AppController::new(renderer, scene, width, height);
+        let controller = AppController::new(renderer, width, height);
         self.controller = Some(controller);
 
         // Set up resize observer

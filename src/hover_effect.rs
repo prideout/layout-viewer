@@ -7,7 +7,6 @@ use crate::graphics::Geometry;
 use crate::graphics::Material;
 use crate::graphics::Mesh;
 use crate::graphics::Ribbon;
-use crate::graphics::Scene;
 use crate::Project;
 
 use bevy_ecs::entity::Entity;
@@ -32,10 +31,11 @@ pub struct HoverEffect {
 }
 
 impl HoverEffect {
-    pub fn new(world: &mut World, scene: &mut Scene) -> Self {
-        let mut fill_material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        fill_material.set_blending(BlendMode::SourceOver);
-        let fill_material = scene.add_material(fill_material);
+    pub fn new(world: &mut World) -> Self {
+        let mut fill_material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        fill_material_component.set_blending(BlendMode::SourceOver);
+        let fill_material = world.spawn_empty().id();
+        world.entity_mut(fill_material).insert(fill_material_component);
 
         let fill_geometry = world.spawn_empty().id();
         world.entity_mut(fill_geometry).insert(Geometry::new());
@@ -45,7 +45,7 @@ impl HoverEffect {
 
         let fill = world.spawn_empty().id();
         world.entity_mut(fill).insert(fill_mesh);
-        let ribbon = Ribbon::new(world, scene);
+        let ribbon = Ribbon::new(world);
 
         Self {
             polygon: None,

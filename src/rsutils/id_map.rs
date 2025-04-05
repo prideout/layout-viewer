@@ -55,15 +55,6 @@ impl<K: IdMapKey + Copy + Hash + Eq, V> IdMap<K, V> {
     pub fn get_mut(&mut self, id: &K) -> Option<&mut V> {
         self.items.get_mut(id)
     }
-
-    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
-        self.items.values_mut()
-    }
-
-    pub fn clear(&mut self) {
-        self.items.clear();
-        self.next_id = 1;
-    }
 }
 
 impl<K: IdMapKey + Copy + Hash + Eq, V> Default for IdMap<K, V> {

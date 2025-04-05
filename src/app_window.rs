@@ -1,7 +1,6 @@
 use crate::app_controller::AppController;
 use crate::app_controller::Theme;
 use crate::graphics::Renderer;
-use crate::graphics::Scene;
 use crate::Project;
 
 use glutin::config::ConfigTemplateBuilder;
@@ -99,8 +98,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
     let window_size = window.inner_size();
 
     let renderer = Renderer::new(gl);
-    let scene = Scene::new();
-    let mut controller = AppController::new(renderer, scene, window_size.width, window_size.height);
+    let mut controller = AppController::new(renderer, window_size.width, window_size.height);
 
     controller.set_project(project);
     controller.apply_theme(Theme::Dark);

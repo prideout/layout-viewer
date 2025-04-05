@@ -5,7 +5,6 @@ pub mod material;
 pub mod mesh;
 pub mod renderer;
 pub mod ribbon;
-pub mod scene;
 pub mod viewport;
 
 mod ribbon_shaders;
@@ -17,5 +16,4 @@ pub use material::*;
 pub use mesh::*;
 pub use renderer::*;
 pub use ribbon::*;
-pub use scene::*;
 pub use viewport::*;

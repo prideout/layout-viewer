@@ -48,22 +48,7 @@ impl Geometry {
         world.entity_mut(entity).insert(self);
     }
 
-    pub fn draw(&mut self, gl: &glow::Context) {
-        if self.indices.is_empty() {
-            return;
-        }
-        self.bind(gl);
-        unsafe {
-            gl.draw_elements(
-                glow::TRIANGLES,
-                self.indices.len() as i32,
-                glow::UNSIGNED_INT,
-                0,
-            );
-        }
-    }
-
-    fn bind(&mut self, gl: &glow::Context) {
+    pub fn bind(&mut self, gl: &glow::Context) {
         if !self.positions_uploaded {
             self.upload_positions(gl);
         }

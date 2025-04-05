@@ -7,7 +7,6 @@ use super::BlendMode;
 use super::Geometry;
 use super::Material;
 use super::Mesh;
-use super::Scene;
 
 type Point2d = nalgebra::Point2<f64>;
 type Vector2d = nalgebra::Vector2<f64>;
@@ -22,15 +21,16 @@ pub struct Ribbon {
 }
 
 impl Ribbon {
-    pub fn new(world: &mut World, scene: &mut Scene) -> Self {
+    pub fn new(world: &mut World) -> Self {
         let geometry = world.spawn_empty().id();
         world.entity_mut(geometry).insert(Geometry::new());
 
-        let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        material.set_blending(BlendMode::SourceOver);
-        let material_id = scene.add_material(material);
+        let mut material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        material_component.set_blending(BlendMode::SourceOver);
+        let material = world.spawn_empty().id();
+        world.entity_mut(material).insert(material_component);
 
-        let mut mesh_component = Mesh::new(geometry, material_id);
+        let mut mesh_component = Mesh::new(geometry, material);
         mesh_component.visible = false;
         mesh_component.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
         let mesh = world.spawn_empty().id();
