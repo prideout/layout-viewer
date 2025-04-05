@@ -22,6 +22,8 @@ pub use generate_svg::generate_svg;
 #[cfg(target_arch = "wasm32")]
 pub use webui::App;
 
+pub use core::*;
+
 /// Returns a timestamp in milliseconds.
 #[cfg(target_arch = "wasm32")]
 #[macro_export]

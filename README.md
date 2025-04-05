@@ -56,10 +56,10 @@ trunk serve
 
 ## Next tasks
 
-1. Load the GdsFile and create refs/defs/layers (DefsLoader)
+1. Flesh out `loader.rs` to create refs/defs/layers
   - Do not populate the mesh or shape_instances in layer
 
-2. When the user selects a root: (TreeCreator)
+2. Flesh out `instancer.rs` when the user selects a root:
   - Create instances.
   - Recursively populate world_* fields
   - Create mesh and shape_instances in Layer

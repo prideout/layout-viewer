@@ -34,8 +34,11 @@ env_logger = "0.11"
 rstar = "0.12.2"
 serde-wasm-bindgen = "0.6.5"
 serde = "1.0.219"
-gloo = "0.11.0"
+gloo = { version = "0.11.0", features = ["timers", "futures"] }
+gloo-timers = "0.3.0"
 bevy_ecs = "0.13"
+tokio = { version = "1.36", features = ["rt", "time"] }
+futures = "0.3.31"
 
 [patch.crates-io]
 geo = { git = "https://github.com/georust/geo.git", rev = "2daf7cf" }

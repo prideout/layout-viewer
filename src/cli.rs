@@ -1,8 +1,11 @@
 use anyhow::anyhow;
 use anyhow::Result;
+use bevy_ecs::world::World;
 use clap::Parser;
 use colored::*;
+use futures::StreamExt;
 use layout_viewer::generate_svg;
+use layout_viewer::load_gds_into_world;
 use layout_viewer::Project;
 use std::fs;
 use std::path::Path;
@@ -62,6 +65,25 @@ pub fn run_cli() -> Result<()> {
 
     // Read and process the GDSII file
     let file_content = fs::read(&args.input)?;
+
+    //// BEGIN NEW ECS STUFF
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+
+    rt.block_on(async {
+        let gds_data = file_content.clone();
+        let progress_stream = load_gds_into_world(&gds_data, World::new()).await;
+        let mut progress_stream = std::pin::pin!(progress_stream);
+        let mut world = None;
+        while let Some(mut progress) = progress_stream.next().await {
+            log::info!("Progress: {:.0}%", progress.percent);
+            world = progress.world.take();
+        }
+        log::info!("Task completed. World = {}", world.is_some());
+    });
+    //// END NEW ECS STUFF
+
     let mut project = Project::from_bytes(&file_content)?;
     project.update_world_transforms();
     project.update_layers();

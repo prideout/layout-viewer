@@ -1,7 +1,10 @@
+use bevy_ecs::world::World;
+use futures::StreamExt;
 use gloo::timers::callback::Timeout;
 use serde::Serialize;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 use web_sys::HtmlCanvasElement;
@@ -17,6 +20,7 @@ use yew_router::prelude::*;
 
 use crate::app_controller::AppController;
 use crate::app_controller::Theme;
+use crate::load_gds_into_world;
 use crate::webui::take_dropped_file;
 use crate::webui::LayerProxy;
 use crate::webui::Route;
@@ -317,6 +321,21 @@ impl Component for ViewerPage {
                 true
             }
             ViewerMsg::ParseGds(content) => {
+
+                //// BEGIN NEW ECS STUFF
+                let buffer = content.clone();
+                spawn_local(async move {
+                    let mut progress_stream = load_gds_into_world(&buffer, World::new()).await;
+                    let mut progress_stream = std::pin::pin!(progress_stream);
+                    let mut world = None;
+                    while let Some(mut progress) = progress_stream.next().await {
+                        log::info!("Progress: {:.0}%", progress.percent);
+                        world = progress.world.take();
+                    }
+                    log::info!("Task completed. World = {}", world.is_some());
+                });
+                //// END NEW ECS STUFF
+
                 let project = Project::from_bytes(&content);
                 let Ok(mut project) = project else {
                     log::error!("Failed to parse dropped GDS.");
