@@ -1,4 +1,4 @@
-use crate::core::Element;
+use crate::old_core::Element;
 use crate::rsutils::IdMapKey;
 use gds21::GdsPoint;
 use gds21::GdsStrans;

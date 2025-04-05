@@ -1,4 +1,4 @@
-use crate::core::Layer;
+use crate::old_core::Layer;
 use crate::graphics::BoundingBox;
 use svg::node::element::Group;
 use svg::node::element::Path;

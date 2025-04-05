@@ -1,7 +1,7 @@
 use crate::app_shaders::FRAGMENT_SHADER;
 use crate::app_shaders::VERTEX_SHADER;
 
-use crate::core::ElementRef;
+use crate::old_core::ElementRef;
 use crate::graphics::BlendMode;
 use crate::graphics::Geometry;
 use crate::graphics::Material;

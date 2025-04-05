@@ -1,4 +1,4 @@
-use crate::core::CellDefId;
+use crate::old_core::CellDefId;
 use crate::graphics::BoundingBox;
 use bevy_ecs::entity::Entity;
 use geo::AffineOps;

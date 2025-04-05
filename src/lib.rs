@@ -1,6 +1,7 @@
 mod app_controller;
 mod app_shaders;
 mod core;
+mod old_core;
 mod generate_svg;
 mod graphics;
 mod hover_effect;
@@ -15,7 +16,7 @@ mod webui;
 #[cfg(not(target_arch = "wasm32"))]
 pub use app_window::spawn_window;
 
-pub use core::Project;
+pub use old_core::Project;
 pub use generate_svg::generate_svg;
 
 #[cfg(target_arch = "wasm32")]

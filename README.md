@@ -56,12 +56,28 @@ trunk serve
 
 ## Next tasks
 
-Minor CI things: cargo test and sep jobs (see the static.yml at root)
+1. Load the GdsFile and create refs/defs/layers (DefsLoader)
+  - Do not populate the mesh or shape_instances in layer
 
-Refactorings (defunct plan)
-  - Simplify `update_layers` so that _recurse works on the roots (DRY)
-  - I think we need faux cells for the roots
-  - Should `ElementInstance` be stored in `Cell`?
+2. When the user selects a root: (TreeCreator)
+  - Create instances.
+  - Recursively populate world_* fields
+  - Create mesh and shape_instances in Layer
+
+The user should be able to choose a cell definition as "current root"
+
+ShapeReference boxes and CellReference boxes should appear according to pointer position,
+but only for direct children of the current root.
+
+The user should be able to drag cells, but only cells that happen to be direct children of the current root.
+
+The user should be able to drag shapes, but only shapes that happen to be direct children of the current root.
+
+Double clicking a cell or shape should set that cell's definition as root.
+
+-----
+
+Sep jobs (see the static.yml at root)
 
 Zooming out should constrain pan (internally optional)
 
