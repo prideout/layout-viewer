@@ -95,10 +95,15 @@ impl Renderer {
             let projection = camera.get_projection_matrix().cast::<f32>();
             let view_matrix = camera.get_view_matrix().cast::<f32>();
 
-            let meshes = world
+            let mut meshes = world
                 .query_filtered::<Entity, With<Mesh>>()
                 .iter(world)
                 .collect::<Vec<_>>();
+
+            meshes.sort_by_key(|entity| {
+                let mesh = world.get::<Mesh>(*entity).unwrap();
+                mesh.render_order
+            });
 
             for entity in meshes {
                 let mesh = world.get::<Mesh>(entity).unwrap();

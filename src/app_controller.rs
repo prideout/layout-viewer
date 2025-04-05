@@ -82,12 +82,11 @@ impl AppController {
     }
 
     pub fn set_project(&mut self, mut project: Project) {
-        self.hover_effect.move_to_back();
-
         let bounds = project.bounds();
         self.camera.fit_to_bounds(self.window_size, bounds);
 
         let mut meshes = Vec::with_capacity(project.layers().len());
+        let mut highest_render_order = 0;
         for layer in project.layers() {
             let mut geometry = Geometry::new();
             for element_instance in &layer.element_instances {
@@ -106,12 +105,19 @@ impl AppController {
             let geometry_entity = self.world.spawn_empty().id();
             self.world.entity_mut(geometry_entity).insert(geometry);
 
-            let mesh = Mesh::new(geometry_entity, self.layer_material);
+            let mut mesh = Mesh::new(geometry_entity, self.layer_material);
+            mesh.render_order = layer.index() as i32;
+            if mesh.render_order > highest_render_order {
+                highest_render_order = mesh.render_order;
+            }
             let mesh_entity = self.world.spawn_empty().id();
             self.world.entity_mut(mesh_entity).insert(mesh);
 
             meshes.push(mesh_entity);
         }
+
+        self.hover_effect
+            .set_render_order(&mut self.world, highest_render_order + 1);
 
         for (i, layer) in project.layers_mut().iter_mut().enumerate() {
             layer.mesh = Some(meshes[i]);

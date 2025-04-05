@@ -56,6 +56,11 @@ impl Ribbon {
         mesh.visible = true;
     }
 
+    pub fn set_render_order(&self, world: &mut World, render_order: i32) {
+        let mesh = world.get_mut::<Mesh>(self.mesh).unwrap().into_inner();
+        mesh.render_order = render_order;
+    }
+
     pub fn update(&mut self, world: &mut World, gl: &glow::Context) {
         let points = &self.spine;
 

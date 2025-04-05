@@ -56,7 +56,6 @@ trunk serve
 
 ## Next tasks
 
-Meshes need a `render_order`
 
 Refactorings
   - Simplify `update_layers` so that _recurse works on the roots (DRY)

@@ -65,9 +65,11 @@ impl HoverEffect {
         self.polygon == Some(polygon.clone())
     }
 
-    pub fn move_to_back(&mut self) {
-        // scene.move_mesh_to_back(self.fill);
-        // scene.move_mesh_to_back(self.stroke.mesh());
+    pub fn set_render_order(&mut self, world: &mut World, render_order: i32) {
+        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
+        mesh.render_order = render_order;
+
+        self.stroke.set_render_order(world, render_order + 1);
     }
 
     pub fn is_visible(&self) -> bool {
