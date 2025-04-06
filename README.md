@@ -96,3 +96,15 @@ Camera constraints / frame upon selection / "Reset view".
 Van Wijk interpolation / marquee selection.
 
 Better CI (Build & Run CLI, Doc Tests, Unit Tests).
+
+## Code formatting
+
+```bash
+cargo +nightly fmt
+```
+
+or a single file:
+
+```bash
+rustfmt +nightly --edition 2024 src/core/loader.rs
+```

@@ -20,17 +20,17 @@ use yew_router::prelude::*;
 
 use crate::app_controller::AppController;
 use crate::app_controller::Theme;
+use crate::graphics::Renderer;
 use crate::load_gds_into_world;
+use crate::rsutils::hex_to_rgb;
+use crate::rsutils::rgb_to_hex;
+use crate::rsutils::ResizeObserver;
 use crate::webui::take_dropped_file;
 use crate::webui::LayerProxy;
 use crate::webui::Route;
 use crate::webui::Sidebar;
 use crate::webui::ToastContainer;
 use crate::webui::ToastManager;
-use crate::graphics::Renderer;
-use crate::rsutils::hex_to_rgb;
-use crate::rsutils::rgb_to_hex;
-use crate::rsutils::ResizeObserver;
 use crate::Project;
 
 use super::has_dropped_file;
@@ -321,7 +321,6 @@ impl Component for ViewerPage {
                 true
             }
             ViewerMsg::ParseGds(content) => {
-
                 //// BEGIN NEW ECS STUFF
                 let buffer = content.clone();
                 spawn_local(async move {

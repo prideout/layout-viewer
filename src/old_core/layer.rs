@@ -1,5 +1,5 @@
-use crate::old_core::CellDefId;
 use crate::graphics::BoundingBox;
+use crate::old_core::CellDefId;
 use bevy_ecs::entity::Entity;
 use geo::AffineOps;
 use geo::AffineTransform;

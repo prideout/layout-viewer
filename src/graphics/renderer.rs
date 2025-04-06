@@ -113,7 +113,7 @@ impl Renderer {
                 let mesh = world.get_mut::<Mesh>(mesh_entity).unwrap();
                 if !mesh.visible {
                     continue;
-                }                
+                }
 
                 let geometry = mesh.geometry;
                 let material = mesh.material;

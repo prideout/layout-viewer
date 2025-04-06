@@ -1,6 +1,6 @@
 mod components;
-mod loader;
 mod instancer;
+mod loader;
 mod path_outline;
 
 pub use components::*;

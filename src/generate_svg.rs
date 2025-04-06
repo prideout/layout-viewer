@@ -1,5 +1,5 @@
-use crate::old_core::Layer;
 use crate::graphics::BoundingBox;
+use crate::old_core::Layer;
 use svg::node::element::Group;
 use svg::node::element::Path;
 use svg::Document;

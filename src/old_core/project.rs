@@ -1,3 +1,4 @@
+use crate::graphics::BoundingBox;
 use crate::old_core::ArrayProperties;
 use crate::old_core::Cell;
 use crate::old_core::CellDef;
@@ -7,7 +8,6 @@ use crate::old_core::Element;
 use crate::old_core::ElementInstance;
 use crate::old_core::GdsSourceShape;
 use crate::old_core::Layer;
-use crate::graphics::BoundingBox;
 use crate::rsutils::hsv_to_rgb;
 use crate::rsutils::IdMap;
 use crate::rsutils::StringInterner;
@@ -462,8 +462,7 @@ impl Debug for ElementRef {
 
 impl PartialEq for ElementRef {
     fn eq(&self, other: &Self) -> bool {
-        self.element_instance_index == other.element_instance_index
-            && self.layer == other.layer
+        self.element_instance_index == other.element_instance_index && self.layer == other.layer
     }
 }
 

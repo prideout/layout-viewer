@@ -10,7 +10,7 @@ pub type Point = geo::Point<f64>;
 pub enum PathType {
     Standard = 0,
     Round = 1,
-    Extended = 2,   
+    Extended = 2,
 }
 
 pub fn create_path_outline(

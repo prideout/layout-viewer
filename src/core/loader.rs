@@ -1,15 +1,23 @@
 use std::collections::BTreeMap;
 
-use super::{
-    components::CellDefinition,
-    path_outline::{create_path_outline, PathType},
-    CellReference, ShapeDefinition, ShapeReference, ShapeType, Triangulation,
-};
-use bevy_ecs::{entity::Entity, world::World};
-use gds21::{GdsBoundary, GdsLibrary, GdsPath, GdsPoint, GdsStructRef};
+use super::components::CellDefinition;
+use super::path_outline::create_path_outline;
+use super::path_outline::PathType;
+use super::CellReference;
+use super::ShapeDefinition;
+use super::ShapeType;
+use super::Triangulation;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
+use gds21::GdsBoundary;
+use gds21::GdsLibrary;
+use gds21::GdsPath;
+use gds21::GdsPoint;
+use gds21::GdsStructRef;
 
 use futures::stream::{self};
-use geo::{AffineTransform, TriangulateEarcut};
+use geo::AffineTransform;
+use geo::TriangulateEarcut;
 
 type Point2d = nalgebra::Point2<f64>;
 type Point2f = nalgebra::Point2<f32>;
@@ -54,7 +62,7 @@ pub async fn load_gds_into_world(
             for gds_struct in &library.structs {
                 let cell_def = CellDefinition {
                     name: gds_struct.name.clone(),
-                    shape_refs: vec![],
+                    shape_defs: vec![],
                     cell_refs: vec![],
                     root_instance: None,
                 };
@@ -78,16 +86,16 @@ pub async fn load_gds_into_world(
                 // TODO: array refs are not yet implemented, hide them for now
             }
             gds21::GdsElement::GdsBoundary(boundary) => {
-                let shape_ref = Loader::load_boundary(boundary, world);
+                let shape_def = Loader::load_boundary(boundary, world);
                 let cell_def = name_to_cell_def[&gds_struct.name];
                 let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
-                cell_def.shape_refs.push(shape_ref);
+                cell_def.shape_defs.push(shape_def);
             }
             gds21::GdsElement::GdsPath(path) => {
-                let shape_ref = Loader::load_path(path, world);
+                let shape_def = Loader::load_path(path, world);
                 let cell_def = name_to_cell_def[&gds_struct.name];
                 let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
-                cell_def.shape_refs.push(shape_ref);
+                cell_def.shape_defs.push(shape_def);
             }
             gds21::GdsElement::GdsTextElem(_) => {
                 // We do not support text elements yet, but they do
@@ -179,7 +187,7 @@ impl Loader {
         Triangulation { indices, vertices }
     }
 
-    fn load_boundary(boundary: &GdsBoundary, world: &mut World) -> ShapeReference {
+    fn load_boundary(boundary: &GdsBoundary, world: &mut World) -> Entity {
         let geo_points: Vec<_> = boundary.xy.iter().map(gds_to_geo_point).collect();
         let array_points: Vec<_> = boundary.xy.iter().map(gds_point_to_array).collect();
         let local_polygon = Polygon::new(LineString::from(geo_points), vec![]);
@@ -190,14 +198,10 @@ impl Loader {
             local_polygon,
             local_triangles,
         };
-        let shape_definition = world.spawn(shape_definition).id();
-        ShapeReference {
-            shape_definition,
-            local_transform: AffineTransform::identity(),
-        }
+        world.spawn(shape_definition).id()
     }
 
-    fn load_path(path: &GdsPath, world: &mut World) -> ShapeReference {
+    fn load_path(path: &GdsPath, world: &mut World) -> Entity {
         let spine: Vec<_> = path.xy.iter().map(gds_point_to_array).collect();
         let width = path.width.unwrap_or(0) as f64;
         let half_width = width / 2.0;
@@ -216,11 +220,7 @@ impl Loader {
             local_polygon,
             local_triangles,
         };
-        let shape_definition = world.spawn(shape_definition).id();
-        ShapeReference {
-            shape_definition,
-            local_transform: AffineTransform::identity(),
-        }
+        world.spawn(shape_definition).id()
     }
 }
 

@@ -14,7 +14,7 @@ type Polygon = geo::Polygon<f64>;
 #[derive(Component)]
 pub struct CellDefinition {
     pub name: String,
-    pub shape_refs: Vec<ShapeReference>,
+    pub shape_defs: Vec<Entity>,
     pub cell_refs: Vec<CellReference>,
 
     /// Users must choose a cell definition to be the active view context.
@@ -68,11 +68,6 @@ pub struct Layer {
     pub shape_instances: Vec<Entity>,
 }
 
-pub struct ShapeReference {
-    pub shape_definition: Entity,
-    pub local_transform: AffineTransform,
-}
-
 pub struct CellReference {
     pub cell_definition: Entity,
     pub local_transform: AffineTransform,
@@ -90,7 +85,9 @@ pub struct Triangulation {
 
 impl Triangulation {
     pub fn empty() -> Self {
-        Self { indices: vec![], vertices: vec![] }
+        Self {
+            indices: vec![],
+            vertices: vec![],
+        }
     }
 }
-
