@@ -193,12 +193,11 @@ impl Project {
         for layer in self.layers() {
             let mut geometry = Geometry::new();
             for element_instance in &layer.element_instances {
-                let affine_transform =
-                    if let Some(cell) = self.get_cell(element_instance.cell_id) {
-                        cell.world_transform
-                    } else {
-                        AffineTransform::identity()
-                    };
+                let affine_transform = if let Some(cell) = self.get_cell(element_instance.cell_id) {
+                    cell.world_transform
+                } else {
+                    AffineTransform::identity()
+                };
                 let cell_def = self.get_cell_def(element_instance.cell_def_id).unwrap();
                 let element_index = element_instance.element_index;
                 let element = &cell_def.elements[element_index];

@@ -8,8 +8,10 @@ use bevy_ecs::system::lifetimeless::Read;
 use bevy_ecs::world::World;
 use geo::AffineOps;
 use geo::AffineTransform;
+use geo::BoundingRect;
 use i_overlay::i_shape::fix::shape;
 
+use crate::graphics::BoundingBox;
 use crate::graphics::Geometry;
 use crate::graphics::Mesh;
 use crate::Polygon;
@@ -98,17 +100,24 @@ impl Instancer {
 
         let mut shape_instances = Vec::with_capacity(shape_prototypes.len());
         for prototype in shape_prototypes {
+            let mut layer = world.get_mut::<Layer>(prototype.layer).unwrap();
+            let layer_index = layer.index;
+            let mesh = layer.mesh;
+            let bbox = prototype.world_polygon.bounding_rect();
             let shape_instance = ShapeInstance {
                 cell_instance: cell_instance_id,
                 world_polygon: prototype.world_polygon,
+                layer_index,
             };
             let shape_instance_id = world.spawn(shape_instance).id();
             shape_instances.push(shape_instance_id);
             let mut layer = world.get_mut::<Layer>(prototype.layer).unwrap();
             layer.shape_instances.push(shape_instance_id);
-            let mesh = layer.mesh;
-            let mesh = world.get::<Mesh>(mesh).unwrap();
-            let geo = mesh.geometry;
+            if let Some(bbox) = bbox {
+                let bbox = BoundingBox::from(bbox);
+                layer.world_bounds.encompass(&bbox);
+            }
+            let geo = world.get::<Mesh>(mesh).unwrap().geometry;
             let mut geo = world.get_mut::<Geometry>(geo).unwrap();
             prototype.world_triangles.append_to(&mut geo);
         }

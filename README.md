@@ -57,11 +57,18 @@ trunk serve
 
 ## Next tasks
 
-Do some rendering!
+- Resurrect hover highlighting
+- Resurrect LayerProxy UI
+- Make alpha nicer
+
+Loader chunks should be based on a combo of struct & shape counts
+  - 4004 should update the status
 
 `get_or_create_layer` should maybe use a SystemState for storing queries
 
 Write blog post: Entities, components, and fast queries.
+
+Look for memory leaks.
 
 The user should be able to choose a cell definition as "current root"
 

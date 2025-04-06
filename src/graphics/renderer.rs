@@ -32,6 +32,10 @@ impl Renderer {
         }
     }
 
+    pub fn on_new_world(&mut self, world: &mut World) {
+        self.mesh_query = Some(world.query());
+    }
+
     pub fn gl(&self) -> &glow::Context {
         &self.gl
     }

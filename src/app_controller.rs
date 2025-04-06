@@ -1,16 +1,22 @@
-use rstar::RTree;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
+use rstar::RTree;
+use rstar::RTreeObject;
 
-use crate::app_shaders::FRAGMENT_SHADER;
-use crate::app_shaders::VERTEX_SHADER;
+use crate::graphics::BlendMode;
+use crate::graphics::BoundingBox;
 use crate::graphics::Camera;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
+use crate::graphics::Mesh;
 use crate::graphics::Renderer;
 use crate::graphics::Viewport;
 use crate::hover_effect::HoverEffect;
+use crate::Layer;
+use crate::LayerMaterial;
 use crate::RTreeItem;
+use crate::ShapeInstance;
+use crate::Vector4f;
 
 type Point3 = nalgebra::Point3<f64>;
 
@@ -25,7 +31,6 @@ pub struct AppController {
     zoom_speed: f64,
     needs_render: bool,
     hover_effect: HoverEffect,
-    layer_material: Entity,
     rtree: RTree<RTreeItem>,
 }
 
@@ -44,9 +49,6 @@ impl AppController {
 
         let hover_effect = HoverEffect::new(&mut world);
 
-        let layer_material_component = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
-        let layer_material = world.spawn(layer_material_component).id();
-
         Self {
             window_size: (physical_width, physical_height),
             renderer,
@@ -57,9 +59,43 @@ impl AppController {
             zoom_speed: 0.05,
             needs_render: true,
             hover_effect,
-            layer_material,
             rtree: RTree::new(),
         }
+    }
+
+    pub fn set_world(&mut self, mut world: World) {
+        if world.id() == self.world.id() {
+            return;
+        }
+
+        self.hover_effect = HoverEffect::new(&mut world);
+        self.hover_effect.set_render_order(&mut world, 9999);
+        self.renderer.on_new_world(&mut world);
+        self.world = world;
+
+        let mut world_bounds = BoundingBox::new();
+        let mut layer_query = self.world.query::<&Layer>();
+        for layer in layer_query.iter_mut(&mut self.world) {
+            world_bounds.encompass(&layer.world_bounds);
+        }
+
+        log::info!("World bounds: {:?}", world_bounds);
+        log::info!("Window size: {:?}", self.window_size);
+
+        self.camera.fit_to_bounds(self.window_size, world_bounds);
+
+        self.render();
+
+        let mut rtree_items = Vec::new();
+        let mut shape_query = self.world.query::<(Entity, &ShapeInstance)>();
+        for (entity, shape_instance) in shape_query.iter(&self.world) {
+            rtree_items.push(RTreeItem {
+                shape_instance: entity,
+                layer: shape_instance.layer_index,
+                aabb: shape_instance.world_polygon.envelope(),
+            });
+        }
+        self.rtree = RTree::bulk_load(rtree_items);
     }
 
     pub fn handle_mouse_press(&mut self, x: u32, y: u32) {
@@ -209,26 +245,37 @@ impl AppController {
     }
 
     pub fn apply_theme(&mut self, theme: Theme) {
-        /*
-        let mut project = self.project.take().unwrap();
-        let mut material = self.world.get_mut::<Material>(self.layer_material).unwrap();
+
+        let mut layer_query = self.world.query::<&Layer>();
+
+        // Collect all mesh IDs from layers
+        let mut mesh_ids = Vec::new();
+        for layer in layer_query.iter(&self.world) {
+            mesh_ids.push(layer.mesh);
+        }
+
+        // Update mesh colors based on theme
+        let mut mesh_query = self.world.query::<&mut Mesh>();
+        for mut mesh in mesh_query.iter_mut(&mut self.world) {
+            let color = match theme {
+                Theme::Light =>  Vector4f::new(0.0, 0.0, 0.0, 0.1),
+                Theme::Dark =>   Vector4f::new(1.0, 1.0, 1.0, 0.1),
+            };
+            mesh.set_vec4("color", color);
+        }
+
+        let mut lmq = self.world.query::<(&LayerMaterial, &mut Material)>();
+
+        let (_, mut mat) = lmq.single_mut(&mut self.world);
         match theme {
             Theme::Light => {
-                material.set_blending(BlendMode::Additive);
-                project.apply_light_scheme();
+                mat.set_blending(BlendMode::Additive);
             }
             Theme::Dark => {
-                material.set_blending(BlendMode::SourceOver);
-                project.apply_rainbow_scheme();
+                mat.set_blending(BlendMode::SourceOver);
             }
         }
-        for layer in project.layers() {
-            let id = layer.mesh.unwrap();
-            let mesh = self.world.get_mut::<Mesh>(id).unwrap().into_inner();
-            mesh.set_vec4("color", layer.color);
-        }
-        self.project = Some(project);
-         */
+
         self.render();
     }
 

@@ -23,6 +23,7 @@ pub struct Material {
     vertex_shader: String,
     fragment_shader: String,
     blend_mode: BlendMode,
+    depth_test: bool,
 }
 
 // SAFETY: This is safe because:
@@ -40,6 +41,7 @@ impl Material {
             vertex_shader: vertex_shader.to_string(),
             fragment_shader: fragment_shader.to_string(),
             blend_mode: BlendMode::Disabled,
+            depth_test: false,
         }
     }
 
@@ -136,6 +138,12 @@ impl Material {
 
         unsafe {
             gl.use_program(self.program);
+
+            if self.depth_test {
+                gl.enable(glow::DEPTH_TEST);
+            } else {
+                gl.disable(glow::DEPTH_TEST);
+            }
 
             match self.blend_mode {
                 BlendMode::Disabled => {

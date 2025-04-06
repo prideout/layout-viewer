@@ -1,8 +1,10 @@
 use bevy_ecs::world::World;
 use futures::StreamExt;
-use gloo::timers::callback::Timeout;
+use gloo_timers::future::TimeoutFuture;
+use js_sys::Promise;
 use serde::Serialize;
 use wasm_bindgen::closure::Closure;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::JsFuture;
@@ -22,8 +24,6 @@ use crate::app_controller::AppController;
 use crate::app_controller::Theme;
 use crate::graphics::Renderer;
 use crate::load_gds_into_world;
-use crate::rsutils::hex_to_rgb;
-use crate::rsutils::rgb_to_hex;
 use crate::rsutils::ResizeObserver;
 use crate::webui::take_dropped_file;
 use crate::webui::LayerProxy;
@@ -32,7 +32,6 @@ use crate::webui::Sidebar;
 use crate::webui::ToastContainer;
 use crate::webui::ToastManager;
 use crate::Instancer;
-use crate::Project;
 use crate::RootFinder;
 
 use super::has_dropped_file;
@@ -49,9 +48,10 @@ pub enum ViewerMsg {
     MouseWheel(u32, u32, f64),
     MouseLeave,
     DoneFetching(Vec<u8>),
-    ParseGds(Vec<u8>),
-    Triangulate(Box<Project>),
-    GenerateVerts(Box<Project>),
+    SpawnLoader(Vec<u8>),
+    SpawnInstancer(Box<World>),
+    StashWorld(Box<World>),
+    SetStatus(String),
     Render,
     Resize,
     Tick,
@@ -67,24 +67,6 @@ pub struct ViewerPage {
     layer_proxies: Vec<LayerProxy>,
     is_dark_theme: bool,
     status: String,
-}
-
-impl ViewerPage {
-    fn enqueue<T>(&mut self, status: &str, callback: Callback<T>, data: T)
-    where
-        T: 'static,
-    {
-        self.status = status.to_string();
-        log::info!("{}", status);
-
-        // NOTE: This does not consistently give enough time for a refresh.
-        // However we cannot use requestAnimationFrame without requiring
-        // T to be cloneable.
-        Timeout::new(1, move || {
-            callback.emit(data);
-        })
-        .forget();
-    }
 }
 
 impl Component for ViewerPage {
@@ -210,8 +192,7 @@ impl Component for ViewerPage {
         let link = ctx.link().clone();
 
         if let Some((_name, content)) = take_dropped_file() {
-            let cb = link.callback(ViewerMsg::ParseGds);
-            self.enqueue("Parsing GDS", cb, content);
+            link.send_message(ViewerMsg::SpawnLoader(content));
         } else if id != "dropped-file" {
             download(link, id);
         }
@@ -318,116 +299,78 @@ impl Component for ViewerPage {
                 false
             }
             ViewerMsg::DoneFetching(content) => {
-                let cb = link.callback(ViewerMsg::ParseGds);
-                self.enqueue("Parsing GDS", cb, content);
+                link.send_message(ViewerMsg::SpawnLoader(content));
                 true
             }
-            ViewerMsg::ParseGds(content) => {
-                //// BEGIN NEW ECS STUFF
-                let buffer = content.clone();
+            ViewerMsg::SpawnLoader(content) => {
                 spawn_local(async move {
-                    let mut progress_stream = load_gds_into_world(&buffer, World::new()).await;
+                    print_and_yield(&link, "Parsing GDS").await;
+
+                    let mut progress_stream = load_gds_into_world(&content, World::new()).await;
+
+                    print_and_yield(&link, "Loading GDS").await;
+
                     let mut progress_stream = std::pin::pin!(progress_stream);
                     let mut world = None;
                     while let Some(mut progress) = progress_stream.next().await {
-                        log::info!("{}", progress.phase);
+                        print_and_yield(&link, &progress.phase).await;
                         world = progress.world.take();
                     }
-                    log::info!("Done with loading.");
-
-                    let mut root_finder = RootFinder::new(world.as_mut().unwrap());
-                    let roots = root_finder.find_roots(world.as_ref().unwrap());
-
-                    log::info!("Found {} roots.", roots.len());
-
-                    let mut instancer = Instancer::new(world.as_mut().unwrap());
-                    instancer.select_root(world.as_mut().unwrap(), roots[0]);
-
-                    log::info!("Done with instantiation.");
+                    let world = world.unwrap();
+                    link.send_message(ViewerMsg::SpawnInstancer(Box::new(world)));
                 });
-                //// END NEW ECS STUFF
+                true
+            }
+            ViewerMsg::SpawnInstancer(world) => {
+                spawn_local(async move {
+                    let mut boxed_world = world;
+                    let world = boxed_world.as_mut();
+                    let mut root_finder = RootFinder::new(world);
+                    let roots = root_finder.find_roots(world);
 
-                let project = Project::from_bytes(&content);
-                let Ok(mut project) = project else {
-                    log::error!("Failed to parse dropped GDS.");
+                    let message = format!("Found {} roots. Instancing...", roots.len());
+                    print_and_yield(&link, &message).await;
+
+                    let mut instancer = Instancer::new(world);
+                    instancer.select_root(world, roots[0]);
+                    link.send_message(ViewerMsg::StashWorld(boxed_world));
+                });
+                true
+            }
+            ViewerMsg::StashWorld(world) => {
+                self.status.clear();
+
+                let Some(controller) = &mut self.controller else {
+                    spawn_local(async move {
+                        print_and_yield(&link, "Waiting for app controller...").await;
+                        link.send_message(ViewerMsg::StashWorld(world));
+                    });
                     return true;
                 };
-                project.update_world_transforms();
-                let cb = link.callback(ViewerMsg::Triangulate);
-                self.enqueue("Triangulating polygons", cb, Box::new(project));
-                true
-            }
-            ViewerMsg::Triangulate(mut project) => {
-                project.update_layers();
-                let cb = link.callback(ViewerMsg::GenerateVerts);
-                self.enqueue("Generating vertex buffers", cb, project);
-                true
-            }
-            ViewerMsg::GenerateVerts(mut project) => {
-                if self.is_dark_theme {
-                    project.apply_rainbow_scheme();
-                }
-                let Some(controller) = &mut self.controller else {
-                    log::error!("Controller not ready");
-                    return false;
-                };
-                controller.set_project(*project);
+
+                controller.set_world(*world);
+
                 controller.apply_theme(if self.is_dark_theme {
                     Theme::Dark
                 } else {
                     Theme::Light
                 });
-                self.toast_manager
-                    .show("Zoom and pan like a map".to_string());
 
-                // Update layer proxies
-                if let Some(project) = controller.project() {
-                    self.layer_proxies = project
-                        .layers()
-                        .iter()
-                        .enumerate()
-                        .map(|(index, layer)| LayerProxy {
-                            index,
-                            visible: layer.visible,
-                            opacity: layer.color.w,
-                            color: rgb_to_hex(layer.color.x, layer.color.y, layer.color.z),
-                            is_empty: layer.element_instances.is_empty(),
-                        })
-                        .collect();
-                }
-
-                controller.render();
-                self.status.clear();
+                true
+            }
+            ViewerMsg::SetStatus(status) => {
+                self.status = status;
                 true
             }
             ViewerMsg::RemoveToast(id) => {
                 self.toast_manager.remove(id);
                 true
             }
-            ViewerMsg::UpdateLayer(layer_proxy) => {
+            ViewerMsg::UpdateLayer(_layer_proxy) => {
                 let Some(controller) = &mut self.controller else {
                     return false;
                 };
-                let color = {
-                    let Some(project) = controller.project_mut() else {
-                        return false;
-                    };
-                    let Some(layer) = project.layers_mut().get_mut(layer_proxy.index) else {
-                        return false;
-                    };
-                    layer.visible = layer_proxy.visible;
-                    if let Some((r, g, b)) = hex_to_rgb(&layer_proxy.color) {
-                        layer.color.w = layer_proxy.opacity;
-                        layer.color.x = r;
-                        layer.color.y = g;
-                        layer.color.z = b;
-                    }
-                    layer.color
-                };
-                let mesh = controller.get_mesh_for_layer_mut(layer_proxy.index);
-                mesh.set_vec4("color", color);
-                mesh.visible = layer_proxy.visible;
-                self.layer_proxies[layer_proxy.index] = layer_proxy.clone();
+                // TODO
                 controller.render();
                 true
             }
@@ -438,11 +381,6 @@ impl Component for ViewerPage {
                 } else {
                     Theme::Light
                 });
-                for layer in controller.project().unwrap().layers() {
-                    let proxy = &mut self.layer_proxies[layer.index() as usize];
-                    proxy.color = rgb_to_hex(layer.color.x, layer.color.y, layer.color.z);
-                    proxy.opacity = layer.color.w;
-                }
                 if let Some(window) = window() {
                     if let Some(storage) = window.local_storage().unwrap() {
                         let _ = storage.set_item(
@@ -489,4 +427,19 @@ fn download(link: Scope<ViewerPage>, filename: String) {
             }
         }
     });
+}
+
+async fn print_and_yield(link: &Scope<ViewerPage>, status: &str) {
+    link.send_message(ViewerMsg::SetStatus(status.to_string()));
+    TimeoutFuture::new(0).await;
+}
+
+// NOTE: This is the more modern API than TimeoutFuture, but it does not seem to
+// give enough time for the browser to re-render the DOM.
+#[allow(dead_code)]
+async fn yield_to_browser() -> Result<JsValue, JsValue> {
+    JsFuture::from(Promise::new(&mut |resolve, _| {
+        web_sys::window().unwrap().queue_microtask(&resolve);
+    }))
+    .await
 }

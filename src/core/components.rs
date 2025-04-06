@@ -66,6 +66,7 @@ pub struct ShapeDefinition {
 pub struct ShapeInstance {
     pub cell_instance: Entity,
     pub world_polygon: Polygon,
+    pub layer_index: i16,
 }
 
 #[derive(Component)]
@@ -120,10 +121,11 @@ impl Triangulation {
     }
 
     pub fn append_to(&self, geo: &mut Geometry) {
-        let start_index = geo.positions.len() as u32;
+        let start_index = (geo.positions.len() / 3) as u32;
         for vert in &self.vertices {
             geo.positions.push(vert.x);
             geo.positions.push(vert.y);
+            geo.positions.push(0.0);
         }
         for index in &self.indices {
             geo.indices.push(start_index + *index);
