@@ -74,7 +74,6 @@ pub async fn load_gds_into_world(
                     name: gds_struct.name.clone(),
                     shape_defs: vec![],
                     cell_refs: vec![],
-                    root_instance: None,
                 };
                 let cell_def = world.spawn(cell_def).id();
                 map.insert(gds_struct.name.clone(), cell_def);

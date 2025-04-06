@@ -12,26 +12,34 @@ pub type Point2f = nalgebra::Point2<f32>;
 pub type Polygon = geo::Polygon<f64>;
 
 #[derive(Component)]
+pub struct Selected {}
+
+#[derive(Component)]
+pub struct Hovered {}
+
+/// Identifies the CellInstance at the root of the instance tree.
+///
+/// At run time, users can choose any cell definition to be the active view
+/// context. When this choice is made, a new tree of instances are created, and
+/// the chosen cell definition is used to instantiate the root. The
+/// [RootCellInstance] tag identifies the root cell instance.
+///
+/// Note that Bevy queries have a `get_single` method.
+#[derive(Component)]
+pub struct RootCellInstance {}
+
+#[derive(Component)]
 pub struct CellDefinition {
     pub name: String,
     pub shape_defs: Vec<Entity>,
     pub cell_refs: Vec<CellReference>,
-
-    /// Users must choose a cell definition to be the active view context.
-    ///
-    /// When this choice is made, a new tree of instances are created, and the
-    /// chosen cell definition is used to instantiate the root.
-    ///
-    /// The root instantiation is stored here, but only if this cell definition
-    /// happens to be the chosen one. For all other definitions, this is `None`.
-    pub root_instance: Option<CellInstance>,
 }
 
 #[derive(Component)]
 pub struct CellInstance {
     pub cell_definition: Entity,
 
-    /// Must have same length as CellDefinition::shape_refs
+    /// Must have same length as CellDefinition::shape_defs
     pub shape_instances: Vec<Entity>,
 
     /// Must have same length as CellDefinition::cell_refs
@@ -39,6 +47,8 @@ pub struct CellInstance {
 
     /// Transforms this cell's coord system to the root coord system.
     pub world_transform: AffineTransform,
+
+    // NOTE: consider storing a GeometryRange here for fast VBO updates.
 }
 
 #[derive(Component)]
@@ -49,9 +59,9 @@ pub struct ShapeDefinition {
     pub local_triangles: Triangulation,
 }
 
-// The rtree item has:
+// NOTE: We use an R-tree for fast spatial lookups. Each node in the tree has:
 //  (1) this entity id
-//  (2) the aabb of this world_polygon.
+//  (2) the aabb of this world_polygon
 #[derive(Component)]
 pub struct ShapeInstance {
     pub cell_instance: Entity,

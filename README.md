@@ -49,6 +49,7 @@ trunk serve
 
 ## Dependencies
 
+- bevy_ecs: Entity-component-system
 - gds21: GDSII parser
 - svg: SVG generation
 - wasm-bindgen: WebAssembly bindings
