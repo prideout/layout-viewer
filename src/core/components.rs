@@ -6,10 +6,10 @@ use geo::AffineTransform;
 
 use crate::graphics::BoundingBox;
 
-type Point2d = nalgebra::Point2<f64>;
-type Vector4f = nalgebra::Vector4<f32>;
-type Point2f = nalgebra::Point2<f32>;
-type Polygon = geo::Polygon<f64>;
+pub type Point2d = nalgebra::Point2<f64>;
+pub type Vector4f = nalgebra::Vector4<f32>;
+pub type Point2f = nalgebra::Point2<f32>;
+pub type Polygon = geo::Polygon<f64>;
 
 #[derive(Component)]
 pub struct CellDefinition {
@@ -60,7 +60,7 @@ pub struct ShapeInstance {
 
 #[derive(Component)]
 pub struct Layer {
-    pub index: u16,
+    pub index: i16,
     pub color: Vector4f,
     pub visible: bool,
     pub mesh: Entity,

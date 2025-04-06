@@ -328,7 +328,7 @@ impl Component for ViewerPage {
                     let mut progress_stream = std::pin::pin!(progress_stream);
                     let mut world = None;
                     while let Some(mut progress) = progress_stream.next().await {
-                        log::info!("Progress: {:.0}%", progress.percent);
+                        log::info!("{} ... {:.0}%", progress.phase, progress.percent);
                         world = progress.world.take();
                     }
                     log::info!("Task completed. World = {}", world.is_some());

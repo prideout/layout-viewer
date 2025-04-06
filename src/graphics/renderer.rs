@@ -2,7 +2,7 @@ use crate::graphics::Camera;
 use crate::graphics::Viewport;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::query::QueryState;
-use bevy_ecs::query::With;
+use bevy_ecs::system::lifetimeless::Read;
 use bevy_ecs::world::World;
 use glow::*;
 
@@ -14,7 +14,7 @@ pub struct Renderer {
     gl: glow::Context,
     viewport: Viewport,
     clear_color: (f32, f32, f32, f32),
-    mesh_query: Option<QueryState<Entity, With<Mesh>>>,
+    mesh_query: Option<QueryState<(Entity, Read<Mesh>)>>,
 }
 
 impl Renderer {
@@ -98,28 +98,23 @@ impl Renderer {
             let projection = camera.get_projection_matrix().cast::<f32>();
             let view_matrix = camera.get_view_matrix().cast::<f32>();
 
-            let mesh_query = self
-                .mesh_query
-                .get_or_insert_with(|| world.query_filtered::<Entity, With<Mesh>>());
+            let mesh_query = self.mesh_query.get_or_insert_with(|| world.query());
 
-            let mut meshes = mesh_query.iter(world).collect::<Vec<_>>();
-
-            meshes.sort_by_key(|entity| {
-                let mesh = world.get::<Mesh>(*entity).unwrap();
-                mesh.render_order
+            let meshes = mesh_query.iter(world).filter_map(|(entity, mesh)| {
+                if mesh.visible {
+                    Some((entity, mesh.geometry, mesh.material, mesh.render_order))
+                } else {
+                    None
+                }
             });
 
-            for mesh_entity in meshes {
-                let mesh = world.get_mut::<Mesh>(mesh_entity).unwrap();
-                if !mesh.visible {
-                    continue;
-                }
+            let mut meshes = meshes.collect::<Vec<_>>();
 
-                let geometry = mesh.geometry;
-                let material = mesh.material;
+            meshes.sort_by_key(|(_, _, _, render_order)| *render_order);
 
+            for (mesh, geometry, material, _) in meshes {
                 let [mut mesh, mut geometry, mut material] =
-                    world.many_entities_mut([mesh_entity, geometry, material]);
+                    world.many_entities_mut([mesh, geometry, material]);
 
                 let mesh = mesh.get_mut::<Mesh>().unwrap();
                 let mut geometry = geometry.get_mut::<Geometry>().unwrap();

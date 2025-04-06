@@ -56,17 +56,16 @@ trunk serve
 
 ## Next tasks
 
-1. Flesh out `loader.rs` to create refs/defs/layers
-  - Do not populate the mesh or shape_instances in layer
-
-2. Flesh out `instancer.rs` when the user selects a root:
+1. Flesh out `instancer.rs` when the user selects a root:
   - Create instances.
   - Recursively populate world_* fields
   - Create mesh and shape_instances in Layer
 
+2. Use `root_finder` and do some rendering
+
 The user should be able to choose a cell definition as "current root"
 
-ShapeReference boxes and CellReference boxes should appear according to pointer position,
+ShapeDefinition boxes and CellReference boxes should appear according to pointer position,
 but only for direct children of the current root.
 
 The user should be able to drag cells, but only cells that happen to be direct children of the current root.
