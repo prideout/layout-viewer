@@ -1,4 +1,6 @@
 use crate::graphics::BoundingBox;
+use crate::graphics::Geometry;
+use crate::graphics::Mesh;
 use crate::old_core::ArrayProperties;
 use crate::old_core::Cell;
 use crate::old_core::CellDef;
@@ -13,6 +15,8 @@ use crate::rsutils::IdMap;
 use crate::rsutils::StringInterner;
 use anyhow::anyhow;
 use anyhow::Result;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
 use gds21::GdsLibrary;
 use gds21::GdsPoint;
 use gds21::GdsStrans;
@@ -37,7 +41,6 @@ pub struct Project {
     cell_defs: BTreeMap<CellDefId, CellDef>,
     layers: Vec<Layer>,
     highest_layer: i16,
-    interner: StringInterner,
     bounds: BoundingBox,
     rtree: RTree<ElementRef>,
 }
@@ -167,7 +170,6 @@ impl Project {
         }
 
         let mut project = Project {
-            interner,
             cells,
             cell_defs,
             layers: Vec::new(),
@@ -185,28 +187,36 @@ impl Project {
         Ok(project)
     }
 
-    pub fn highest_layer(&self) -> i16 {
-        self.highest_layer
-    }
+    pub fn create_meshes(&self, world: &mut World, layer_material: Entity) -> Vec<Entity> {
+        let mut meshes = Vec::with_capacity(self.layers().len());
+        let mut highest_render_order = 0;
+        for layer in self.layers() {
+            let mut geometry = Geometry::new();
+            for element_instance in &layer.element_instances {
+                let affine_transform =
+                    if let Some(cell) = self.get_cell(element_instance.cell_id) {
+                        cell.world_transform
+                    } else {
+                        AffineTransform::identity()
+                    };
+                let cell_def = self.get_cell_def(element_instance.cell_def_id).unwrap();
+                let element_index = element_instance.element_index;
+                let element = &cell_def.elements[element_index];
+                element.append_triangles(&mut geometry, &affine_transform);
+            }
 
-    pub fn struct_name(&self, cell_def_id: CellDefId) -> &str {
-        self.interner.get(cell_def_id.0)
-    }
+            let geometry_entity = world.spawn(geometry).id();
 
-    pub fn get_cell_def(&self, cell_def_id: CellDefId) -> Option<&CellDef> {
-        self.cell_defs.get(&cell_def_id)
-    }
+            let mut mesh = Mesh::new(geometry_entity, layer_material);
+            mesh.render_order = layer.index() as i32;
+            if mesh.render_order > highest_render_order {
+                highest_render_order = mesh.render_order;
+            }
+            let mesh_entity = world.spawn(mesh).id();
 
-    pub fn get_cell(&self, cell_id: CellId) -> Option<&Cell> {
-        self.cells.get(&cell_id)
-    }
-
-    pub fn find_roots(&self) -> Vec<CellDefId> {
-        self.cell_defs
-            .iter()
-            .filter(|(_, cell_def)| cell_def.instances.is_empty())
-            .map(|(cell_def_id, _)| *cell_def_id)
-            .collect()
+            meshes.push(mesh_entity);
+        }
+        meshes
     }
 
     pub fn update_world_transforms(&mut self) {
@@ -327,6 +337,22 @@ impl Project {
             }
             layer.color = Vector4::new(0.0, 0.0, 0.0, alpha);
         }
+    }
+
+    fn get_cell_def(&self, cell_def_id: CellDefId) -> Option<&CellDef> {
+        self.cell_defs.get(&cell_def_id)
+    }
+
+    fn get_cell(&self, cell_id: CellId) -> Option<&Cell> {
+        self.cells.get(&cell_id)
+    }
+
+    fn find_roots(&self) -> Vec<CellDefId> {
+        self.cell_defs
+            .iter()
+            .filter(|(_, cell_def)| cell_def.instances.is_empty())
+            .map(|(cell_def_id, _)| *cell_def_id)
+            .collect()
     }
 
     fn update_layers_recurse(&mut self, cell_id: CellId, rtree_items: &mut Vec<ElementRef>) {

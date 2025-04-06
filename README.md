@@ -57,11 +57,9 @@ trunk serve
 
 ## Next tasks
 
-- Instancer and queries ... awkward
-  - `get_or_create_layer` can use a SystemState for storing queries
-  https://docs.rs/bevy/0.14.2/bevy/ecs/system/struct.SystemState.html
-
 Do some rendering!
+
+`get_or_create_layer` should maybe use a SystemState for storing queries
 
 Write blog post: Entities, components, and fast queries.
 

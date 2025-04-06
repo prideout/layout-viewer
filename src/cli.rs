@@ -100,12 +100,6 @@ pub fn run_cli() -> Result<()> {
     project.update_world_transforms();
     project.update_layers();
 
-    println!(
-        "{:<12} {}",
-        "Layers".color(Color::Green),
-        (project.highest_layer() + 1) as usize
-    );
-
     let bounds = project.bounds();
     println!(
         "{:<12} ({}, {}) to ({}, {})",
@@ -115,20 +109,6 @@ pub fn run_cli() -> Result<()> {
         pretty_print_float(bounds.max_x),
         pretty_print_float(bounds.max_y)
     );
-
-    let mut has_root_cell = false;
-    for root_id in project.find_roots() {
-        has_root_cell = true;
-        println!(
-            "{:<12} {}",
-            "Root".color(Color::BrightYellow),
-            project.struct_name(root_id)
-        );
-    }
-
-    if !has_root_cell {
-        println!("{}", "No root cell found".color(Color::Red));
-    }
 
     // Generate and save SVG if output path is provided
     if let Some(ref output_path) = args.output {

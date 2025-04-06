@@ -1,6 +1,5 @@
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
-use geo::AffineTransform;
 
 use crate::app_shaders::FRAGMENT_SHADER;
 use crate::app_shaders::VERTEX_SHADER;
@@ -75,37 +74,9 @@ impl AppController {
         let bounds = project.bounds();
         self.camera.fit_to_bounds(self.window_size, bounds);
 
-        let mut meshes = Vec::with_capacity(project.layers().len());
-        let mut highest_render_order = 0;
-        for layer in project.layers() {
-            let mut geometry = Geometry::new();
-            for element_instance in &layer.element_instances {
-                let affine_transform =
-                    if let Some(cell) = project.get_cell(element_instance.cell_id) {
-                        cell.world_transform
-                    } else {
-                        AffineTransform::identity()
-                    };
-                let cell_def = project.get_cell_def(element_instance.cell_def_id).unwrap();
-                let element_index = element_instance.element_index;
-                let element = &cell_def.elements[element_index];
-                element.append_triangles(&mut geometry, &affine_transform);
-            }
+        let meshes = project.create_meshes(&mut self.world, self.layer_material);
 
-            let geometry_entity = self.world.spawn(geometry).id();
-
-            let mut mesh = Mesh::new(geometry_entity, self.layer_material);
-            mesh.render_order = layer.index() as i32;
-            if mesh.render_order > highest_render_order {
-                highest_render_order = mesh.render_order;
-            }
-            let mesh_entity = self.world.spawn(mesh).id();
-
-            meshes.push(mesh_entity);
-        }
-
-        self.hover_effect
-            .set_render_order(&mut self.world, highest_render_order + 1);
+        self.hover_effect.set_render_order(&mut self.world, 9999);
 
         for (i, layer) in project.layers_mut().iter_mut().enumerate() {
             layer.mesh = Some(meshes[i]);
