@@ -6,7 +6,9 @@ use colored::*;
 use futures::StreamExt;
 use layout_viewer::generate_svg;
 use layout_viewer::load_gds_into_world;
+use layout_viewer::Instancer;
 use layout_viewer::Project;
+use layout_viewer::RootFinder;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -77,10 +79,20 @@ pub fn run_cli() -> Result<()> {
         let mut progress_stream = std::pin::pin!(progress_stream);
         let mut world = None;
         while let Some(mut progress) = progress_stream.next().await {
-            log::info!("Progress: {:.0}%", progress.percent);
+            log::info!("{}", progress.phase);
             world = progress.world.take();
         }
-        log::info!("Task completed. World = {}", world.is_some());
+        log::info!("Done with loading.");
+
+        let mut root_finder = RootFinder::new(world.as_mut().unwrap());
+        let roots = root_finder.find_roots(world.as_ref().unwrap());
+
+        log::info!("Found {} roots.", roots.len());
+
+        let mut instancer = Instancer::new(world.as_mut().unwrap());
+        instancer.select_root(world.as_mut().unwrap(), roots[0]);
+
+        log::info!("Done with instantiation.");
     });
     //// END NEW ECS STUFF
 

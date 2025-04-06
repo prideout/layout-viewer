@@ -7,6 +7,7 @@ pub mod renderer;
 pub mod ribbon;
 pub mod viewport;
 
+mod default_shaders;
 mod ribbon_shaders;
 
 pub use bounds::*;

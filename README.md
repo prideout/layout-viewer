@@ -57,14 +57,13 @@ trunk serve
 
 ## Next tasks
 
-Upgrade Bevy. Write blog post. Entities, components, and fast queries.
+- Instancer and queries ... awkward
+  - `get_or_create_layer` can use a SystemState for storing queries
+  https://docs.rs/bevy/0.14.2/bevy/ecs/system/struct.SystemState.html
 
-1. Flesh out `instancer.rs` when the user selects a root:
-  - Create instances.
-  - Recursively populate world_* fields
-  - Create mesh and shape_instances in Layer
+Do some rendering!
 
-2. Use `root_finder` and do some rendering
+Write blog post: Entities, components, and fast queries.
 
 The user should be able to choose a cell definition as "current root"
 

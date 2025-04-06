@@ -1,3 +1,5 @@
+use super::default_shaders::FRAGMENT_SHADER;
+use super::default_shaders::VERTEX_SHADER;
 use bevy_ecs::component::Component;
 use glow::HasContext;
 use indexmap::IndexMap;
@@ -230,5 +232,11 @@ impl Drop for Material {
         if self.program.is_some() {
             log::warn!("Material dropped without calling destroy()");
         }
+    }
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        Material::new(VERTEX_SHADER, FRAGMENT_SHADER)
     }
 }

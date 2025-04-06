@@ -2,9 +2,12 @@
 
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
+use geo::AffineOps;
 use geo::AffineTransform;
 
 use crate::graphics::BoundingBox;
+use crate::graphics::Geometry;
+use crate::graphics::Material;
 
 pub type Point2d = nalgebra::Point2<f64>;
 pub type Vector4f = nalgebra::Vector4<f32>;
@@ -12,21 +15,19 @@ pub type Point2f = nalgebra::Point2<f32>;
 pub type Polygon = geo::Polygon<f64>;
 
 #[derive(Component)]
-pub struct Selected {}
+pub struct Selected;
 
 #[derive(Component)]
-pub struct Hovered {}
+pub struct Hovered;
 
-/// Identifies the CellInstance at the root of the instance tree.
+/// Marker for the singleton CellInstance at the root of the instance tree.
 ///
 /// At run time, users can choose any cell definition to be the active view
 /// context. When this choice is made, a new tree of instances are created, and
-/// the chosen cell definition is used to instantiate the root. The
-/// [RootCellInstance] tag identifies the root cell instance.
-///
-/// Note that Bevy queries have a `get_single` method.
+/// the chosen cell definition is used to instantiate the root.
 #[derive(Component)]
-pub struct RootCellInstance {}
+#[require(CellInstance)]
+pub struct RootCellInstance;
 
 #[derive(Component)]
 pub struct CellDefinition {
@@ -47,7 +48,6 @@ pub struct CellInstance {
 
     /// Transforms this cell's coord system to the root coord system.
     pub world_transform: AffineTransform,
-
     // NOTE: consider storing a GeometryRange here for fast VBO updates.
 }
 
@@ -78,6 +78,12 @@ pub struct Layer {
     pub shape_instances: Vec<Entity>,
 }
 
+/// Marker for the singleton Material shared across all layer meshes.
+#[derive(Component)]
+#[require(Material)]
+pub struct LayerMaterial;
+
+#[derive(Clone)]
 pub struct CellReference {
     pub cell_definition: Entity,
     pub local_transform: AffineTransform,
@@ -98,6 +104,48 @@ impl Triangulation {
         Self {
             indices: vec![],
             vertices: vec![],
+        }
+    }
+
+    // TODO: Make this more streamlined by taking an f32 AffineTransform and avoiding
+    // the back-and-forth conversion to geo::Point.
+    pub fn affine_transform(&self, transform: &AffineTransform) -> Self {
+        let indices = self.indices.clone();
+        let vertices = self
+            .vertices
+            .iter()
+            .map(|v| from_geo(to_geo(v).affine_transform(transform)))
+            .collect();
+        Self { indices, vertices }
+    }
+
+    pub fn append_to(&self, geo: &mut Geometry) {
+        let start_index = geo.positions.len() as u32;
+        for vert in &self.vertices {
+            geo.positions.push(vert.x);
+            geo.positions.push(vert.y);
+        }
+        for index in &self.indices {
+            geo.indices.push(start_index + *index);
+        }
+    }
+}
+
+fn to_geo(p: &Point2f) -> geo::Point<f64> {
+    geo::Point::new(p.x as f64, p.y as f64)
+}
+
+fn from_geo(p: geo::Point<f64>) -> Point2f {
+    Point2f::new(p.x() as f32, p.y() as f32)
+}
+
+impl Default for CellInstance {
+    fn default() -> Self {
+        Self {
+            cell_definition: Entity::PLACEHOLDER,
+            shape_instances: Default::default(),
+            child_instances: Default::default(),
+            world_transform: Default::default(),
         }
     }
 }

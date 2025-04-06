@@ -1,12 +1,15 @@
 use std::collections::BTreeMap;
 
 use crate::graphics::BoundingBox;
+use crate::graphics::Geometry;
+use crate::graphics::Mesh;
 
 use super::components::CellDefinition;
 use super::path_outline::create_path_outline;
 use super::path_outline::PathType;
 use super::CellReference;
 use super::Layer;
+use super::LayerMaterial;
 use super::ShapeDefinition;
 use super::ShapeType;
 use super::Triangulation;
@@ -126,16 +129,6 @@ pub async fn load_gds_into_world(
         }
 
         if loader.struct_elem_index == gds_struct.elems.len() {
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-            }
-
-            #[cfg(target_arch = "wasm32")]
-            {
-                gloo_timers::future::TimeoutFuture::new(50).await;
-            }
-
             loader.library_struct_index += 1;
             loader.struct_elem_index = 0;
         }
@@ -150,7 +143,7 @@ pub async fn load_gds_into_world(
         };
 
         let progress = Progress {
-            phase: format!("Creating definitions {}", gds_struct.name),
+            phase: format!("Creating definitions for '{}'", gds_struct.name),
             percent,
             world,
         };
@@ -239,11 +232,24 @@ impl Loader {
             return entity;
         }
 
+        let layer_material_result = world.query::<(Entity, &LayerMaterial)>().get_single(world);
+
+        let layer_material = match layer_material_result {
+            Err(_) => world.spawn(LayerMaterial).id(),
+            Ok((entity, _)) => entity,
+        };
+
+        let geometry = world.spawn(Geometry::new()).id();
+
+        let mut mesh = Mesh::new(geometry, layer_material);
+        mesh.render_order = index as i32;
+        let mesh = world.spawn(mesh).id();
+
         let layer = Layer {
             index,
             color: Vector4f::new(0.0, 0.0, 0.0, 1.0),
             visible: true,
-            mesh: Entity::PLACEHOLDER,
+            mesh,
             world_bounds: BoundingBox::new(),
             shape_instances: vec![],
         };
