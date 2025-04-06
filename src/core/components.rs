@@ -87,3 +87,10 @@ pub struct Triangulation {
     pub indices: Vec<u32>,
     pub vertices: Vec<Point2f>,
 }
+
+impl Triangulation {
+    pub fn empty() -> Self {
+        Self { indices: vec![], vertices: vec![] }
+    }
+}
+
