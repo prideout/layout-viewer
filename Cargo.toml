@@ -18,7 +18,6 @@ anyhow = "1.0"
 wasm-bindgen = { version = "0.2" }
 svg = "0.13"
 colored = "2.0"
-fastrand = "2.3.0"
 geo = "0.29.3"
 indexmap = "2.2"
 i_overlay = "2.0.0"
@@ -28,7 +27,6 @@ raw-window-handle = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 nalgebra = "0.32"
 bytemuck = "1.14"
-approx = "0.5"
 log = "0.4"
 env_logger = "0.11"
 rstar = "0.12.2"
@@ -36,7 +34,7 @@ serde-wasm-bindgen = "0.6.5"
 serde = "1.0.219"
 gloo = { version = "0.11.0", features = ["timers", "futures"] }
 gloo-timers = "0.3.0"
-bevy_ecs = "0.13"
+bevy_ecs = "0.15.3"
 tokio = { version = "1.36", features = ["rt", "time"] }
 futures = "0.3.31"
 
@@ -61,7 +59,6 @@ web-sys = { version = "0.3", features = [
     "Storage",
     "Window"
 ] }
-uuid = { version = "1.7", features = ["js"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
 stylist = { version = "0.13", features = ["yew"] }

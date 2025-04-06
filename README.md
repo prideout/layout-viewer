@@ -57,6 +57,8 @@ trunk serve
 
 ## Next tasks
 
+Upgrade Bevy. Write blog post. Entities, components, and fast queries.
+
 1. Flesh out `instancer.rs` when the user selects a root:
   - Create instances.
   - Recursively populate world_* fields

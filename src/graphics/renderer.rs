@@ -108,22 +108,19 @@ impl Renderer {
                 }
             });
 
-            let mut meshes = meshes.collect::<Vec<_>>();
+            let mut meshes: Vec<_> = meshes.collect();
 
             meshes.sort_by_key(|(_, _, _, render_order)| *render_order);
 
-            for (mesh, geometry, material, _) in meshes {
-                let [mut mesh, mut geometry, mut material] =
-                    world.many_entities_mut([mesh, geometry, material]);
-
-                let mesh = mesh.get_mut::<Mesh>().unwrap();
-                let mut geometry = geometry.get_mut::<Geometry>().unwrap();
-                let mut material = material.get_mut::<Material>().unwrap();
-
-                material.bind(gl);
-                material.set_mat4(gl, "view", &view_matrix);
-                material.set_mat4(gl, "projection", &projection);
-                mesh.draw(gl, &mut material, &mut geometry);
+            for (mesh, geo, mat, _) in meshes {
+                let [mesh, mut geo, mut mat] = world.entity_mut([mesh, geo, mat]);
+                let mesh = mesh.get::<Mesh>().unwrap();
+                let mut geo = geo.get_mut::<Geometry>().unwrap();
+                let mut mat = mat.get_mut::<Material>().unwrap();
+                mat.bind(gl);
+                mat.set_mat4(gl, "view", &view_matrix);
+                mat.set_mat4(gl, "projection", &projection);
+                mesh.draw(gl, &mut mat, &mut geo);
             }
         }
     }
