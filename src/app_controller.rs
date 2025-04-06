@@ -1,18 +1,16 @@
+use rstar::RTree;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
 
 use crate::app_shaders::FRAGMENT_SHADER;
 use crate::app_shaders::VERTEX_SHADER;
-use crate::graphics::BlendMode;
 use crate::graphics::Camera;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
-use crate::graphics::Mesh;
 use crate::graphics::Renderer;
 use crate::graphics::Viewport;
 use crate::hover_effect::HoverEffect;
-use crate::hover_effect::HoverParams;
-use crate::Project;
+use crate::RTreeItem;
 
 type Point3 = nalgebra::Point3<f64>;
 
@@ -26,9 +24,9 @@ pub struct AppController {
     last_mouse_pos: Option<(u32, u32)>,
     zoom_speed: f64,
     needs_render: bool,
-    project: Option<Project>,
     hover_effect: HoverEffect,
     layer_material: Entity,
+    rtree: RTree<RTreeItem>,
 }
 
 pub enum Theme {
@@ -58,31 +56,10 @@ impl AppController {
             last_mouse_pos: None,
             zoom_speed: 0.05,
             needs_render: true,
-            project: None,
             hover_effect,
             layer_material,
+            rtree: RTree::new(),
         }
-    }
-
-    pub fn get_mesh_for_layer_mut(&mut self, layer_index: usize) -> &mut Mesh {
-        let layer = &self.project.as_ref().unwrap().layers()[layer_index];
-        let id = layer.mesh.unwrap();
-        self.world.get_mut::<Mesh>(id).unwrap().into_inner()
-    }
-
-    pub fn set_project(&mut self, mut project: Project) {
-        let bounds = project.bounds();
-        self.camera.fit_to_bounds(self.window_size, bounds);
-
-        let meshes = project.create_meshes(&mut self.world, self.layer_material);
-
-        self.hover_effect.set_render_order(&mut self.world, 9999);
-
-        for (i, layer) in project.layers_mut().iter_mut().enumerate() {
-            layer.mesh = Some(meshes[i]);
-        }
-
-        self.project = Some(project);
     }
 
     pub fn handle_mouse_press(&mut self, x: u32, y: u32) {
@@ -115,6 +92,7 @@ impl AppController {
         // Convert screen coordinates to world space
         let (world_x, world_y) = self.screen_to_world(x, y);
 
+        /*
         // Temporarily take the project to avoid borrowing issues
         let Some(project) = self.project.take() else {
             return;
@@ -136,6 +114,7 @@ impl AppController {
         }
 
         self.project = Some(project);
+         */
     }
 
     pub fn handle_mouse_wheel(&mut self, x: u32, y: u32, delta: f64) {
@@ -229,15 +208,8 @@ impl AppController {
         // TODO: despawn the entities too
     }
 
-    pub fn project(&self) -> Option<&Project> {
-        self.project.as_ref()
-    }
-
-    pub fn project_mut(&mut self) -> Option<&mut Project> {
-        self.project.as_mut()
-    }
-
     pub fn apply_theme(&mut self, theme: Theme) {
+        /*
         let mut project = self.project.take().unwrap();
         let mut material = self.world.get_mut::<Material>(self.layer_material).unwrap();
         match theme {
@@ -256,6 +228,7 @@ impl AppController {
             mesh.set_vec4("color", layer.color);
         }
         self.project = Some(project);
+         */
         self.render();
     }
 
