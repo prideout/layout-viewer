@@ -10,11 +10,14 @@ use super::path_outline::PathType;
 use super::CellReference;
 use super::Layer;
 use super::LayerMaterial;
+use super::RootCellInstance;
 use super::ShapeDefinition;
 use super::ShapeType;
 use super::Triangulation;
 use super::Vector4f;
 use bevy_ecs::entity::Entity;
+use bevy_ecs::system::Query;
+use bevy_ecs::system::SystemState;
 use bevy_ecs::world::World;
 use gds21::GdsBoundary;
 use gds21::GdsLibrary;
@@ -32,6 +35,7 @@ type Point2f = nalgebra::Point2<f32>;
 type Polygon = geo::Polygon<f64>;
 type LineString = geo::LineString<f64>;
 type NameTable = BTreeMap<String, Entity>;
+type QueryBundle = SystemState<(Query<'static, 'static, (Entity, &'static RootCellInstance)>,)>;
 
 /// Controls the maximum number of GDS elements to consume before yielding.
 /// Higher numbers might speed up loading time, but could reduce interactivity
@@ -45,6 +49,9 @@ struct Loader {
     world: Option<World>,
     data: Vec<u8>,
     name_to_cell_def: Option<NameTable>,
+
+    // TODO: use this in get_or_create_layer
+    queries: QueryBundle,
 }
 
 pub struct Progress {
@@ -55,12 +62,15 @@ pub struct Progress {
 
 pub async fn load_gds_into_world(
     gds_content: &[u8],
-    world: World,
+    mut world: World,
 ) -> impl futures::Stream<Item = Progress> {
-    let state = Loader::new(gds_content, world);
+    let queries = SystemState::new(&mut world);
+    let state = Loader::new(gds_content, world, queries);
 
     stream::unfold(state, move |mut loader| async move {
         let world = loader.world.as_mut()?;
+
+        loader.queries.get_mut(world); // TODO: use it or lose it
 
         let Some(library) = &loader.library else {
             let mut data = vec![];
@@ -153,7 +163,7 @@ pub async fn load_gds_into_world(
 }
 
 impl Loader {
-    fn new(gds_content: &[u8], world: World) -> Self {
+    fn new(gds_content: &[u8], world: World, queries: QueryBundle) -> Self {
         Self {
             library: None,
             library_struct_index: 0,
@@ -161,6 +171,7 @@ impl Loader {
             world: Some(world),
             data: gds_content.to_vec(),
             name_to_cell_def: None,
+            queries,
         }
     }
 
@@ -222,6 +233,7 @@ impl Loader {
         Triangulation { indices, vertices }
     }
 
+    // TODO: use passed-in QueryBundle
     fn get_or_create_layer(index: i16, world: &mut World) -> Entity {
         let layer = world
             .query::<(Entity, &Layer)>()
