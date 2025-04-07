@@ -57,10 +57,9 @@ trunk serve
 
 ## Next tasks
 
-- Fix LayerProxy UI
 - Resurrect CLI app
 - Move app_controller and hover_effect into `core`
-- Move cli, genertate_svg, and app_window into `cli`
+- Move cli, generate_svg, and app_window into `cli`
 - Create `graphics/vectors.rs` and shrink top of camera/components/controller
 - Remove old_core
 
@@ -75,22 +74,22 @@ Write blog post: The ECQ architecture: Entity-Component-Query.
   For fun I wrote a web-based viewer for integrated circuit layouts in Rust. Its
   data model required quite a bit of cross-referencing (heavy use of
   instancing). I knew that strong ownership semantics would be difficult to
-  manage, so I decided to use an id-based architecture for the data model.
-  Naturally my thoughts turned to an ECS, which in turn made me think of Bevy;
-  it provides a great ECS for Rustin its own crate without any of the game
+  manage, so I decided to use an id-based architecture.
+  Naturally my thoughts turned to an ECS, which in turn made me think of Bevy.
+  Bevy has a nice ECS that lives in an isolated crate without any of the game
   engine stuff that I don't need.
   
-  However even Bevy's ECS alone felt a bit more than what I needed; it's not a
-  simulation or a game, and there's only one thread and no need for
-  sophisticated scheduling or "systems". I ended up using only entities,
-  components, and queries.
+  However even Bevy's ECS alone felt a bit more than what I needed; my app is
+  not a simulation or a game, and there's only one thread since it targets WASM.
+  No need for sophisticated scheduling or "systems". I ended up using only
+  entities, components, and queries.
   
   I'm pretty happy with how it turned out so I thought I'd write about it.
 
-  In case you didn't know, caching the query objects is quite magical. Behind
-  the scenes, Bevy maintains multiple lists of entities: one for each query
-  object. And it updates each one when you add or remove components from the
-  world.
+  Query objects are really neat. Behind the scenes, Bevy maintains multiple
+  lists of entities: one for each query object. And it updates each one when you
+  add or remove components from the world. The premise is that adding and
+  removing entities is nuch less frequent than iterating over them.
 
 Look for memory leaks.
 

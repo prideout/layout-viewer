@@ -9,7 +9,7 @@ use super::Layer;
 #[derive(Clone, PartialEq)]
 pub struct LayerProxy {
     pub entity: Entity,
-    pub index: usize,
+    pub index: i16,
     pub visible: bool,
     pub opacity: f32,
     pub color: String,
@@ -20,7 +20,7 @@ impl LayerProxy {
     pub fn from_layer(entity: Entity, layer: &Layer) -> Self {
         Self {
             entity,
-            index: layer.index as usize,
+            index: layer.index,
             visible: layer.visible,
             opacity: layer.color.w,
             color: rgb_to_hex(layer.color.x, layer.color.y, layer.color.z),

@@ -360,7 +360,6 @@ impl Component for ViewerPage {
                 });
 
                 self.layer_proxies = controller.create_layer_proxies();
-
                 true
             }
             ViewerMsg::SetStatus(status) => {
@@ -376,6 +375,7 @@ impl Component for ViewerPage {
                     return false;
                 };
                 controller.update_layer(layer_proxy);
+                self.layer_proxies = controller.create_layer_proxies();
                 controller.render();
                 true
             }

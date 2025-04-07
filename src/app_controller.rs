@@ -280,6 +280,10 @@ impl AppController {
         }
         let alpha = 1.0 / (count as f32);
 
+        for (_, mut layer) in self.mut_layer_query.iter_mut(&mut self.world) {
+            layer.color.w = alpha;
+        }
+
         let mut mesh_query = self.world.query::<(&mut Mesh, &LayerMesh)>();
         for mut mesh in mesh_query.iter_mut(&mut self.world) {
             let color = match theme {
@@ -318,6 +322,13 @@ impl AppController {
             .unwrap()
             .1;
         layer_proxy.to_layer(&mut layer);
+        let visible = layer.visible;
+        let color = layer.color;
+        let mesh = layer.mesh;
+
+        let mut mesh = self.world.get_mut::<Mesh>(mesh).unwrap();
+        mesh.set_vec4("color", color);
+        mesh.visible = visible;
     }
 
     fn pick_cell(&self, x: f64, y: f64) -> Option<RTreeItem> {

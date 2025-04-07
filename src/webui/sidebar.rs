@@ -1,3 +1,4 @@
+use bevy_ecs::entity::Entity;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -12,9 +13,9 @@ pub struct SidebarProps {
 pub enum SidebarMsg {
     HideAll,
     ShowAll,
-    ToggleLayer(usize),
-    UpdateOpacity(usize, f32),
-    UpdateColor(usize, String),
+    ToggleLayer(Entity),
+    UpdateOpacity(Entity, f32),
+    UpdateColor(Entity, String),
 }
 
 pub struct Sidebar;
@@ -42,16 +43,16 @@ impl Component for Sidebar {
                         if layer.is_empty {
                             return None;
                         }
-                        let index = layer.index;
-                        let toggle_layer = ctx.link().callback(move |_| SidebarMsg::ToggleLayer(index));
+                        let entity = layer.entity;
+                        let toggle_layer = ctx.link().callback(move |_| SidebarMsg::ToggleLayer(entity));
                         let update_opacity = ctx.link().callback(move |e: InputEvent| {
                             let input: HtmlInputElement = e.target_unchecked_into();
                             let opacity = input.value().parse::<f32>().unwrap_or(1.0);
-                            SidebarMsg::UpdateOpacity(index, opacity)
+                            SidebarMsg::UpdateOpacity(entity, opacity)
                         });
                         let update_color = ctx.link().callback(move |e: InputEvent| {
                             let input: HtmlInputElement = e.target_unchecked_into();
-                            SidebarMsg::UpdateColor(index, input.value())
+                            SidebarMsg::UpdateColor(entity, input.value())
                         });
                         let prevent_toggle = |e: MouseEvent| {
                             e.stop_propagation();
@@ -60,7 +61,7 @@ impl Component for Sidebar {
                         Some(html! {
                             <div
                                 class="layer-item"
-                                key={layer.index}
+                                key={layer.entity.to_string()}
                                 onclick={toggle_layer}
                             >
                                 <i class={format!("fas fa-eye{}", if layer.visible { "" } else { "-slash" })}></i>
@@ -92,6 +93,14 @@ impl Component for Sidebar {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let get_proxy = |entity: Entity| -> LayerProxy {
+            ctx.props()
+                .layers
+                .iter()
+                .find(|layer| layer.entity == entity)
+                .unwrap()
+                .clone()
+        };
         match msg {
             SidebarMsg::HideAll => {
                 for layer in &ctx.props().layers {
@@ -109,20 +118,21 @@ impl Component for Sidebar {
                 }
                 true
             }
-            SidebarMsg::ToggleLayer(index) => {
-                let mut layer = ctx.props().layers[index].clone();
+            SidebarMsg::ToggleLayer(entity) => {
+                let mut layer = get_proxy(entity);
                 layer.visible = !layer.visible;
                 ctx.props().update_layer.emit(layer);
                 true
             }
-            SidebarMsg::UpdateOpacity(index, opacity) => {
-                let mut layer = ctx.props().layers[index].clone();
+            SidebarMsg::UpdateOpacity(entity, opacity) => {
+                log::info!("Updating opacity for layer {} to {}", entity, opacity);
+                let mut layer = get_proxy(entity);
                 layer.opacity = opacity;
                 ctx.props().update_layer.emit(layer);
                 true
             }
-            SidebarMsg::UpdateColor(index, color) => {
-                let mut layer = ctx.props().layers[index].clone();
+            SidebarMsg::UpdateColor(entity, color) => {
+                let mut layer = get_proxy(entity);
                 layer.color = color.clone();
                 ctx.props().update_layer.emit(layer);
                 true
