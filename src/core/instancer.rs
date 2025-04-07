@@ -108,6 +108,7 @@ impl Instancer {
                 cell_instance: cell_instance_id,
                 world_polygon: prototype.world_polygon,
                 layer_index,
+                layer: prototype.layer,
             };
             let shape_instance_id = world.spawn(shape_instance).id();
             shape_instances.push(shape_instance_id);

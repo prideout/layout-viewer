@@ -1,5 +1,6 @@
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
+use geo::Contains;
 use rstar::RTree;
 use rstar::RTreeObject;
 
@@ -12,6 +13,8 @@ use crate::graphics::Mesh;
 use crate::graphics::Renderer;
 use crate::graphics::Viewport;
 use crate::hover_effect::HoverEffect;
+use crate::hover_effect::HoverParams;
+use crate::Hovered;
 use crate::Layer;
 use crate::LayerMaterial;
 use crate::RTreeItem;
@@ -91,7 +94,6 @@ impl AppController {
         for (entity, shape_instance) in shape_query.iter(&self.world) {
             rtree_items.push(RTreeItem {
                 shape_instance: entity,
-                layer: shape_instance.layer_index,
                 aabb: shape_instance.world_polygon.envelope(),
             });
         }
@@ -125,33 +127,36 @@ impl AppController {
             self.last_mouse_pos = Some((x, y));
         }
 
-        /*
-
         // Convert screen coordinates to world space
         let (world_x, world_y) = self.screen_to_world(x, y);
 
-        // Temporarily take the project to avoid borrowing issues
-        let Some(project) = self.project.take() else {
-            return;
-        };
+        // Find the single entity that has the Hovered component, if it exists.
+        let hovered_entity = self
+            .world
+            .query::<(Entity, &Hovered)>()
+            .get_single(&self.world)
+            .ok()
+            .map(|(entity, _)| entity)
+            .unwrap_or(Entity::PLACEHOLDER);
 
-        if let Some(hit) = project.pick_cell(world_x, world_y) {
-            if !self.hover_effect.contains(&hit) {
+        if let Some(hit) = self.pick_cell(world_x, world_y) {
+            if hit.shape_instance != hovered_entity {
+                if hovered_entity != Entity::PLACEHOLDER {
+                    self.world.entity_mut(hovered_entity).remove::<Hovered>();
+                }
+                self.world.entity_mut(hit.shape_instance).insert(Hovered);
                 self.hover_effect.show(HoverParams {
-                    selection: hit,
-                    project: &project,
+                    shape_instance: hit.shape_instance,
                     world: &mut self.world,
                     gl: self.renderer.gl(),
                 });
                 self.render();
             }
-        } else if self.hover_effect.is_visible() {
+        } else if hovered_entity != Entity::PLACEHOLDER {
             self.hover_effect.hide(&mut self.world);
+            self.world.entity_mut(hovered_entity).remove::<Hovered>();
             self.render();
         }
-
-        self.project = Some(project);
-         */
     }
 
     pub fn handle_mouse_wheel(&mut self, x: u32, y: u32, delta: f64) {
@@ -188,8 +193,17 @@ impl AppController {
     }
 
     pub fn handle_mouse_leave(&mut self) {
-        if self.hover_effect.is_visible() {
+        let hovered_entity = self
+            .world
+            .query::<(Entity, &Hovered)>()
+            .get_single(&self.world)
+            .ok()
+            .map(|(entity, _)| entity)
+            .unwrap_or(Entity::PLACEHOLDER);
+
+        if hovered_entity != Entity::PLACEHOLDER {
             self.hover_effect.hide(&mut self.world);
+            self.world.entity_mut(hovered_entity).remove::<Hovered>();
             self.render();
         }
     }
@@ -277,6 +291,42 @@ impl AppController {
         }
 
         self.render();
+    }
+
+    fn pick_cell(&self, x: f64, y: f64) -> Option<RTreeItem> {
+        let point = geo::Point::new(x, y);
+        let items = self.rtree.locate_all_at_point(&point);
+        let mut result: Option<RTreeItem> = None;
+        let mut result_layer_index = -i16::MAX;
+
+        // Of all items whose AABB overlaps the query point, pick the one with
+        // the highest layer index, but only if its layer is visible, and if its
+        // polygon actually contains the point.
+
+        for item in items {
+            let shape_instance = self
+                .world
+                .get::<ShapeInstance>(item.shape_instance)
+                .unwrap();
+
+            if shape_instance.layer_index < result_layer_index {
+                continue;
+            }
+
+            let layer = self.world.get::<Layer>(shape_instance.layer).unwrap();
+
+            if !layer.visible {
+                continue;
+            }
+
+            if !shape_instance.world_polygon.contains(&point) {
+                continue;
+            }
+
+            result = Some(item.clone());
+            result_layer_index = shape_instance.layer_index;
+        }
+        result
     }
 
     fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {

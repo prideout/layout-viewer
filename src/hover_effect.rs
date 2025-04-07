@@ -1,13 +1,10 @@
-use crate::app_shaders::FRAGMENT_SHADER;
-use crate::app_shaders::VERTEX_SHADER;
-
 use crate::graphics::BlendMode;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
 use crate::graphics::Mesh;
 use crate::graphics::Ribbon;
-use crate::old_core::ElementRef;
-use crate::Project;
+use crate::Layer;
+use crate::ShapeInstance;
 
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
@@ -17,22 +14,20 @@ type Point2 = nalgebra::Point2<f64>;
 
 /// Parameters for setting a cell in the hover effect
 pub struct HoverParams<'a> {
-    pub selection: ElementRef,
-    pub project: &'a Project,
+    pub shape_instance: Entity,
     pub world: &'a mut World,
     pub gl: &'a glow::Context,
 }
 
 /// Manages graphics primitives for a hover effect
 pub struct HoverEffect {
-    polygon: Option<ElementRef>,
-    fill: Entity,
+    fill_mesh: Entity,
     stroke: Ribbon,
 }
 
 impl HoverEffect {
     pub fn new(world: &mut World) -> Self {
-        let mut material = Material::new(VERTEX_SHADER, FRAGMENT_SHADER);
+        let mut material = Material::default();
         material.set_blending(BlendMode::SourceOver);
         let fill_material = world.spawn(material).id();
 
@@ -42,8 +37,7 @@ impl HoverEffect {
         mesh.visible = false;
 
         Self {
-            polygon: None,
-            fill: world.spawn(mesh).id(),
+            fill_mesh: world.spawn(mesh).id(),
             stroke: Ribbon::new(world),
         }
     }
@@ -55,24 +49,15 @@ impl HoverEffect {
         }
     }
 
-    pub fn contains(&self, polygon: &ElementRef) -> bool {
-        self.polygon == Some(polygon.clone())
-    }
-
     pub fn set_render_order(&mut self, world: &mut World, render_order: i32) {
-        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
+        let mut mesh = world.get_mut::<Mesh>(self.fill_mesh).unwrap();
         mesh.render_order = render_order;
 
         self.stroke.set_render_order(world, render_order + 1);
     }
 
-    pub fn is_visible(&self) -> bool {
-        self.polygon.is_some()
-    }
-
     pub fn hide(&mut self, world: &mut World) {
-        self.polygon = None;
-        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
+        let mut mesh = world.get_mut::<Mesh>(self.fill_mesh).unwrap();
         mesh.visible = false;
         self.stroke.hide(world);
     }
@@ -81,26 +66,22 @@ impl HoverEffect {
     pub fn show(
         &mut self,
         HoverParams {
-            selection,
-            project,
+            shape_instance,
             world,
             gl,
         }: HoverParams,
     ) {
-        self.polygon = Some(selection.clone());
-
-        let layer = &project.layers()[selection.layer as usize];
-        let polygon = &layer.element_instances[selection.element_instance_index].polygon;
-
-        let triangles = polygon.earcut_triangles_raw();
-
-        let mut color = layer.color;
-        color.w = 0.5;
+        let shape_instance = world.get::<ShapeInstance>(shape_instance).unwrap();
+        let triangles = shape_instance.world_polygon.earcut_triangles_raw();
 
         let mut points = Vec::new();
-        for coord in polygon.exterior().points() {
+        for coord in shape_instance.world_polygon.exterior().points() {
             points.push(Point2::new(coord.x(), coord.y()));
         }
+
+        let layer = world.get::<Layer>(shape_instance.layer).unwrap();
+        let mut color = layer.color;
+        color.w *= 0.5;
 
         self.stroke.spine = points;
         self.stroke.update(world, gl);
@@ -120,7 +101,7 @@ impl HoverEffect {
             geometry.indices.push(index as u32);
         }
 
-        let mut mesh = world.get_mut::<Mesh>(self.fill).unwrap();
+        let mut mesh = world.get_mut::<Mesh>(self.fill_mesh).unwrap();
         mesh.visible = true;
         mesh.set_vec4("color", color);
         let geometry_entity = mesh.geometry;

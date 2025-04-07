@@ -8,7 +8,6 @@ use rstar::AABB;
 pub struct RTreeItem {
     pub shape_instance: Entity,
     pub aabb: AABB<geo::Point<f64>>,
-    pub layer: i16,
 }
 
 impl PartialEq for RTreeItem {

@@ -100,7 +100,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
     let renderer = Renderer::new(gl);
     let mut controller = AppController::new(renderer, window_size.width, window_size.height);
 
-    controller.set_project(project);
+    // controller.set_project(project);
     controller.apply_theme(Theme::Dark);
     controller.resize(window_size.width, window_size.height);
 

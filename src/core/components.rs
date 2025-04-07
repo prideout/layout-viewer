@@ -71,6 +71,7 @@ pub struct ShapeInstance {
     pub cell_instance: Entity,
     pub world_polygon: Polygon,
     pub layer_index: i16,
+    pub layer: Entity,
 }
 
 #[derive(Component)]

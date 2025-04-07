@@ -1,5 +1,4 @@
 mod app_controller;
-mod app_shaders;
 mod core;
 mod generate_svg;
 mod graphics;

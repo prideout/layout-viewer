@@ -57,15 +57,25 @@ trunk serve
 
 ## Next tasks
 
-- Resurrect hover highlighting
+- Create a tag component called `LayerMesh` so that we can fix `apply_theme` and the
+  workaround in `Ribbon.ts`
+
+- The hover effect should pass LayerMaterial into the Ribbon's constructor so that it
+  can share the blend mode.
+
+- The theme button should be disabled during loading and instancing.
+
 - Resurrect LayerProxy UI
+
 - Make alpha nicer
+
 - Resurrect CLI app
 
 Loader chunks should be based on a combo of struct & shape counts
   - 4004 should update the status
 
 `get_or_create_layer` should maybe use a SystemState for storing queries
+  - In fact there lots of queries sprinkled throughout the codebase
 
 Write blog post: Entities, components, and fast queries.
 
