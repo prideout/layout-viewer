@@ -26,12 +26,12 @@ use crate::graphics::Renderer;
 use crate::load_gds_into_world;
 use crate::rsutils::ResizeObserver;
 use crate::webui::take_dropped_file;
-use crate::webui::LayerProxy;
 use crate::webui::Route;
 use crate::webui::Sidebar;
 use crate::webui::ToastContainer;
 use crate::webui::ToastManager;
 use crate::Instancer;
+use crate::LayerProxy;
 use crate::RootFinder;
 
 use super::has_dropped_file;
@@ -67,6 +67,7 @@ pub struct ViewerPage {
     layer_proxies: Vec<LayerProxy>,
     is_dark_theme: bool,
     status: String,
+    enabled: bool,
 }
 
 impl Component for ViewerPage {
@@ -107,6 +108,7 @@ impl Component for ViewerPage {
             toast_manager,
             layer_proxies,
             is_dark_theme,
+            enabled: false,
             status: "Fetching GDS".to_string(),
         }
     }
@@ -169,7 +171,7 @@ impl Component for ViewerPage {
                         <Link<Route> to={Route::Home} classes="floating-button">
                             <i class="fas fa-arrow-left fa-lg"></i>
                         </Link<Route>>
-                        <button class="floating-button" onclick={toggle_theme}>
+                        <button class="floating-button" onclick={toggle_theme} disabled={!self.enabled}>
                             <i class={format!("fas fa-{} fa-lg", if self.is_dark_theme { "sun" } else { "moon" })}></i>
                         </button>
                         <span class="status-text">{self.status.clone()}</span>
@@ -349,12 +351,15 @@ impl Component for ViewerPage {
                 };
 
                 controller.set_world(*world);
+                self.enabled = true;
 
                 controller.apply_theme(if self.is_dark_theme {
                     Theme::Dark
                 } else {
                     Theme::Light
                 });
+
+                self.layer_proxies = controller.create_layer_proxies();
 
                 true
             }
@@ -366,11 +371,11 @@ impl Component for ViewerPage {
                 self.toast_manager.remove(id);
                 true
             }
-            ViewerMsg::UpdateLayer(_layer_proxy) => {
+            ViewerMsg::UpdateLayer(layer_proxy) => {
                 let Some(controller) = &mut self.controller else {
                     return false;
                 };
-                // TODO
+                controller.update_layer(layer_proxy);
                 controller.render();
                 true
             }

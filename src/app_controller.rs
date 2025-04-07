@@ -1,4 +1,5 @@
 use bevy_ecs::entity::Entity;
+use bevy_ecs::query::QueryState;
 use bevy_ecs::world::World;
 use geo::Contains;
 use rstar::RTree;
@@ -18,6 +19,7 @@ use crate::Hovered;
 use crate::Layer;
 use crate::LayerMaterial;
 use crate::LayerMesh;
+use crate::LayerProxy;
 use crate::RTreeItem;
 use crate::ShapeInstance;
 use crate::Vector4f;
@@ -30,6 +32,8 @@ pub struct AppController {
     renderer: Renderer,
     camera: Camera,
     world: World,
+    mut_layer_query: QueryState<(Entity, &'static mut Layer)>,
+    layer_query: QueryState<&'static Layer>,
     is_dragging: bool,
     last_mouse_pos: Option<(u32, u32)>,
     zoom_speed: f64,
@@ -53,11 +57,17 @@ impl AppController {
 
         let hover_effect = HoverEffect::new(&mut world);
 
+        let layer_query = QueryState::new(&mut world);
+
+        let mut_layer_query = QueryState::new(&mut world);
+
         Self {
             window_size: (physical_width, physical_height),
             renderer,
             camera,
             world,
+            layer_query,
+            mut_layer_query,
             is_dragging: false,
             last_mouse_pos: None,
             zoom_speed: 0.05,
@@ -76,10 +86,11 @@ impl AppController {
         self.hover_effect.set_render_order(&mut world, 9999);
         self.renderer.on_new_world(&mut world);
         self.world = world;
+        self.layer_query = QueryState::new(&mut self.world);
+        self.mut_layer_query = QueryState::new(&mut self.world);
 
         let mut world_bounds = BoundingBox::new();
-        let mut layer_query = self.world.query::<&Layer>();
-        for layer in layer_query.iter_mut(&mut self.world) {
+        for layer in self.layer_query.iter_mut(&mut self.world) {
             world_bounds.encompass(&layer.world_bounds);
         }
 
@@ -261,9 +272,8 @@ impl AppController {
     }
 
     pub fn apply_theme(&mut self, theme: Theme) {
-        let mut layer_query = self.world.query::<&Layer>();
         let mut count = 0;
-        for layer in layer_query.iter(&self.world) {
+        for layer in self.layer_query.iter(&self.world) {
             if !layer.shape_instances.is_empty() {
                 count += 1;
             }
@@ -291,6 +301,23 @@ impl AppController {
         }
 
         self.render();
+    }
+
+    pub fn create_layer_proxies(&mut self) -> Vec<LayerProxy> {
+        let mut layer_proxies = Vec::new();
+        for (entity, layer) in self.mut_layer_query.iter(&self.world) {
+            layer_proxies.push(LayerProxy::from_layer(entity, layer));
+        }
+        layer_proxies
+    }
+
+    pub fn update_layer(&mut self, layer_proxy: LayerProxy) {
+        let mut layer = self
+            .mut_layer_query
+            .get_mut(&mut self.world, layer_proxy.entity)
+            .unwrap()
+            .1;
+        layer_proxy.to_layer(&mut layer);
     }
 
     fn pick_cell(&self, x: f64, y: f64) -> Option<RTreeItem> {

@@ -57,13 +57,12 @@ trunk serve
 
 ## Next tasks
 
-- The theme button should be disabled during loading and instancing.
-
-- Resurrect LayerProxy UI
-
-- Make alpha nicer
-
+- Fix LayerProxy UI
 - Resurrect CLI app
+- Move app_controller and hover_effect into `core`
+- Move cli, genertate_svg, and app_window into `cli`
+- Create `graphics/vectors.rs` and shrink top of camera/components/controller
+- Remove old_core
 
 Loader chunks should be based on a combo of struct & shape counts
   - 4004 should update the status
@@ -71,7 +70,27 @@ Loader chunks should be based on a combo of struct & shape counts
 `get_or_create_layer` should maybe use a SystemState for storing queries
   - In fact there lots of queries sprinkled throughout the codebase
 
-Write blog post: Entities, components, and fast queries.
+Write blog post: The ECQ architecture: Entity-Component-Query.
+
+  For fun I wrote a web-based viewer for integrated circuit layouts in Rust. Its
+  data model required quite a bit of cross-referencing (heavy use of
+  instancing). I knew that strong ownership semantics would be difficult to
+  manage, so I decided to use an id-based architecture for the data model.
+  Naturally my thoughts turned to an ECS, which in turn made me think of Bevy;
+  it provides a great ECS for Rustin its own crate without any of the game
+  engine stuff that I don't need.
+  
+  However even Bevy's ECS alone felt a bit more than what I needed; it's not a
+  simulation or a game, and there's only one thread and no need for
+  sophisticated scheduling or "systems". I ended up using only entities,
+  components, and queries.
+  
+  I'm pretty happy with how it turned out so I thought I'd write about it.
+
+  In case you didn't know, caching the query objects is quite magical. Behind
+  the scenes, Bevy maintains multiple lists of entities: one for each query
+  object. And it updates each one when you add or remove components from the
+  world.
 
 Look for memory leaks.
 

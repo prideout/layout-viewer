@@ -197,6 +197,18 @@ body {
   transform: translateY(-2px);
 }
 
+.floating-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.floating-button:disabled:hover {
+  background-color: var(--floating-button-bg);
+  border-color: var(--floating-button-border);
+  transform: none;
+}
+
 .floating-button i {
   font-size: 1.25rem;
   color: var(--floating-button-icon);
