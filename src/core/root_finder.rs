@@ -4,8 +4,9 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::query::QueryState;
 use bevy_ecs::world::World;
 
-use super::CellDefinition;
+use super::components::CellDefinition;
 
+/// Finds CellDefinition entities that are not referenced by any other CellDefinition.
 pub struct RootFinder<'world> {
     query: QueryState<(Entity, &'world CellDefinition)>,
     visited: HashSet<Entity>,

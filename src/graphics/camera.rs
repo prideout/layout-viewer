@@ -1,12 +1,8 @@
-#![allow(dead_code)]
-
-type Mat4 = nalgebra::Matrix4<f64>;
-type Point = nalgebra::Point3<f64>;
-type Vec3 = nalgebra::Vector3<f64>;
+use crate::graphics::vectors::*;
 
 use std::fmt;
 
-use crate::graphics::BoundingBox;
+use crate::graphics::bounds::BoundingBox;
 
 impl fmt::Debug for Camera {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -23,9 +19,9 @@ impl fmt::Debug for Camera {
 }
 
 pub struct Camera {
-    pub position: Point,
-    pub up: Vec3,
-    pub gaze: Vec3,
+    pub position: Point3d,
+    pub up: Vector3d,
+    pub gaze: Vector3d,
     pub width: f64,
     pub height: f64,
     pub near: f64,
@@ -33,11 +29,11 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: Point, width: f64, height: f64, near: f64, far: f64) -> Self {
+    pub fn new(position: Point3d, width: f64, height: f64, near: f64, far: f64) -> Self {
         Self {
             position,
-            up: Vec3::new(-1.0, 0.0, 0.0),
-            gaze: Vec3::new(0.0, 0.0, -1.0),
+            up: Vector3d::new(-1.0, 0.0, 0.0),
+            gaze: Vector3d::new(0.0, 0.0, -1.0),
             width,
             height,
             near,
@@ -65,23 +61,23 @@ impl Camera {
     }
 
     /// Projects a world space point to NDC space
-    pub fn project(&self, point: Point) -> Point {
+    pub fn project(&self, point: Point3d) -> Point3d {
         let view_matrix = self.get_view_matrix();
         let proj_matrix = self.get_projection_matrix();
         let combined = proj_matrix * view_matrix;
         let clip_space = combined * nalgebra::Vector4::new(point.x, point.y, point.z, 1.0);
         let ndc = clip_space / clip_space.w;
-        Point::new(ndc.x, ndc.y, ndc.z)
+        Point3d::new(ndc.x, ndc.y, ndc.z)
     }
 
     /// Transforms a point from NDC space to world space coordinates
-    pub fn unproject(&self, point: Point) -> Point {
+    pub fn unproject(&self, point: Point3d) -> Point3d {
         let view_matrix = self.get_view_matrix();
         let proj_matrix = self.get_projection_matrix();
         let combined = (proj_matrix * view_matrix).try_inverse().unwrap();
         let ndc = nalgebra::Vector4::new(point.x, point.y, point.z, 1.0);
         let world = combined * ndc;
-        Point::new(world.x, world.y, world.z)
+        Point3d::new(world.x, world.y, world.z)
     }
 
     /// Sets the world space width and height of the near projection quad.

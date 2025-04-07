@@ -1,27 +1,12 @@
-mod app_controller;
-mod core;
-mod generate_svg;
-mod graphics;
-mod hover_effect;
-mod old_core;
-mod rsutils;
-
-#[cfg(not(target_arch = "wasm32"))]
-mod app_window;
+pub mod core;
+pub mod graphics;
+pub mod rsutils;
 
 #[cfg(target_arch = "wasm32")]
-mod webui;
+pub mod webui;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use app_window::spawn_window;
-
-pub use generate_svg::generate_svg;
-pub use old_core::Project;
-
-#[cfg(target_arch = "wasm32")]
-pub use webui::App;
-
-pub use core::*;
+pub mod cli;
 
 /// Returns a timestamp in milliseconds.
 #[cfg(target_arch = "wasm32")]

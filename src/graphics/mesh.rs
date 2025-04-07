@@ -7,8 +7,8 @@ use nalgebra::Vector2;
 use nalgebra::Vector3;
 use nalgebra::Vector4;
 
-use super::Geometry;
-use super::Material;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::Material;
 
 #[derive(Component)]
 pub struct Mesh {

@@ -1,9 +1,8 @@
 use bevy_ecs::entity::Entity;
 
-use crate::rsutils::hex_to_rgb;
-use crate::rsutils::rgb_to_hex;
-
-use super::Layer;
+use crate::core::components::Layer;
+use crate::rsutils::colors::hex_to_rgb;
+use crate::rsutils::colors::rgb_to_hex;
 
 /// Represents a layer in the sidebar.
 #[derive(Clone, PartialEq)]

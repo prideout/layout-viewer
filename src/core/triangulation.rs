@@ -2,10 +2,8 @@ use geo::AffineOps;
 use geo::AffineTransform;
 use geo::TriangulateEarcut;
 
-use crate::graphics::Geometry;
-
-use super::Point2f;
-use super::Polygon;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::vectors::*;
 
 pub struct Triangulation {
     pub indices: Vec<u32>,

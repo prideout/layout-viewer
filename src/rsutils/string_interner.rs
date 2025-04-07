@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use indexmap::IndexMap;
 
 pub struct StringInterner {

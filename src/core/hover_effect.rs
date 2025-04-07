@@ -1,17 +1,15 @@
-use crate::graphics::BlendMode;
-use crate::graphics::Geometry;
-use crate::graphics::Material;
-use crate::graphics::Mesh;
-use crate::graphics::Ribbon;
-use crate::Layer;
-use crate::LayerMaterial;
-use crate::ShapeInstance;
-
+use crate::core::components::Layer;
+use crate::core::components::LayerMaterial;
+use crate::core::components::ShapeInstance;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::BlendMode;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::ribbon::Ribbon;
+use crate::graphics::vectors::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
 use geo::TriangulateEarcut;
-
-type Point2 = nalgebra::Point2<f64>;
 
 /// Parameters for setting a cell in the hover effect
 pub struct HoverParams<'a> {
@@ -82,7 +80,7 @@ impl HoverEffect {
 
         let mut points = Vec::new();
         for coord in shape_instance.world_polygon.exterior().points() {
-            points.push(Point2::new(coord.x(), coord.y()));
+            points.push(Point2d::new(coord.x(), coord.y()));
         }
 
         let layer = world.get::<Layer>(shape_instance.layer).unwrap();

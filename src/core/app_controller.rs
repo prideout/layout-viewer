@@ -5,26 +5,24 @@ use geo::Contains;
 use rstar::RTree;
 use rstar::RTreeObject;
 
-use crate::graphics::BlendMode;
-use crate::graphics::BoundingBox;
-use crate::graphics::Camera;
-use crate::graphics::Geometry;
-use crate::graphics::Material;
-use crate::graphics::Mesh;
-use crate::graphics::Renderer;
-use crate::graphics::Viewport;
-use crate::hover_effect::HoverEffect;
-use crate::hover_effect::HoverParams;
-use crate::Hovered;
-use crate::Layer;
-use crate::LayerMaterial;
-use crate::LayerMesh;
-use crate::LayerProxy;
-use crate::RTreeItem;
-use crate::ShapeInstance;
-use crate::Vector4f;
-
-type Point3 = nalgebra::Point3<f64>;
+use crate::core::components::Hovered;
+use crate::core::components::Layer;
+use crate::core::components::LayerMaterial;
+use crate::core::components::LayerMesh;
+use crate::core::components::ShapeInstance;
+use crate::core::hover_effect::HoverEffect;
+use crate::core::hover_effect::HoverParams;
+use crate::core::layer_proxy::LayerProxy;
+use crate::core::rtree::RTreeItem;
+use crate::graphics::bounds::BoundingBox;
+use crate::graphics::camera::Camera;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::BlendMode;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::renderer::Renderer;
+use crate::graphics::viewport::Viewport;
+use crate::graphics::vectors::*;
 
 /// Encapsulates high-level application logic common to all platforms.
 pub struct AppController {
@@ -51,7 +49,7 @@ pub enum Theme {
 #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 impl AppController {
     pub fn new(renderer: Renderer, physical_width: u32, physical_height: u32) -> Self {
-        let camera = Camera::new(Point3::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
+        let camera = Camera::new(Point3d::new(0.0, 0.0, 0.0), 128.0, 128.0, -1.0, 1.0);
 
         let mut world = World::new();
 
@@ -370,7 +368,7 @@ impl AppController {
     fn screen_to_world(&self, screen_x: u32, screen_y: u32) -> (f64, f64) {
         let ndc_x = (screen_x as f64 / self.window_size.0 as f64) * 2.0 - 1.0;
         let ndc_y = -((screen_y as f64 / self.window_size.1 as f64) * 2.0 - 1.0);
-        let world = self.camera.unproject(Point3::new(ndc_x, ndc_y, 0.0));
+        let world = self.camera.unproject(Point3d::new(ndc_x, ndc_y, 0.0));
         (world.x, world.y)
     }
 }

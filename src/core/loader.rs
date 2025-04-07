@@ -1,21 +1,21 @@
 use std::collections::BTreeMap;
 
-use crate::graphics::BoundingBox;
-use crate::graphics::Geometry;
-use crate::graphics::Mesh;
+use crate::core::components::CellDefinition;
+use crate::core::components::CellReference;
+use crate::core::components::Layer;
+use crate::core::components::LayerMaterial;
+use crate::core::components::LayerMesh;
+use crate::core::components::RootCellInstance;
+use crate::core::components::ShapeDefinition;
+use crate::core::components::ShapeType;
+use crate::core::path_outline::create_path_outline;
+use crate::core::path_outline::PathType;
+use crate::core::triangulation::Triangulation;
+use crate::graphics::bounds::BoundingBox;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::vectors::*;
 
-use super::components::CellDefinition;
-use super::path_outline::create_path_outline;
-use super::path_outline::PathType;
-use super::CellReference;
-use super::Layer;
-use super::LayerMaterial;
-use super::LayerMesh;
-use super::RootCellInstance;
-use super::ShapeDefinition;
-use super::ShapeType;
-use super::Triangulation;
-use super::Vector4f;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Query;
 use bevy_ecs::system::SystemState;
@@ -30,8 +30,6 @@ use futures::stream::{self};
 use geo::AffineTransform;
 use geo::Coord;
 
-type Point2d = nalgebra::Point2<f64>;
-type Polygon = geo::Polygon<f64>;
 type LineString = geo::LineString<f64>;
 type NameTable = BTreeMap<String, Entity>;
 type QueryBundle = SystemState<(Query<'static, 'static, (Entity, &'static RootCellInstance)>,)>;

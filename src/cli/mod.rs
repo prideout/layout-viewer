@@ -1,14 +1,17 @@
+pub mod app_window;
+pub mod generate_svg;
+
+use crate::cli::app_window::spawn_window;
+use crate::cli::generate_svg::generate_svg;
+use crate::core::instancer::Instancer;
+use crate::core::loader::load_gds_into_world;
+use crate::core::root_finder::RootFinder;
+
 use anyhow::anyhow;
 use anyhow::Result;
 use bevy_ecs::world::World;
 use clap::Parser;
-use colored::*;
 use futures::StreamExt;
-use layout_viewer::generate_svg;
-use layout_viewer::load_gds_into_world;
-use layout_viewer::Instancer;
-use layout_viewer::Project;
-use layout_viewer::RootFinder;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -40,14 +43,6 @@ fn verify_file_extension(path: &Path, expected: &str) -> Result<()> {
     }
 }
 
-fn pretty_print_float(value: f64) -> String {
-    let value = format!("{:.4}", value);
-    value
-        .trim_end_matches('0')
-        .trim_end_matches('.')
-        .to_string()
-}
-
 pub fn run_cli() -> Result<()> {
     // Initialize logger
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -73,13 +68,13 @@ pub fn run_cli() -> Result<()> {
         .enable_all()
         .build()?;
 
-    rt.block_on(async {
+    let mut world = rt.block_on(async {
         let gds_data = file_content.clone();
         let progress_stream = load_gds_into_world(&gds_data, World::new()).await;
         let mut progress_stream = std::pin::pin!(progress_stream);
         let mut world = None;
         while let Some(mut progress) = progress_stream.next().await {
-            log::info!("{}", progress.phase);
+            print!(".");
             world = progress.world.take();
         }
         log::info!("Done with loading.");
@@ -93,26 +88,13 @@ pub fn run_cli() -> Result<()> {
         instancer.select_root(world.as_mut().unwrap(), roots[0]);
 
         log::info!("Done with instantiation.");
+
+        world.unwrap()
     });
-    //// END NEW ECS STUFF
-
-    let mut project = Project::from_bytes(&file_content)?;
-    project.update_world_transforms();
-    project.update_layers();
-
-    let bounds = project.bounds();
-    println!(
-        "{:<12} ({}, {}) to ({}, {})",
-        "Bounds".color(Color::BrightYellow),
-        pretty_print_float(bounds.min_x),
-        pretty_print_float(bounds.min_y),
-        pretty_print_float(bounds.max_x),
-        pretty_print_float(bounds.max_y)
-    );
 
     // Generate and save SVG if output path is provided
     if let Some(ref output_path) = args.output {
-        let svg_content = generate_svg(project.layers());
+        let svg_content = generate_svg(&mut world);
 
         fs::write(output_path, svg_content)?;
         println!("SVG file written to: {}", output_path.display());
@@ -121,7 +103,7 @@ pub fn run_cli() -> Result<()> {
     println!();
 
     if args.gl {
-        layout_viewer::spawn_window(project)?;
+        spawn_window(world)?;
     }
 
     Ok(())

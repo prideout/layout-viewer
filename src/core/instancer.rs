@@ -1,7 +1,3 @@
-#![allow(unused)]
-
-use std::cell;
-
 use bevy_ecs::entity::Entity;
 use bevy_ecs::query::QueryState;
 use bevy_ecs::system::lifetimeless::Read;
@@ -9,20 +5,18 @@ use bevy_ecs::world::World;
 use geo::AffineOps;
 use geo::AffineTransform;
 use geo::BoundingRect;
-use i_overlay::i_shape::fix::shape;
 
-use crate::graphics::BoundingBox;
-use crate::graphics::Geometry;
-use crate::graphics::Mesh;
-use crate::Polygon;
-use crate::Triangulation;
-
-use super::CellDefinition;
-use super::CellInstance;
-use super::Layer;
-use super::RootCellInstance;
-use super::ShapeDefinition;
-use super::ShapeInstance;
+use crate::core::components::CellDefinition;
+use crate::core::components::CellInstance;
+use crate::core::components::Layer;
+use crate::core::components::RootCellInstance;
+use crate::core::components::ShapeDefinition;
+use crate::core::components::ShapeInstance;
+use crate::core::triangulation::Triangulation;
+use crate::graphics::bounds::BoundingBox;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::vectors::*;
 
 pub struct Instancer {
     root_query: QueryState<(Entity, Read<RootCellInstance>)>,
@@ -71,7 +65,7 @@ impl Instancer {
             layer: Entity,
             world_polygon: Polygon,
             world_triangles: Triangulation,
-        };
+        }
 
         let mut shape_prototypes = Vec::new();
         for shape_def in &cell_definition.shape_defs {
@@ -100,7 +94,7 @@ impl Instancer {
 
         let mut shape_instances = Vec::with_capacity(shape_prototypes.len());
         for prototype in shape_prototypes {
-            let mut layer = world.get_mut::<Layer>(prototype.layer).unwrap();
+            let layer = world.get_mut::<Layer>(prototype.layer).unwrap();
             let layer_index = layer.index;
             let mesh = layer.mesh;
             let bbox = prototype.world_polygon.bounding_rect();

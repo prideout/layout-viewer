@@ -1,14 +1,14 @@
-use crate::graphics::Camera;
-use crate::graphics::Viewport;
+use crate::graphics::camera::Camera;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::viewport::Viewport;
+
 use bevy_ecs::entity::Entity;
 use bevy_ecs::query::QueryState;
 use bevy_ecs::system::lifetimeless::Read;
 use bevy_ecs::world::World;
 use glow::*;
-
-use super::Geometry;
-use super::Material;
-use super::Mesh;
 
 pub struct Renderer {
     gl: glow::Context,

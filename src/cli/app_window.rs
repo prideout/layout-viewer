@@ -1,8 +1,8 @@
-use crate::app_controller::AppController;
-use crate::app_controller::Theme;
-use crate::graphics::Renderer;
-use crate::Project;
+use crate::core::app_controller::AppController;
+use crate::core::app_controller::Theme;
+use crate::graphics::renderer::Renderer;
 
+use bevy_ecs::world::World;
 use glutin::config::ConfigTemplateBuilder;
 use glutin::context::ContextApi;
 use glutin::context::ContextAttributesBuilder;
@@ -26,7 +26,7 @@ use winit::window::WindowBuilder;
 const INITIAL_WINDOW_WIDTH: u32 = 800;
 const INITIAL_WINDOW_HEIGHT: u32 = 600;
 
-pub fn spawn_window(project: Project) -> anyhow::Result<()> {
+pub fn spawn_window(world: World) -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
     let window_builder = WindowBuilder::new()
         .with_title("Layout Viewer")
@@ -36,7 +36,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
         ));
 
     let (window, gl, surface, context) = {
-        let template = ConfigTemplateBuilder::new(); // .with_multisampling(16);
+        let template = ConfigTemplateBuilder::new();
 
         let display_builder = DisplayBuilder::new().with_window_builder(Some(window_builder));
         let (window, gl_config) = display_builder
@@ -100,7 +100,7 @@ pub fn spawn_window(project: Project) -> anyhow::Result<()> {
     let renderer = Renderer::new(gl);
     let mut controller = AppController::new(renderer, window_size.width, window_size.height);
 
-    // controller.set_project(project);
+    controller.set_world(world);
     controller.apply_theme(Theme::Dark);
     controller.resize(window_size.width, window_size.height);
 

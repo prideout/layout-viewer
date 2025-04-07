@@ -1,16 +1,13 @@
 use bevy_ecs::entity::Entity;
 use bevy_ecs::world::World;
 
-use super::ribbon_shaders::FRAGMENT_SHADER;
-use super::ribbon_shaders::VERTEX_SHADER;
-use super::BlendMode;
-use super::Geometry;
-use super::Material;
-use super::Mesh;
-
-type Point2d = nalgebra::Point2<f64>;
-type Vector2d = nalgebra::Vector2<f64>;
-type Vector4f = nalgebra::Vector4<f32>;
+use crate::graphics::geometry::Geometry;
+use crate::graphics::material::BlendMode;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::ribbon_shaders::FRAGMENT_SHADER;
+use crate::graphics::ribbon_shaders::VERTEX_SHADER;
+use crate::graphics::vectors::*;
 
 pub struct Ribbon {
     mesh: Entity,

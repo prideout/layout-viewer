@@ -1,21 +1,12 @@
-#![allow(unused)]
-
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
-use geo::AffineOps;
 use geo::AffineTransform;
 
-use crate::graphics::BoundingBox;
-use crate::graphics::Geometry;
-use crate::graphics::Material;
-use crate::graphics::Mesh;
-
-use super::Triangulation;
-
-pub type Point2d = nalgebra::Point2<f64>;
-pub type Vector4f = nalgebra::Vector4<f32>;
-pub type Point2f = nalgebra::Point2<f32>;
-pub type Polygon = geo::Polygon<f64>;
+use crate::core::triangulation::Triangulation;
+use crate::graphics::bounds::BoundingBox;
+use crate::graphics::material::Material;
+use crate::graphics::mesh::Mesh;
+use crate::graphics::vectors::*;
 
 #[derive(Component)]
 pub struct Selected;

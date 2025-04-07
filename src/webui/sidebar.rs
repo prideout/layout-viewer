@@ -2,7 +2,7 @@ use bevy_ecs::entity::Entity;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::LayerProxy;
+use crate::core::layer_proxy::LayerProxy;
 
 #[derive(Properties, PartialEq)]
 pub struct SidebarProps {

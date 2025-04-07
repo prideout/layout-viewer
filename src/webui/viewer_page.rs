@@ -20,21 +20,20 @@ use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::app_controller::AppController;
-use crate::app_controller::Theme;
-use crate::graphics::Renderer;
-use crate::load_gds_into_world;
-use crate::rsutils::ResizeObserver;
-use crate::webui::take_dropped_file;
-use crate::webui::Route;
-use crate::webui::Sidebar;
-use crate::webui::ToastContainer;
-use crate::webui::ToastManager;
-use crate::Instancer;
-use crate::LayerProxy;
-use crate::RootFinder;
-
-use super::has_dropped_file;
+use crate::core::app_controller::AppController;
+use crate::core::app_controller::Theme;
+use crate::graphics::renderer::Renderer;
+use crate::core::loader::load_gds_into_world;
+use crate::rsutils::resize_observer::ResizeObserver;
+use crate::webui::home_page::take_dropped_file;
+use crate::webui::app::Route;
+use crate::webui::sidebar::Sidebar;
+use crate::webui::toast::ToastContainer;
+use crate::webui::toast::ToastManager;
+use crate::core::instancer::Instancer;
+use crate::core::layer_proxy::LayerProxy;
+use crate::core::root_finder::RootFinder;
+use crate::webui::home_page::has_dropped_file;
 
 #[derive(Properties, PartialEq)]
 pub struct ViewerProps {
