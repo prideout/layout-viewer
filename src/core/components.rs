@@ -8,6 +8,7 @@ use geo::AffineTransform;
 use crate::graphics::BoundingBox;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
+use crate::graphics::Mesh;
 
 use super::Triangulation;
 
@@ -30,6 +31,10 @@ pub struct Hovered;
 #[derive(Component)]
 #[require(CellInstance)]
 pub struct RootCellInstance;
+
+#[derive(Component)]
+#[require(Mesh)]
+pub struct LayerMesh;
 
 #[derive(Component)]
 pub struct CellDefinition {

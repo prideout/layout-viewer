@@ -57,12 +57,6 @@ trunk serve
 
 ## Next tasks
 
-- Create a tag component called `LayerMesh` so that we can fix `apply_theme` and the
-  workaround in `Ribbon.ts`
-
-- The hover effect should pass LayerMaterial into the Ribbon's constructor so that it
-  can share the blend mode.
-
 - The theme button should be disabled during loading and instancing.
 
 - Resurrect LayerProxy UI

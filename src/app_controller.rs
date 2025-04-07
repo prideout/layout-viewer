@@ -17,6 +17,7 @@ use crate::hover_effect::HoverParams;
 use crate::Hovered;
 use crate::Layer;
 use crate::LayerMaterial;
+use crate::LayerMesh;
 use crate::RTreeItem;
 use crate::ShapeInstance;
 use crate::Vector4f;
@@ -261,32 +262,31 @@ impl AppController {
 
     pub fn apply_theme(&mut self, theme: Theme) {
         let mut layer_query = self.world.query::<&Layer>();
-
-        // Collect all mesh IDs from layers
-        let mut mesh_ids = Vec::new();
+        let mut count = 0;
         for layer in layer_query.iter(&self.world) {
-            mesh_ids.push(layer.mesh);
+            if !layer.shape_instances.is_empty() {
+                count += 1;
+            }
         }
+        let alpha = 1.0 / (count as f32);
 
-        // Update mesh colors based on theme
-        let mut mesh_query = self.world.query::<&mut Mesh>();
+        let mut mesh_query = self.world.query::<(&mut Mesh, &LayerMesh)>();
         for mut mesh in mesh_query.iter_mut(&mut self.world) {
             let color = match theme {
-                Theme::Light => Vector4f::new(0.0, 0.0, 0.0, 0.1),
-                Theme::Dark => Vector4f::new(1.0, 1.0, 1.0, 0.1),
+                Theme::Light => Vector4f::new(0.0, 0.0, 0.0, alpha),
+                Theme::Dark => Vector4f::new(1.0, 1.0, 1.0, alpha),
             };
-            mesh.set_vec4("color", color);
+            mesh.0.set_vec4("color", color);
         }
 
-        let mut lmq = self.world.query::<(&LayerMaterial, &mut Material)>();
-
-        let (_, mut mat) = lmq.single_mut(&mut self.world);
+        let mut mat_query = self.world.query::<(&mut Material, &LayerMaterial)>();
+        let mut material = mat_query.single_mut(&mut self.world).0;
         match theme {
             Theme::Light => {
-                mat.set_blending(BlendMode::Additive);
+                material.set_blending(BlendMode::Additive);
             }
             Theme::Dark => {
-                mat.set_blending(BlendMode::SourceOver);
+                material.set_blending(BlendMode::SourceOver);
             }
         }
 

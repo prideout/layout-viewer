@@ -138,3 +138,9 @@ impl Mesh {
         }
     }
 }
+
+impl Default for Mesh {
+    fn default() -> Self {
+        Self::new(Entity::PLACEHOLDER, Entity::PLACEHOLDER)
+    }
+}

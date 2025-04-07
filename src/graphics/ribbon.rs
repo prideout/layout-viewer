@@ -50,9 +50,6 @@ impl Ribbon {
     pub fn show(&self, world: &mut World) {
         let mesh = world.get_mut::<Mesh>(self.mesh).unwrap().into_inner();
         mesh.visible = true;
-
-        // TODO: remove this, it's here only because of clobbering in apply_theme.
-        mesh.set_vec4("color", Vector4f::new(0.0, 0.4, 0.6, 1.0));
     }
 
     pub fn set_render_order(&self, world: &mut World, render_order: i32) {

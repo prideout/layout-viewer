@@ -4,6 +4,7 @@ use crate::graphics::Material;
 use crate::graphics::Mesh;
 use crate::graphics::Ribbon;
 use crate::Layer;
+use crate::LayerMaterial;
 use crate::ShapeInstance;
 
 use bevy_ecs::entity::Entity;
@@ -27,9 +28,14 @@ pub struct HoverEffect {
 
 impl HoverEffect {
     pub fn new(world: &mut World) -> Self {
-        let mut material = Material::default();
-        material.set_blending(BlendMode::SourceOver);
-        let fill_material = world.spawn(material).id();
+        let mut lmq = world.query::<(Entity, &LayerMaterial, &mut Material)>();
+        let fill_material = lmq.get_single_mut(world).ok().map(|(entity, _, _)| entity);
+
+        let fill_material = fill_material.unwrap_or_else(|| {
+            let mut material = Material::default();
+            material.set_blending(BlendMode::SourceOver);
+            world.spawn(material).id()
+        });
 
         let geometry = world.spawn(Geometry::new()).id();
 
@@ -81,7 +87,7 @@ impl HoverEffect {
 
         let layer = world.get::<Layer>(shape_instance.layer).unwrap();
         let mut color = layer.color;
-        color.w *= 0.5;
+        color.w *= 0.1;
 
         self.stroke.spine = points;
         self.stroke.update(world, gl);

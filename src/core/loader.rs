@@ -10,6 +10,7 @@ use super::path_outline::PathType;
 use super::CellReference;
 use super::Layer;
 use super::LayerMaterial;
+use super::LayerMesh;
 use super::RootCellInstance;
 use super::ShapeDefinition;
 use super::ShapeType;
@@ -240,7 +241,7 @@ impl Loader {
 
         let mut mesh = Mesh::new(geometry, layer_material);
         mesh.render_order = index as i32;
-        let mesh = world.spawn(mesh).id();
+        let mesh = world.spawn((mesh, LayerMesh)).id();
 
         let layer = Layer {
             index,
