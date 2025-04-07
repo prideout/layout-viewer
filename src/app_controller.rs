@@ -125,10 +125,11 @@ impl AppController {
             self.last_mouse_pos = Some((x, y));
         }
 
+        /*
+
         // Convert screen coordinates to world space
         let (world_x, world_y) = self.screen_to_world(x, y);
 
-        /*
         // Temporarily take the project to avoid borrowing issues
         let Some(project) = self.project.take() else {
             return;
@@ -245,7 +246,6 @@ impl AppController {
     }
 
     pub fn apply_theme(&mut self, theme: Theme) {
-
         let mut layer_query = self.world.query::<&Layer>();
 
         // Collect all mesh IDs from layers
@@ -258,8 +258,8 @@ impl AppController {
         let mut mesh_query = self.world.query::<&mut Mesh>();
         for mut mesh in mesh_query.iter_mut(&mut self.world) {
             let color = match theme {
-                Theme::Light =>  Vector4f::new(0.0, 0.0, 0.0, 0.1),
-                Theme::Dark =>   Vector4f::new(1.0, 1.0, 1.0, 0.1),
+                Theme::Light => Vector4f::new(0.0, 0.0, 0.0, 0.1),
+                Theme::Dark => Vector4f::new(1.0, 1.0, 1.0, 0.1),
             };
             mesh.set_vec4("color", color);
         }

@@ -28,10 +28,8 @@ use gds21::GdsStructRef;
 use futures::stream::{self};
 use geo::AffineTransform;
 use geo::Coord;
-use geo::TriangulateEarcut;
 
 type Point2d = nalgebra::Point2<f64>;
-type Point2f = nalgebra::Point2<f32>;
 type Polygon = geo::Polygon<f64>;
 type LineString = geo::LineString<f64>;
 type NameTable = BTreeMap<String, Entity>;
@@ -220,19 +218,6 @@ impl Loader {
         }
     }
 
-    fn triangulate_polygon(polygon: &Polygon) -> Triangulation {
-        let earcut_result = polygon.earcut_triangles_raw();
-        let mut vertices = Vec::with_capacity(earcut_result.vertices.len() / 2);
-        for coord in earcut_result.vertices.chunks(2) {
-            vertices.push(Point2f::new(coord[0] as f32, coord[1] as f32));
-        }
-        let mut indices = Vec::with_capacity(earcut_result.triangle_indices.len());
-        for i in earcut_result.triangle_indices {
-            indices.push(i as u32);
-        }
-        Triangulation { indices, vertices }
-    }
-
     // TODO: use passed-in QueryBundle
     fn get_or_create_layer(index: i16, world: &mut World) -> Entity {
         let layer = world
@@ -273,7 +258,7 @@ impl Loader {
         let geo_points: Vec<_> = boundary.xy.iter().map(gds_to_geo_point).collect();
         let array_points: Vec<_> = boundary.xy.iter().map(gds_point_to_array).collect();
         let local_polygon = Polygon::new(LineString::from(geo_points), vec![]);
-        let local_triangles = Loader::triangulate_polygon(&local_polygon);
+        let local_triangles = Triangulation::from_polygon(&local_polygon);
         let layer = Loader::get_or_create_layer(boundary.layer, world);
         let shape_definition = ShapeDefinition {
             layer,
@@ -296,7 +281,7 @@ impl Loader {
 
         let outline_points = create_path_outline(&path.xy, half_width, path_type);
         let local_polygon = Polygon::new(LineString::from(outline_points), vec![]);
-        let local_triangles = Loader::triangulate_polygon(&local_polygon);
+        let local_triangles = Triangulation::from_polygon(&local_polygon);
         let layer = Loader::get_or_create_layer(path.layer, world);
         let shape_definition = ShapeDefinition {
             layer,

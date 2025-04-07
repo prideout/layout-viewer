@@ -9,6 +9,8 @@ use crate::graphics::BoundingBox;
 use crate::graphics::Geometry;
 use crate::graphics::Material;
 
+use super::Triangulation;
+
 pub type Point2d = nalgebra::Point2<f64>;
 pub type Vector4f = nalgebra::Vector4<f32>;
 pub type Point2f = nalgebra::Point2<f32>;
@@ -59,9 +61,11 @@ pub struct ShapeDefinition {
     pub local_triangles: Triangulation,
 }
 
-// NOTE: We use an R-tree for fast spatial lookups. Each node in the tree has:
-//  (1) this entity id
-//  (2) the aabb of this world_polygon
+/// This component is referenced by the R-tree that we use for fast spatial
+/// lookups. Each node in the tree has:
+/// - this entity id
+/// - the aabb of the world_polygon
+/// - a copy of the layer index
 #[derive(Component)]
 pub struct ShapeInstance {
     pub cell_instance: Entity,
@@ -93,52 +97,6 @@ pub struct CellReference {
 pub enum ShapeType {
     Polygon(Vec<Point2d>),
     Path { width: f64, spine: Vec<Point2d> },
-}
-
-pub struct Triangulation {
-    pub indices: Vec<u32>,
-    pub vertices: Vec<Point2f>,
-}
-
-impl Triangulation {
-    pub fn empty() -> Self {
-        Self {
-            indices: vec![],
-            vertices: vec![],
-        }
-    }
-
-    // TODO: Make this more streamlined by taking an f32 AffineTransform and avoiding
-    // the back-and-forth conversion to geo::Point.
-    pub fn affine_transform(&self, transform: &AffineTransform) -> Self {
-        let indices = self.indices.clone();
-        let vertices = self
-            .vertices
-            .iter()
-            .map(|v| from_geo(to_geo(v).affine_transform(transform)))
-            .collect();
-        Self { indices, vertices }
-    }
-
-    pub fn append_to(&self, geo: &mut Geometry) {
-        let start_index = (geo.positions.len() / 3) as u32;
-        for vert in &self.vertices {
-            geo.positions.push(vert.x);
-            geo.positions.push(vert.y);
-            geo.positions.push(0.0);
-        }
-        for index in &self.indices {
-            geo.indices.push(start_index + *index);
-        }
-    }
-}
-
-fn to_geo(p: &Point2f) -> geo::Point<f64> {
-    geo::Point::new(p.x as f64, p.y as f64)
-}
-
-fn from_geo(p: geo::Point<f64>) -> Point2f {
-    Point2f::new(p.x() as f32, p.y() as f32)
 }
 
 impl Default for CellInstance {

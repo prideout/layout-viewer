@@ -1,21 +1,8 @@
 use bevy_ecs::entity::Entity;
-use bevy_ecs::world::World;
 use rstar::Envelope;
 use rstar::PointDistance;
-use rstar::RTree;
 use rstar::RTreeObject;
 use rstar::AABB;
-
-use crate::app_shaders::FRAGMENT_SHADER;
-use crate::app_shaders::VERTEX_SHADER;
-use crate::graphics::Camera;
-use crate::graphics::Geometry;
-use crate::graphics::Material;
-use crate::graphics::Renderer;
-use crate::graphics::Viewport;
-use crate::hover_effect::HoverEffect;
-
-type Point3 = nalgebra::Point3<f64>;
 
 #[derive(Clone)]
 pub struct RTreeItem {

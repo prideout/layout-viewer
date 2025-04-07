@@ -60,6 +60,7 @@ trunk serve
 - Resurrect hover highlighting
 - Resurrect LayerProxy UI
 - Make alpha nicer
+- Resurrect CLI app
 
 Loader chunks should be based on a combo of struct & shape counts
   - 4004 should update the status
