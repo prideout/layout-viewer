@@ -22,18 +22,18 @@ use yew_router::prelude::*;
 
 use crate::core::app_controller::AppController;
 use crate::core::app_controller::Theme;
-use crate::graphics::renderer::Renderer;
+use crate::core::instancer::Instancer;
+use crate::core::layer_proxy::LayerProxy;
 use crate::core::loader::load_gds_into_world;
+use crate::core::root_finder::RootFinder;
+use crate::graphics::renderer::Renderer;
 use crate::rsutils::resize_observer::ResizeObserver;
-use crate::webui::home_page::take_dropped_file;
 use crate::webui::app::Route;
+use crate::webui::home_page::has_dropped_file;
+use crate::webui::home_page::take_dropped_file;
 use crate::webui::sidebar::Sidebar;
 use crate::webui::toast::ToastContainer;
 use crate::webui::toast::ToastManager;
-use crate::core::instancer::Instancer;
-use crate::core::layer_proxy::LayerProxy;
-use crate::core::root_finder::RootFinder;
-use crate::webui::home_page::has_dropped_file;
 
 #[derive(Properties, PartialEq)]
 pub struct ViewerProps {
@@ -314,7 +314,8 @@ impl Component for ViewerPage {
                     let mut progress_stream = std::pin::pin!(progress_stream);
                     let mut world = None;
                     while let Some(mut progress) = progress_stream.next().await {
-                        print_and_yield(&link, &progress.phase).await;
+                        let message = format!("{} {:.0}%", progress.phase, progress.percent);
+                        print_and_yield(&link, &message).await;
                         world = progress.world.take();
                     }
                     let world = world.unwrap();

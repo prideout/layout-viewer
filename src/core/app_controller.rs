@@ -21,8 +21,8 @@ use crate::graphics::material::BlendMode;
 use crate::graphics::material::Material;
 use crate::graphics::mesh::Mesh;
 use crate::graphics::renderer::Renderer;
-use crate::graphics::viewport::Viewport;
 use crate::graphics::vectors::*;
+use crate::graphics::viewport::Viewport;
 
 /// Encapsulates high-level application logic common to all platforms.
 pub struct AppController {

@@ -57,9 +57,6 @@ trunk serve --open
 
 ## Next tasks
 
-Loader chunks should be based on a combo of struct & shape counts
-  - 4004 should update the status
-
 `get_or_create_layer` should maybe use a SystemState for storing queries
   - In fact there lots of queries sprinkled throughout the codebase
 

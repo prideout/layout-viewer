@@ -4,9 +4,9 @@ use svg::node::element::Group;
 use svg::node::element::Path;
 use svg::Document;
 
-use crate::graphics::bounds::BoundingBox;
 use crate::core::components::Layer;
 use crate::core::components::ShapeInstance;
+use crate::graphics::bounds::BoundingBox;
 
 const PRECISION: f64 = 0.0001;
 

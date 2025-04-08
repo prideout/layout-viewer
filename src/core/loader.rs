@@ -34,7 +34,7 @@ type LineString = geo::LineString<f64>;
 type NameTable = BTreeMap<String, Entity>;
 type QueryBundle = SystemState<(Query<'static, 'static, (Entity, &'static RootCellInstance)>,)>;
 
-/// Controls the maximum number of GDS elements to consume before yielding.
+/// Controls the maximum number of GDS elements to process before yielding.
 /// Higher numbers might speed up loading time, but could reduce interactivity
 /// and frequency of status update in the UI.
 const CHUNK_SIZE: usize = 100;
@@ -48,7 +48,12 @@ struct Loader {
     name_to_cell_def: Option<NameTable>,
 
     // TODO: use this in get_or_create_layer
+    #[allow(dead_code)]
     queries: QueryBundle,
+
+    processed_element_count: usize,
+    total_element_count: usize,
+    status: String,
 }
 
 pub struct Progress {
@@ -59,17 +64,14 @@ pub struct Progress {
 
 pub async fn load_gds_into_world(
     gds_content: &[u8],
-    mut world: World,
+    world: World,
 ) -> impl futures::Stream<Item = Progress> {
-    let queries = SystemState::new(&mut world);
-    let state = Loader::new(gds_content, world, queries);
+    let state = Loader::new(gds_content, world);
 
     stream::unfold(state, move |mut loader| async move {
-        let world = loader.world.as_mut()?;
+        loader.world.as_mut()?;
 
-        loader.queries.get_mut(world); // TODO: use it or lose it
-
-        let Some(library) = &loader.library else {
+        if loader.library.is_none() {
             let mut data = vec![];
             std::mem::swap(&mut loader.data, &mut data);
             let library = GdsLibrary::from_bytes(data).unwrap();
@@ -77,8 +79,11 @@ pub async fn load_gds_into_world(
             return loader.next_phase("Gathering definitions");
         };
 
-        let Some(name_to_cell_def) = &loader.name_to_cell_def else {
+        if loader.name_to_cell_def.is_none() {
+            let world = loader.world.as_mut()?;
+            let library = loader.library.as_ref().unwrap();
             let mut map = BTreeMap::new();
+            loader.total_element_count = 0;
             for gds_struct in &library.structs {
                 let cell_def = CellDefinition {
                     name: gds_struct.name.clone(),
@@ -87,71 +92,31 @@ pub async fn load_gds_into_world(
                 };
                 let cell_def = world.spawn(cell_def).id();
                 map.insert(gds_struct.name.clone(), cell_def);
+                loader.total_element_count += gds_struct.elems.len();
             }
             loader.name_to_cell_def = Some(map);
             return loader.next_phase("Creating definitions");
         };
 
-        let gds_struct = &library.structs[loader.library_struct_index];
-
+        let mut fraction = 0.0;
         for _ in 0..CHUNK_SIZE {
-            if loader.struct_elem_index >= gds_struct.elems.len() {
+            loader.process_element();
+            fraction = (loader.processed_element_count as f32) / loader.total_element_count as f32;
+            if fraction == 1.0 {
                 break;
             }
-            let element = &gds_struct.elems[loader.struct_elem_index];
-            match element {
-                gds21::GdsElement::GdsStructRef(sref) => {
-                    let cell_ref = Loader::load_struct_ref(sref, name_to_cell_def);
-                    let cell_def = name_to_cell_def[&gds_struct.name];
-                    let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
-                    cell_def.cell_refs.push(cell_ref);
-                }
-                gds21::GdsElement::GdsArrayRef(_) => {
-                    // TODO: array refs are not yet implemented, hide them for now
-                }
-                gds21::GdsElement::GdsBoundary(boundary) => {
-                    let shape_def = Loader::load_boundary(boundary, world);
-                    let cell_def = name_to_cell_def[&gds_struct.name];
-                    let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
-                    cell_def.shape_defs.push(shape_def);
-                }
-                gds21::GdsElement::GdsPath(path) => {
-                    let shape_def = Loader::load_path(path, world);
-                    let cell_def = name_to_cell_def[&gds_struct.name];
-                    let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
-                    cell_def.shape_defs.push(shape_def);
-                }
-                gds21::GdsElement::GdsTextElem(_) => {
-                    // We do not support text elements yet, but they do
-                    // occur so let's not spam the console with warnings.
-                }
-                gds21::GdsElement::GdsNode(_) => {
-                    log::warn!("Node elements are not supported");
-                }
-                gds21::GdsElement::GdsBox(_) => {
-                    log::warn!("Box elements are not supported");
-                }
-            }
-            loader.struct_elem_index += 1;
         }
-
-        if loader.struct_elem_index == gds_struct.elems.len() {
-            loader.library_struct_index += 1;
-            loader.struct_elem_index = 0;
-        }
-
-        let percent = ((loader.library_struct_index as f32) / library.structs.len() as f32) * 100.0;
 
         // Return ownership of the world only when done loading.
-        let world = if percent == 100.0 {
+        let world = if fraction == 1.0 {
             loader.world.take()
         } else {
             None
         };
 
         let progress = Progress {
-            phase: format!("Creating definitions for '{}'", gds_struct.name),
-            percent,
+            phase: format!("Creating definitions for '{}'", loader.status),
+            percent: fraction * 100.0,
             world,
         };
 
@@ -160,7 +125,8 @@ pub async fn load_gds_into_world(
 }
 
 impl Loader {
-    fn new(gds_content: &[u8], world: World, queries: QueryBundle) -> Self {
+    fn new(gds_content: &[u8], mut world: World) -> Self {
+        let queries = SystemState::new(&mut world);
         Self {
             library: None,
             library_struct_index: 0,
@@ -169,6 +135,9 @@ impl Loader {
             data: gds_content.to_vec(),
             name_to_cell_def: None,
             queries,
+            total_element_count: 0,
+            processed_element_count: 0,
+            status: String::new(),
         }
     }
 
@@ -289,6 +258,58 @@ impl Loader {
             local_triangles,
         };
         world.spawn(shape_definition).id()
+    }
+
+    fn process_element(&mut self) {
+        let library = self.library.as_ref().unwrap();
+        let world = self.world.as_mut().unwrap();
+        let gds_struct = &library.structs[self.library_struct_index];
+        let name_to_cell_def = self.name_to_cell_def.as_ref().unwrap();
+        if self.struct_elem_index >= gds_struct.elems.len() {
+            self.library_struct_index += 1;
+            self.struct_elem_index = 0;
+            if self.library_struct_index >= library.structs.len() {
+                return;
+            }
+        }
+        let gds_struct = &library.structs[self.library_struct_index];
+        let element = &gds_struct.elems[self.struct_elem_index];
+        match element {
+            gds21::GdsElement::GdsStructRef(sref) => {
+                let cell_ref = Loader::load_struct_ref(sref, name_to_cell_def);
+                let cell_def = name_to_cell_def[&gds_struct.name];
+                let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
+                cell_def.cell_refs.push(cell_ref);
+            }
+            gds21::GdsElement::GdsArrayRef(_) => {
+                // TODO: array refs are not yet implemented, hide them for now
+            }
+            gds21::GdsElement::GdsBoundary(boundary) => {
+                let shape_def = Loader::load_boundary(boundary, world);
+                let cell_def = name_to_cell_def[&gds_struct.name];
+                let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
+                cell_def.shape_defs.push(shape_def);
+            }
+            gds21::GdsElement::GdsPath(path) => {
+                let shape_def = Loader::load_path(path, world);
+                let cell_def = name_to_cell_def[&gds_struct.name];
+                let mut cell_def = world.get_mut::<CellDefinition>(cell_def).unwrap();
+                cell_def.shape_defs.push(shape_def);
+            }
+            gds21::GdsElement::GdsTextElem(_) => {
+                // We do not support text elements yet, but they do
+                // occur so let's not spam the console with warnings.
+            }
+            gds21::GdsElement::GdsNode(_) => {
+                log::warn!("Node elements are not supported");
+            }
+            gds21::GdsElement::GdsBox(_) => {
+                log::warn!("Box elements are not supported");
+            }
+        }
+        self.struct_elem_index += 1;
+        self.processed_element_count += 1;
+        self.status = gds_struct.name.clone();
     }
 }
 

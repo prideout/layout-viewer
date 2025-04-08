@@ -5,8 +5,8 @@ pub mod material;
 pub mod mesh;
 pub mod renderer;
 pub mod ribbon;
-pub mod viewport;
 pub mod vectors;
+pub mod viewport;
 
 mod default_shaders;
 mod ribbon_shaders;
