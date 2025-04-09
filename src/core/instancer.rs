@@ -6,11 +6,11 @@ use geo::AffineOps;
 use geo::AffineTransform;
 use geo::BoundingRect;
 
+use crate::core::components::get_component;
 use crate::core::components::CellDefinition;
 use crate::core::components::CellInstance;
 use crate::core::components::Layer;
 use crate::core::components::RootCellInstance;
-use crate::core::components::ShapeDefinition;
 use crate::core::components::ShapeInstance;
 use crate::core::triangulation::Triangulation;
 use crate::graphics::bounds::BoundingBox;
@@ -70,8 +70,7 @@ impl Instancer {
 
         let mut shape_prototypes = Vec::new();
         for shape_def in &cell_definition.shape_defs {
-            let shape_def = world.get::<ShapeDefinition>(*shape_def);
-            let Some(shape_def) = shape_def else {
+            let Some(shape_def) = get_component(world, shape_def) else {
                 log::error!("Shape definition not found");
                 continue;
             };

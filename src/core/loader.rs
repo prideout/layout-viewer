@@ -25,7 +25,10 @@ use gds21::GdsStructRef;
 use geo::AffineTransform;
 use geo::Coord;
 use geo::LineString;
+use moonshine_kind::Instance;
 use web_time::Instant;
+
+use super::components::spawn;
 
 type NameTable = BTreeMap<String, Entity>;
 
@@ -288,7 +291,7 @@ impl WorldGenerator {
         }
     }
 
-    fn load_boundary(&mut self, boundary: &GdsBoundary) -> Entity {
+    fn load_boundary(&mut self, boundary: &GdsBoundary) -> Instance<ShapeDefinition> {
         let geo_points: Vec<_> = boundary.xy.iter().map(gds_to_geo_point).collect();
         let array_points: Vec<_> = boundary.xy.iter().map(gds_point_to_array).collect();
         let local_polygon = Polygon::new(LineString::from(geo_points), vec![]);
@@ -300,10 +303,10 @@ impl WorldGenerator {
             local_polygon,
             local_triangles,
         };
-        self.world.spawn(shape_definition).id()
+        spawn(&mut self.world, shape_definition)
     }
 
-    fn load_path(&mut self, path: &GdsPath) -> Entity {
+    fn load_path(&mut self, path: &GdsPath) -> Instance<ShapeDefinition> {
         let spine: Vec<_> = path.xy.iter().map(gds_point_to_array).collect();
         let width = path.width.unwrap_or(0) as f64;
         let half_width = width / 2.0;
@@ -323,7 +326,7 @@ impl WorldGenerator {
             local_polygon,
             local_triangles,
         };
-        self.world.spawn(shape_definition).id()
+        spawn(&mut self.world, shape_definition)
     }
 
     fn get_or_create_layer(&mut self, index: i16) -> Entity {

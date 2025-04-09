@@ -1,5 +1,6 @@
-use bevy_ecs::component::Component;
-use bevy_ecs::entity::Entity;
+use bevy_ecs::prelude::*;
+use moonshine_kind::prelude::*;
+
 use geo::AffineTransform;
 
 use crate::core::triangulation::Triangulation;
@@ -30,7 +31,7 @@ pub struct LayerMesh;
 #[derive(Component)]
 pub struct CellDefinition {
     pub name: String,
-    pub shape_defs: Vec<Entity>,
+    pub shape_defs: Vec<Instance<ShapeDefinition>>,
     pub cell_refs: Vec<CellReference>,
 }
 
@@ -105,4 +106,13 @@ impl Default for CellInstance {
             world_transform: Default::default(),
         }
     }
+}
+
+pub fn spawn<T: Component>(world: &mut World, component: T) -> Instance<T> {
+    let entity = world.spawn(component);
+    Instance::from_entity(entity.into()).unwrap()
+}
+
+pub fn get_component<'w, T: Component>(world: &'w World, instance: &Instance<T>) -> Option<&'w T> {
+    world.get::<T>(instance.entity())
 }
