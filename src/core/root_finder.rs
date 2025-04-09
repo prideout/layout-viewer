@@ -1,22 +1,25 @@
 use std::collections::HashSet;
 
 use bevy_ecs::entity::Entity;
-use bevy_ecs::query::QueryState;
+use bevy_ecs::query::With;
+use bevy_ecs::system::Query;
+use bevy_ecs::system::SystemState;
+use bevy_ecs::world::EntityRef;
 use bevy_ecs::world::World;
 
 use super::components::CellDefinition;
 
 /// Finds CellDefinition entities that are not referenced by any other CellDefinition.
-pub struct RootFinder<'world> {
-    query: QueryState<(Entity, &'world CellDefinition)>,
+pub struct RootFinder {
+    query: SystemState<Query<'static, 'static, EntityRef<'static>, With<CellDefinition>>>,
     visited: HashSet<Entity>,
     non_roots: HashSet<Entity>,
 }
 
-impl RootFinder<'_> {
+impl RootFinder {
     pub fn new(world: &mut World) -> Self {
         Self {
-            query: world.query::<(Entity, &CellDefinition)>(),
+            query: SystemState::new(world),
             visited: HashSet::new(),
             non_roots: HashSet::new(),
         }
@@ -27,20 +30,23 @@ impl RootFinder<'_> {
         self.visited.clear();
         self.non_roots.clear();
 
-        for (entity, cell) in self.query.iter(world) {
-            if self.visited.contains(&entity) {
+        let query = self.query.get(world);
+
+        for cell in query.iter() {
+            if self.visited.contains(&cell.id()) {
                 continue;
             }
-            self.visited.insert(entity);
-            for cell_ref in &cell.cell_refs {
+            self.visited.insert(cell.id());
+            let cell_def = cell.get::<CellDefinition>().unwrap();
+            for cell_ref in &cell_def.cell_refs {
                 self.non_roots.insert(cell_ref.cell_definition);
             }
         }
 
         let mut roots = Vec::new();
-        for (entity, _) in self.query.iter(world) {
-            if !self.non_roots.contains(&entity) {
-                roots.push(entity);
+        for cell in query.iter() {
+            if !self.non_roots.contains(&cell.id()) {
+                roots.push(cell.id());
             }
         }
         roots
