@@ -12,6 +12,7 @@ use crate::graphics::bounds::BoundingBox;
 use crate::graphics::geometry::Geometry;
 use crate::graphics::mesh::Mesh;
 use crate::graphics::vectors::*;
+use crate::rsutils::moonshine::SpawnInstanceWorld;
 use std::collections::BTreeMap;
 
 use bevy_ecs::entity::Entity;
@@ -27,8 +28,6 @@ use geo::Coord;
 use geo::LineString;
 use moonshine_kind::Instance;
 use web_time::Instant;
-
-use super::components::spawn;
 
 type NameTable = BTreeMap<String, Entity>;
 
@@ -303,7 +302,7 @@ impl WorldGenerator {
             local_polygon,
             local_triangles,
         };
-        spawn(&mut self.world, shape_definition)
+        self.world.spawn_instance_ref(shape_definition).instance()
     }
 
     fn load_path(&mut self, path: &GdsPath) -> Instance<ShapeDefinition> {
@@ -326,7 +325,7 @@ impl WorldGenerator {
             local_polygon,
             local_triangles,
         };
-        spawn(&mut self.world, shape_definition)
+        self.world.spawn_instance_id(shape_definition)
     }
 
     fn get_or_create_layer(&mut self, index: i16) -> Entity {

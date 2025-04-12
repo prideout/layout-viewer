@@ -6,7 +6,6 @@ use geo::AffineOps;
 use geo::AffineTransform;
 use geo::BoundingRect;
 
-use crate::core::components::get_component;
 use crate::core::components::CellDefinition;
 use crate::core::components::CellInstance;
 use crate::core::components::Layer;
@@ -17,6 +16,7 @@ use crate::graphics::bounds::BoundingBox;
 use crate::graphics::geometry::Geometry;
 use crate::graphics::mesh::Mesh;
 use crate::graphics::vectors::*;
+use crate::rsutils::moonshine::ComponentInstance;
 
 /// Creates instance entities from definition entities.
 pub struct Instancer {
@@ -70,7 +70,7 @@ impl Instancer {
 
         let mut shape_prototypes = Vec::new();
         for shape_def in &cell_definition.shape_defs {
-            let Some(shape_def) = get_component(world, shape_def) else {
+            let Some(shape_def) = world.instance(*shape_def) else {
                 log::error!("Shape definition not found");
                 continue;
             };

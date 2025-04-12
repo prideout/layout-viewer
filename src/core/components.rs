@@ -107,12 +107,3 @@ impl Default for CellInstance {
         }
     }
 }
-
-pub fn spawn<T: Component>(world: &mut World, component: T) -> Instance<T> {
-    let entity = world.spawn(component);
-    Instance::from_entity(entity.into()).unwrap()
-}
-
-pub fn get_component<'w, T: Component>(world: &'w World, instance: &Instance<T>) -> Option<&'w T> {
-    world.get::<T>(instance.entity())
-}

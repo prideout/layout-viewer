@@ -74,4 +74,4 @@ tokio = { version = "1.36", features = ["rt", "time"] }
 
 [profile.release]
 opt-level = 3
-lto = true 
+lto = true
